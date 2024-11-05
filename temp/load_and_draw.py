@@ -34,6 +34,7 @@ scr_y = 0
 scr_speed = 20
 
 # Initial Rectangle Location
+square_selected = False
 square_x = -100
 square_y = -100
 
@@ -162,13 +163,14 @@ while running:
                 grid_y = (mouse_y + scr_y) // cell_size
 
                 if 0 <= grid_x < cols:
+                    square_selected = True
                     square_x = step_x_offset + grid_x * cell_size
                     square_y = grid_y * cell_size
             print(scr_y)
 
         elif event.type == pygame.KEYDOWN:
             is_scroll = False
-            if event.key in square_keys:
+            if event.key in square_keys and square_selected:
                 if event.key == pygame.K_LEFT:
                     square_x = max(square_x - cell_size, step_x_offset)
                 if event.key == pygame.K_RIGHT:
@@ -187,10 +189,15 @@ while running:
                         del image_rects[(square_x, square_y)]
                     else:
                         image_rects[(square_x, square_y)] = short_images[selected_col]
-            elif event.key == pygame.K_ESCAPE:
+            elif event.key == pygame.K_ESCAPE and square_selected:
+                square_selected = False
                 square_x = (
                     -cell_size
                 )  # Vanish selection square by moving it to out of the screen
+
+    if square_selected and not is_scroll:
+
+        scr_y = min(max(scr_y, square_y + cell_size - screen_height), square_y)
 
     screen.fill(white)
 
@@ -199,8 +206,10 @@ while running:
     for row in range(rows):
         y = row * cell_size - scr_y
         # print(scr_y, y)
-        if -cell_size >= y or y >= screen_height:
+        if -cell_size >= y:
             continue
+        elif y >= screen_height:
+            break
         # print("hello")
         for col in range(cols):
             x = x_offset + col * cell_size
@@ -216,7 +225,11 @@ while running:
     )
 
     for (x, y), image in image_rects.items():
-        if -cell_size < y - scr_y < screen_height:
+        if y - scr_y <= -cell_size:
+            continue
+        elif y - scr_y >= screen_height:
+            break
+        elif -cell_size < y - scr_y < screen_height:
             screen.blit(image, (x, y - scr_y))
 
     pygame.display.flip()
