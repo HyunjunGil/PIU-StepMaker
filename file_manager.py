@@ -1,0 +1,110 @@
+import os
+
+from typing import List, Tuple
+from constants import *
+
+
+def load_ucs_file(path: str) -> Tuple[int, str, List[List[int]], List[List[int]]]:
+
+    block_info: List[List[int]] = []
+    step_data: List[List[int]] = []
+
+    format, mode = -1, ""
+
+    with open(path, "r") as f:
+        file_lines = f.readlines()
+
+        ln, tot_ln = 2, len(file_lines)
+
+        try:
+            assert file_lines[0].startswith(":Format=") and file_lines[1].startswith(
+                ":Mode="
+            ), "Invalid UCS Header"
+
+            format = int(file_lines[0].strip().split("=")[1])
+            mode = file_lines[1].strip().split("=")[1]
+
+            assert format == 1 and mode in ["Single", "Double"]
+
+            if mode == "Single":
+                cols = 5
+            else:
+                cols = 10
+
+        except Exception as e:
+            print(e)
+            raise Exception("Failed to parse UCS Header")
+
+        inital_bpm = bpm = round(float(file_lines[ln].strip().split("=")[1]), 4)
+        delay = int(file_lines[ln + 1].strip().split("=")[1])
+        beat = int(file_lines[ln + 2].strip().split("=")[1])
+        split = int(file_lines[ln + 3].strip().split("=")[1])
+        block_idx = 0
+        lcnt = 0
+        ln += 4
+        block_info.append([bpm, beat, split, delay])
+
+        while ln < tot_ln:
+            if file_lines[ln].startswith(":"):
+
+                assert lcnt > 0, "Zero Size Block Occured at line {}".format(ln)
+                assert (
+                    file_lines[ln].startswith(":BPM=")
+                    and file_lines[ln + 1].startswith(":Delay=")
+                    and file_lines[ln + 2].startswith(":Beat=")
+                    and file_lines[ln + 3].startswith(":Split=")
+                ), "Invalid Block Header"
+
+                bpm = round(float(file_lines[ln].strip().split("=")[1]), 4)
+                delay = int(file_lines[ln + 1].strip().split("=")[1])
+                beat = int(file_lines[ln + 2].strip().split("=")[1])
+                split = int(file_lines[ln + 3].strip().split("=")[1])
+                block_info.append([bpm, beat, split, delay])
+                block_idx += 1
+                lcnt = 0
+                ln += 4
+                print(delay, beat, split)
+            else:
+                parsed_line = [STEP_TO_CODE[c] for c in file_lines[ln].strip()] + [
+                    block_idx,  # block index
+                    lcnt // (beat * split),  # measure index
+                    lcnt // split,  # beat index
+                    lcnt % split,  # split index
+                ]
+                parsed_line.append(block_idx)
+                step_data.append(parsed_line)
+                lcnt += 1
+                ln += 1
+
+    return format, mode, block_info, step_data
+
+
+def save_ucs_file(
+    path: str,
+    format: int,
+    mode: str,
+    step_data: List[List[int]],
+    block_info: List[List[int | float]],
+):
+
+    rows, cols = len(step_data), len(step_data[0]) - 5
+    with open("result.ucs", "w") as f:
+        f.write(":Format=1\n")
+        f.write("Mode=" + "Single\n" if mode == "Single" else "Double\n")
+
+        block_idx = -1
+        for ln in range(rows):
+            row = step_data[ln]
+            bi = row[cols]
+            if block_idx != bi:
+                f.writelines(
+                    [
+                        f":BPM={row[cols + 1]}\n",
+                        f":Delay={row[cols + 4]}\n",
+                        f":Beat={row[cols + 2]}\n",
+                        f":Split={row[cols + 3]}\n",
+                    ]
+                )
+                block_idx = bi
+
+            f.write("".join([CODE_TO_STEP[c] for c in row[:cols]]) + "\n")
