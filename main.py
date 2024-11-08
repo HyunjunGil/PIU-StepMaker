@@ -3,12 +3,12 @@ import pygame, pygame_gui, sys, time, numpy as np
 from typing import List, Tuple
 from constants import *
 from file_manager import load_ucs_file, save_ucs_file
-
+from pygame import Surface
 
 pygame.init()
 
-font = pygame.font.Font(None, 18)
-
+font = pygame.font.SysFont("Verdana", 18)
+header_font = pygame.font.SysFont("Verdana", 24)
 
 screen_width, screen_height = 800, 500
 screen = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
@@ -39,11 +39,12 @@ scrollbar_y = 0
 # Mouse & Key Flag
 lattice_clicked = False
 scrollbar_clicked = False
+block_info_clicked = False
 line_selected = False
 save_pressed = False
 copy_pressed = False
 paste_pressed = False
-
+playing = False
 
 # Key Combination Status
 key_combination_status = {
@@ -83,7 +84,7 @@ total_images = [
 
 
 # lines = []
-block_info: List[int | float] = []
+block_info: List[List[int | float]] = []
 step_data: List[List[int]] = []
 y_selection_map: List[List[int]] = [[0, 0] for i in range(100_000)]
 
@@ -95,6 +96,13 @@ y_coors = []
 
 block_idx, y_coor = 0, 0
 initial_bpm, bpm, delay, beat, split, lcnt = 0, 0, 0, 0, 0, 0
+
+
+def empty_if_none(a: any):
+    if a is None:
+        return ""
+    else:
+        return str(a)
 
 
 def update_y_selection_map():
@@ -138,6 +146,127 @@ def clear_step(ln: int, col: int):
             step_data[i][col] = 0
 
 
+def add_text(
+    screen: Surface,
+    text: str,
+    x: int,
+    y: int,
+    font_size: int,
+    loc: int = 0,
+    color: Tuple[int, int] = BLACK,
+    bg_color: Tuple[int, int] | None = None,
+):
+    # loc
+    # 0 : topleft
+    # 1 : topright
+    # 2 : bottomright
+    # 3 : bottomleft
+    font = pygame.font.Font(None, font_size)
+    text_surface = font.render(text, True, color, bg_color)
+    rect = text_surface.get_rect()
+    if loc == 0:
+        rect.topleft = (x, y)
+    elif loc == 1:
+        rect.topright = (x, y)
+    elif loc == 2:
+        rect.bottomright = (x, y)
+    elif loc == 3:
+        rect.bottomleft = (x, y)
+
+    screen.blit(text_surface, rect)
+
+
+def add_rectangle_with_text(
+    text: str,
+    font_size: int,
+    rect_info: Tuple[int, int, int, int],
+    rect_color: Tuple[int, int, int] = WHITE,
+    text_color: Tuple[int, int, int] = BLACK,
+):
+    global screen
+    rect = pygame.Rect(rect_info)
+    text_surface = pygame.font.SysFont("Verdana", font_size).render(
+        text, True, text_color
+    )
+    text_rect = text_surface.get_rect(center=rect.center)
+    pygame.draw.rect(screen, rect_color, rect)
+    screen.blit(text_surface, text_rect)
+    pass
+
+
+def fill_block_info_area(
+    bpm: int | float, beat: int, split: int, delay: int, mcnt: int, bcnt: int, scnt: int
+):
+    global screen
+    offset = BLOCK_INFO_GAP
+    x0 = option_x_start + BLOCK_INFO_GAP
+    x1 = x0 + 120
+    y0 = BLOCK_INFO_AREA_Y
+    st, sw, sh = 12, 60, 20
+    add_text(
+        screen,
+        "Block Information",
+        option_x_start + BLOCK_INFO_GAP,
+        BLOCK_INFO_AREA_Y + BLOCK_INFO_GAP,
+        30,
+        0,
+        BLACK,
+    )
+    offset += 30
+    add_rectangle_with_text(
+        "Measures",
+        st,
+        (option_x_start + Bx0, BLOCK_INFO_AREA_Y + By0, sw, sh),
+        LIGHT_GRAY,
+    )
+    add_rectangle_with_text(
+        "BPM",
+        st,
+        (option_x_start + Bx2, BLOCK_INFO_AREA_Y + By0, sw, sh),
+        LIGHT_GRAY,
+    )
+    offset += sh + BLOCK_INFO_GAP
+    add_rectangle_with_text(
+        "Beats",
+        st,
+        (option_x_start + Bx0, BLOCK_INFO_AREA_Y + By1, sw, sh),
+        LIGHT_GRAY,
+    )
+    add_rectangle_with_text(
+        "B/M",
+        st,
+        (option_x_start + Bx2, BLOCK_INFO_AREA_Y + By1, sw, sh),
+        LIGHT_GRAY,
+    )
+    offset += sh + BLOCK_INFO_GAP
+    add_rectangle_with_text(
+        "Splits",
+        st,
+        (option_x_start + Bx0, BLOCK_INFO_AREA_Y + By2, sw, sh),
+        LIGHT_GRAY,
+    )
+    add_rectangle_with_text(
+        "S/B",
+        st,
+        (option_x_start + Bx2, BLOCK_INFO_AREA_Y + By2, sw, sh),
+        LIGHT_GRAY,
+    )
+    offset += sh + BLOCK_INFO_GAP
+    add_rectangle_with_text(
+        "Delay",
+        st,
+        (option_x_start + Bx0, BLOCK_INFO_AREA_Y + By3, sw, sh),
+        LIGHT_GRAY,
+    )
+    add_rectangle_with_text(
+        "m/s",
+        st,
+        (option_x_start + Bx2, BLOCK_INFO_AREA_Y + By3, sw, sh),
+        WHITE,
+    )
+    # pass
+
+
 # pygame Manager
 manager = pygame_gui.UIManager((screen_width, screen_height))
 
@@ -148,7 +277,7 @@ rows, cols = len(step_data), len(step_data[0]) - 5
 SELECTION_WIDTH = CELL_SIZE * cols
 step_x_start = MEASURE_DESCRIPTOR_WIDTH
 step_x_end = MEASURE_DESCRIPTOR_WIDTH + CELL_SIZE * cols
-scrollbar_x = step_x_end + BLOCK_DECSRIPTOR_WIDTH
+scrollbar_x = step_x_end
 option_x_start = scrollbar_x + SCROLL_BAR_WIDTH
 option_x_end = option_x_start + OPTION_WIDTH
 
@@ -156,12 +285,90 @@ running = True
 
 update_y_selection_map()
 
-# Buttons
-hello_button = pygame_gui.elements.UIButton(
-    relative_rect=pygame.Rect((option_x_start + 20, 100), (100, 50)),
-    text="Say Hello",
+### File Buttons
+# Play/Stop Button
+play_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect(
+        (option_x_start + FILE_BUTTON_GAP, FILE_BUTTON_GAP), FILE_BUTTON_SIZE
+    ),
+    text="Play",
     manager=manager,
 )
+save_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect(
+        (option_x_start + FILE_BUTTON_GAP * 2 + FILE_BUTTON_WIDTH, FILE_BUTTON_GAP),
+        FILE_BUTTON_SIZE,
+    ),
+    text="Save",
+    manager=manager,
+)
+load_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect(
+        (
+            option_x_start + FILE_BUTTON_GAP * 3 + FILE_BUTTON_WIDTH * 2,
+            FILE_BUTTON_GAP,
+        ),
+        FILE_BUTTON_SIZE,
+    ),
+    text="Load",
+    manager=manager,
+)
+
+### Block Info Buttons
+# Adjust Block Size
+block_apply_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect(
+        (
+            option_x_end - BLOCK_BUTTON_SIZE[0] - BLOCK_INFO_GAP,
+            BLOCK_INFO_AREA_Y
+            + BLOCK_INFO_AREA_HEIGHT
+            - BLOCK_BUTTON_SIZE[1]
+            - BLOCK_INFO_GAP,
+        ),
+        BLOCK_BUTTON_SIZE,
+    ),
+    text="Apply",
+    manager=manager,
+)
+# tx0 = option_x_start + BLOCK_INFO_GAP + 60
+measures_textbox = pygame_gui.elements.UITextEntryLine(
+    relative_rect=pygame.Rect(option_x_start + Bx1, BLOCK_INFO_AREA_Y + By0, Bw1, Bh),
+    manager=manager,
+)
+beats_textbox = pygame_gui.elements.UITextEntryLine(
+    relative_rect=pygame.Rect(option_x_start + Bx1, BLOCK_INFO_AREA_Y + By1, Bw1, Bh),
+    manager=manager,
+)
+splits_textbox = pygame_gui.elements.UITextEntryLine(
+    relative_rect=pygame.Rect(option_x_start + Bx1, BLOCK_INFO_AREA_Y + By2, Bw1, Bh),
+    manager=manager,
+)
+delay_textbox = pygame_gui.elements.UITextEntryLine(
+    relative_rect=pygame.Rect(option_x_start + Bx1, BLOCK_INFO_AREA_Y + By3, Bw1, Bh),
+    manager=manager,
+)
+
+bpm_textbox = pygame_gui.elements.UITextEntryLine(
+    relative_rect=pygame.Rect(option_x_start + Bx3, BLOCK_INFO_AREA_Y + By0, Bw3, Bh),
+    manager=manager,
+)
+bm_textbox = pygame_gui.elements.UITextEntryLine(
+    relative_rect=pygame.Rect(option_x_start + Bx3, BLOCK_INFO_AREA_Y + By1, Bw3, Bh),
+    manager=manager,
+)
+sb_textbox = pygame_gui.elements.UITextEntryLine(
+    relative_rect=pygame.Rect(option_x_start + Bx3, BLOCK_INFO_AREA_Y + By2, Bw3, Bh),
+    manager=manager,
+)
+
+measures_textbox.set_allowed_characters("numbers")
+beats_textbox.set_allowed_characters("numbers")
+splits_textbox.set_allowed_characters("numbers")
+delay_textbox.set_allowed_characters("numbers")
+bpm_textbox.set_allowed_characters([f"{i}" for i in range(10)] + ["."])
+bm_textbox.set_allowed_characters("numbers")
+sb_textbox.set_allowed_characters("numbers")
+
 
 clock = pygame.time.Clock()
 
@@ -303,6 +510,8 @@ while running:
                 # Vanish selection square by moving it to out of the screen
                 sline_y_init = sline_y = -100
 
+        manager.process_events(event)
+
     manager.update(time_delta)
 
     if lattice_clicked:
@@ -354,16 +563,17 @@ while running:
     )
 
     # Draw lattice
-    pygame.draw.line(screen, RED, (0, 0), (0, screen_height), 2)
-    pygame.draw.line(screen, RED, (step_x_start, 0), (step_x_start, screen_height), 2)
+    pygame.draw.line(screen, LIGHT_GRAY, (0, 0), (0, screen_height), 2)
+    pygame.draw.line(
+        screen, LIGHT_GRAY, (step_x_start, 0), (step_x_start, screen_height), 2
+    )
     pygame.draw.line(
         screen,
-        RED,
+        LIGHT_GRAY,
         (step_x_end, 0),
         (step_x_end, screen_height),
         2,
     )
-    pygame.draw.rect(screen, BLACK, (option_x_start, 0, OPTION_WIDTH, screen_height), 3)
 
     ln, y = y_selection_map[scr_y][0], y_selection_map[scr_y][1]
     tot_ln = len(step_data)
@@ -382,23 +592,23 @@ while running:
         if mi == 0 and bti == 0 and si == 0:  # Start of Blcok
             # print("block start")
             pygame.draw.line(
-                screen, RED, (0, y - scr_y), (option_x_start, y - scr_y), 1
+                screen, RED, (0, y - scr_y), (option_x_start, y - scr_y), 3
             )
-            measure_text = font.render("{}:{}".format(bi + 1, mi + 1), True, BLACK)
-            measure_text_rect = measure_text.get_rect()
-            measure_text_rect.topright = (step_x_start, y - scr_y)
+            text = font.render("{}:{}".format(bi + 1, mi + 1), True, BLACK)
+            text_rect = text.get_rect()
+            text_rect.topright = (step_x_start, y - scr_y)
 
-            block_text = font.render("{:.4f}BPM\n1/{}".format(bpm, split), True, BLACK)
-            block_text_rect = block_text.get_rect()
-            block_text_rect.topleft = (step_x_end, y - scr_y)
+            # block_text = font.render("{:.4f}BPM\n1/{}".format(bpm, split), True, BLACK)
+            # block_text_rect = block_text.get_rect()
+            # block_text_rect.topleft = (step_x_end, y - scr_y)
 
-            screen.blit(measure_text, measure_text_rect)
-            screen.blit(block_text, block_text_rect)
+            screen.blit(text, text_rect)
+            # screen.blit(block_text, block_text_rect)
 
         elif bti == 0 and si == 0:  # Start of Measure
             # print("adf")
             pygame.draw.line(
-                screen, ROYAL_BLUE, (0, y - scr_y), (step_x_end, y - scr_y), 1
+                screen, ROYAL_BLUE, (0, y - scr_y), (step_x_end, y - scr_y), 2
             )
             text = font.render("{}:{}".format(bi + 1, mi + 1), True, BLACK)
             text_rect = text.get_rect()
@@ -472,7 +682,93 @@ while running:
         ),
     )
 
+    # Draw Line Descriptor
+    if line_selected:
+        ln = y_selection_map[sline_y][0]
+        ln_init = y_selection_map[sline_y_init][0]
+        if ln == ln_init:
+            txt = "Ln{}".format(ln + 1)
+        else:
+            ln_max, ln_min = max(ln, ln_init), min(ln, ln_init)
+            txt = "Ln{}~{} ({} selected)".format(
+                ln_min + 1, ln_max + 1, ln_max - ln_min + 1
+            )
+        line_text = pygame.font.SysFont("Verdana", 12).render(
+            txt, True, BLACK, LIGHT_GRAY
+        )
+        line_text_rect = line_text.get_rect()
+        line_text_rect.bottomright = (scrollbar_x, screen_height)
+        screen.blit(line_text, line_text_rect)
+
     # Draw Option Area
+    pygame.draw.rect(screen, BLACK, (option_x_start, 0, OPTION_WIDTH, screen_height), 3)
+    pygame.draw.line(
+        screen,
+        BLACK,
+        (option_x_start, FILE_BUTTON_AREA_HEIGHT),
+        (option_x_end, FILE_BUTTON_AREA_HEIGHT),
+        2,
+    )
+
+    pygame.draw.line(
+        screen,
+        BLACK,
+        (option_x_start, BLOCK_INFO_AREA_Y + BLOCK_INFO_AREA_HEIGHT),
+        (option_x_end, BLOCK_INFO_AREA_Y + BLOCK_INFO_AREA_HEIGHT),
+    )
+
+    bpm, beat, split, delay, mcnt, bcnt, scnt = (
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    mouse_x, mouse_y = pygame.mouse.get_pos()
+
+    if line_selected:
+        ln = y_selection_map[sline_y][0]
+        info = block_info[step_data[ln][cols]]
+        bpm, beat, split, delay, mcnt, bcnt, scnt = (
+            info[0],
+            info[1],
+            info[2],
+            info[3],
+            info[4],
+            info[5],
+            info[6],
+        )
+    elif step_x_start <= mouse_x < step_x_end:
+        ln = y_selection_map[mouse_y + scr_y][0]
+        info = block_info[step_data[ln][cols]]
+        bpm, beat, split, delay, mcnt, bcnt, scnt = (
+            info[0],
+            info[1],
+            info[2],
+            info[3],
+            info[4],
+            info[5],
+            info[6],
+        )
+    # line_text = font.render(txt, True, BLACK, LIGHT_GRAY)
+    # line_text_rect = line_text.get_rect()
+    # line_text_rect.bottomright = (scrollbar_x, screen_height)
+
+    fill_block_info_area(bpm, beat, split, delay, mcnt, bcnt, scnt)
+    # block_info_header
+
+    # Fill Block Information
+    if not mcnt is None:
+        measures_textbox.set_text_hidden(empty_if_none(mcnt))
+        beats_textbox.set_text_hidden(empty_if_none(bcnt))
+        splits_textbox.set_text_hidden(empty_if_none(scnt))
+        delay_textbox.set_text_hidden(empty_if_none(delay))
+        bpm_textbox.set_text_hidden(empty_if_none(bpm))
+        bm_textbox.set_text_hidden(empty_if_none(beat))
+        sb_textbox.set_text_hidden(empty_if_none(split))
+
     manager.draw_ui(screen)
 
     pygame.display.flip()

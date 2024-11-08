@@ -4,7 +4,9 @@ from typing import List, Tuple
 from constants import *
 
 
-def load_ucs_file(path: str) -> Tuple[int, str, List[List[int]], List[List[int]]]:
+def load_ucs_file(
+    path: str,
+) -> Tuple[int, str, List[List[int]], List[List[int | float]]]:
 
     block_info: List[List[int]] = []
     step_data: List[List[int]] = []
@@ -35,19 +37,31 @@ def load_ucs_file(path: str) -> Tuple[int, str, List[List[int]], List[List[int]]
             print(e)
             raise Exception("Failed to parse UCS Header")
 
-        inital_bpm = bpm = round(float(file_lines[ln].strip().split("=")[1]), 4)
+        bpm = round(float(file_lines[ln].strip().split("=")[1]), 4)
         delay = int(file_lines[ln + 1].strip().split("=")[1])
         beat = int(file_lines[ln + 2].strip().split("=")[1])
         split = int(file_lines[ln + 3].strip().split("=")[1])
         block_idx = 0
         lcnt = 0
         ln += 4
-        block_info.append([bpm, beat, split, delay])
 
         while ln < tot_ln:
             if file_lines[ln].startswith(":"):
 
                 assert lcnt > 0, "Zero Size Block Occured at line {}".format(ln)
+
+                block_info.append(
+                    [
+                        bpm,
+                        beat,
+                        split,
+                        delay,
+                        lcnt // (beat * split),  # number of measures
+                        (lcnt % (beat * split)) // split,  # number of beats
+                        lcnt % split,  # number of split
+                    ]
+                )
+
                 assert (
                     file_lines[ln].startswith(":BPM=")
                     and file_lines[ln + 1].startswith(":Delay=")
@@ -59,22 +73,33 @@ def load_ucs_file(path: str) -> Tuple[int, str, List[List[int]], List[List[int]]
                 delay = int(file_lines[ln + 1].strip().split("=")[1])
                 beat = int(file_lines[ln + 2].strip().split("=")[1])
                 split = int(file_lines[ln + 3].strip().split("=")[1])
-                block_info.append([bpm, beat, split, delay])
                 block_idx += 1
                 lcnt = 0
                 ln += 4
-                print(delay, beat, split)
+                # print(delay, beat, split)
             else:
                 parsed_line = [STEP_TO_CODE[c] for c in file_lines[ln].strip()] + [
                     block_idx,  # block index
                     lcnt // (beat * split),  # measure index
-                    lcnt // split,  # beat index
+                    (lcnt % (beat * split)) // split,  # beat index
                     lcnt % split,  # split index
                 ]
                 parsed_line.append(block_idx)
                 step_data.append(parsed_line)
                 lcnt += 1
                 ln += 1
+
+    block_info.append(
+        [
+            bpm,
+            beat,
+            split,
+            delay,
+            lcnt // (beat * split),  # number of measures
+            (lcnt % (beat * split)) // split,  # number of beats
+            lcnt % split,  # number of split
+        ]
+    )
 
     return format, mode, block_info, step_data
 
