@@ -78,13 +78,12 @@ def load_ucs_file(
                 ln += 4
                 # print(delay, beat, split)
             else:
-                parsed_line = [STEP_TO_CODE[c] for c in file_lines[ln].strip()] + [
+                parsed_line = [
                     block_idx,  # block index
                     lcnt // (beat * split),  # measure index
                     (lcnt % (beat * split)) // split,  # beat index
                     lcnt % split,  # split index
-                ]
-                parsed_line.append(block_idx)
+                ] + [STEP_TO_CODE[c] for c in file_lines[ln].strip()]
                 step_data.append(parsed_line)
                 lcnt += 1
                 ln += 1
@@ -112,7 +111,7 @@ def save_ucs_file(
     block_info: List[List[int | float]],
 ):
 
-    rows, cols = len(step_data), len(step_data[0]) - 5
+    rows, cols = len(step_data), len(step_data[0]) - STEP_DATA_OFFSET
     with open("result.ucs", "w") as f:
         f.write(":Format=1\n")
         f.write("Mode=" + "Single\n" if mode == "Single" else "Double\n")
@@ -124,12 +123,20 @@ def save_ucs_file(
             if block_idx != bi:
                 f.writelines(
                     [
-                        f":BPM={row[cols + 1]}\n",
-                        f":Delay={row[cols + 4]}\n",
-                        f":Beat={row[cols + 2]}\n",
-                        f":Split={row[cols + 3]}\n",
+                        f":BPM={row[1]}\n",
+                        f":Delay={row[4]}\n",
+                        f":Beat={row[2]}\n",
+                        f":Split={row[3]}\n",
                     ]
                 )
                 block_idx = bi
 
-            f.write("".join([CODE_TO_STEP[c] for c in row[:cols]]) + "\n")
+            f.write(
+                "".join(
+                    [
+                        CODE_TO_STEP[c]
+                        for c in row[STEP_DATA_OFFSET : STEP_DATA_OFFSET + cols]
+                    ]
+                )
+                + "\n"
+            )

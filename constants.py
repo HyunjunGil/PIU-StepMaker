@@ -53,6 +53,13 @@ MIN_SCROLL_BAR_HEIGHT = 200
 # Option Width
 OPTION_WIDTH = 300
 
+# Step Data Index for block information : block_idx, bpm, beat/measure, split/beat, delay
+STEP_DATA_BI_IDX = 0  # index for block index
+STEP_DATA_MS_IDX = 1  # index for measure index
+STEP_DATA_BT_IDX = 2  # index for beat index
+STEP_DATA_SP_IDX = 3  # index for split index
+STEP_DATA_OFFSET = 4  # length of total metadata index
+
 
 # File Buttons Options
 FILE_BUTTON_WIDTH = 50
@@ -74,14 +81,26 @@ BLOCK_INFO_GAP = 10
 Bx0 = BLOCK_INFO_GAP
 Bw0 = 60
 Bx1 = Bx0 + Bw0 + BLOCK_INFO_GAP // 2
-Bw1 = 40 + BLOCK_INFO_GAP
+Bw1 = 80
 Bx2 = Bx1 + Bw1 + BLOCK_INFO_GAP // 2
 Bw2 = 60
 Bx3 = Bx2 + Bw2 + BLOCK_INFO_GAP // 2
-Bw3 = 80
+Bw3 = 40 + BLOCK_INFO_GAP
 
 Bh = 25
 By0 = BLOCK_INFO_GAP + 30
 By1 = By0 + Bh + BLOCK_INFO_GAP
 By2 = By1 + Bh + BLOCK_INFO_GAP
 By3 = By2 + Bh + BLOCK_INFO_GAP
+
+
+# Constant for TAB operation
+BLOCK_INFO_OBJECT_ID_IDX_MAP = {
+    "BI_measures": 0,
+    "BI_beats": 1,
+    "BI_splits": 2,
+    "BI_delay": 3,
+    "BI_bpm": 4,
+    "BI_bm": 5,
+    "BI_sb": 6,
+}
