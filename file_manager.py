@@ -114,12 +114,12 @@ def save_ucs_file(
     rows, cols = len(step_data), len(step_data[0]) - STEP_DATA_OFFSET
     with open("result.ucs", "w") as f:
         f.write(":Format=1\n")
-        f.write("Mode=" + "Single\n" if mode == "Single" else "Double\n")
+        f.write(":Mode=" + "Single\n" if mode == "Single" else "Double\n")
 
         block_idx = -1
         for ln in range(rows):
             row = step_data[ln]
-            bi = row[cols]
+            bi = row[STEP_DATA_BI_IDX]
             if block_idx != bi:
                 f.writelines(
                     [
