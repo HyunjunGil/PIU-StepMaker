@@ -123,7 +123,7 @@ def update_y_selection_map():
             bpm, beat, split, delay = block[0], block[1], block[2], block[3]
             print(block_idx, bpm, beat, split, delay)
 
-        line_height = max((CELL_SIZE * 2) // split, MIN_SPLIT_SIZE)
+        line_height = min(max((CELL_SIZE * 2) // split, MIN_SPLIT_SIZE), CELL_SIZE)
         ny = y + line_height
         # print(ln, ny)
         for i in range(y, ny):
@@ -200,8 +200,31 @@ def add_rectangle_with_text(
     pass
 
 
-def draw_block_info_area():
+def draw_option_area():
     global screen
+
+    pygame.draw.rect(screen, BLACK, (option_x_start, 0, OPTION_WIDTH, screen_height), 3)
+    pygame.draw.rect(
+        screen,
+        BLACK,
+        (option_x_start, FILE_BUTTON_AREA_HEIGHT, OPTION_WIDTH, BLOCK_INFO_AREA_HEIGHT),
+        3,
+    )
+    pygame.draw.rect(
+        screen,
+        BLACK,
+        (
+            (
+                option_x_start,
+                BLOCK_OPER_AREA_Y - 3,
+                OPTION_WIDTH,
+                BLOCK_OPER_AREA_HEIGHT,
+            ),
+        ),
+        3,
+    )
+
+    # Draw "Block Information" Section
     offset = BLOCK_INFO_GAP
     x0 = option_x_start + BLOCK_INFO_GAP
     x1 = x0 + 120
@@ -270,6 +293,17 @@ def draw_block_info_area():
     )
     # pass
 
+    # Draw "Block Operation" Section
+    add_text(
+        screen,
+        "Block Operation",
+        option_x_start + 10,
+        BLOCK_OPER_AREA_Y + 10,
+        30,
+        0,
+        BLACK,
+    )
+
 
 # pygame Manager
 manager = pygame_gui.UIManager((screen_width, screen_height))
@@ -335,6 +369,33 @@ block_apply_button = pygame_gui.elements.UIButton(
     manager=manager,
 )
 
+### BLock Operation Buttons
+block_add_up_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect((option_x_start + BO_x0, BO_y0), BLOCK_OPER_BUTTON_SIZE),
+    text="Add ^",
+    manager=manager,
+    object_id="BO_add_up",
+)
+block_add_down_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect((option_x_start + BO_x1, BO_y0), BLOCK_OPER_BUTTON_SIZE),
+    text="Add v",
+    manager=manager,
+    object_id="BO_add_down",
+)
+block_split_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect((option_x_start + BO_x2, BO_y0), BLOCK_OPER_BUTTON_SIZE),
+    text="Split",
+    manager=manager,
+    object_id="BO_split",
+)
+block_delete_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect((option_x_start + BO_x3, BO_y0), BLOCK_OPER_BUTTON_SIZE),
+    text="Delete",
+    manager=manager,
+    object_id="BO_delete",
+)
+
+### Block Information Textbox
 bpm_textbox = pygame_gui.elements.UITextEntryLine(
     relative_rect=pygame.Rect(option_x_start + Bx1, BLOCK_INFO_AREA_Y + By0, Bw1, Bh),
     manager=manager,
@@ -391,7 +452,7 @@ block_information_text_boxes = [
 ]
 
 
-def update_block_information(info: List[List[int | float]]):
+def update_block_information_section(info: List[int | float]):
     global block_information_text_boxes, block_apply_button
     for textbox, value in zip(block_information_text_boxes, info):
         textbox.set_text(empty_if_none(value))
@@ -445,11 +506,43 @@ while running:
                     step_data, block_info, new_info, block_idx
                 )
                 update_y_selection_map()
-                update_block_information(new_info)
+                update_block_information_section(new_info)
+                sline_y = y_selection_map[sline_y][1]
+                sline_y_init = y_selection_map[sline_y_init][1]
+            elif event.ui_element == block_add_up_button:
+                block_idx = step_data[y_selection_map[sline_y][0]][STEP_DATA_BI_IDX]
+                step_data, block_info = add_block_up(step_data, block_info, block_idx)
+                update_y_selection_map()
+                sline_y = y_selection_map[sline_y][1]
+                sline_y_init = y_selection_map[sline_y_init][1]
+                pass
+            elif event.ui_element == block_add_down_button:
+                block_idx = step_data[y_selection_map[sline_y][0]][STEP_DATA_BI_IDX]
+                step_data, block_info = add_block_down(step_data, block_info, block_idx)
+                update_y_selection_map()
+                sline_y = y_selection_map[sline_y][1]
+                sline_y_init = y_selection_map[sline_y_init][1]
+            elif event.ui_element == block_split_button:
+                ln = y_selection_map[sline_y][0]
+                block_idx = step_data[ln][STEP_DATA_BI_IDX]
+                step_data, block_info = split_block(
+                    step_data, block_info, block_idx, ln
+                )
+                update_y_selection_map()
+                update_block_information_section(block_info[block_idx + 1])
+                sline_y = y_selection_map[sline_y][1]
+                sline_y_init = y_selection_map[sline_y_init][1]
+                pass
+            elif event.ui_element == block_delete_button:
+                block_idx = step_data[y_selection_map[sline_y][0]][STEP_DATA_BI_IDX]
+                step_data, block_info = delete_block(step_data, block_info, block_idx)
+                update_y_selection_map()
+                line_selected = False
+                # Vanish selection square by moving it to out of the screen
+                sline_y_init = sline_y_prev = sline_y = -100
             else:
                 print(event.ui_element.object_ids)
         elif event.type == pygame.MOUSEBUTTONDOWN:
-
             if event.button == 4:  # Mouse Wheel Up
                 is_scroll = True
                 scr_y = max(scr_y - SCROLL_SPEED, 0)
@@ -465,7 +558,8 @@ while running:
 
                 # Select Line
                 if step_x_start <= mouse_x < step_x_end:
-                    lattice_clicked = True
+                    lattice_clicked, scrollbar_clicked = True, False
+                    block_info_idx = -1
                     line_selected = True
                     # sline_y_init = sline_y = y_selection_map[mouse_y + scr_y][1]
                     sline_y = y_selection_map[mouse_y + scr_y][1]
@@ -478,7 +572,8 @@ while running:
                     and scrollbar_y <= mouse_y < scrollbar_y + scrollbar_height
                     and not scrollbar_clicked
                 ):
-                    scrollbar_clicked = True
+                    lattice_clicked, scrollbar_clicked = False, True
+                    block_info_idx = -1
                     scrollbar_mouse_y = mouse_y
                     scrollbar_y_init = scrollbar_y
                     print("scrollbar", scrollbar_y_init, scrollbar_mouse_y)
@@ -486,6 +581,7 @@ while running:
                     # Select Block Information Text Box
                     for i, textbox in enumerate(block_information_text_boxes):
                         if textbox.get_abs_rect().collidepoint(event.pos):
+                            lattice_clicked, scrollbar_clicked = False, False
                             block_info_idx = i
                             break
 
@@ -508,7 +604,7 @@ while running:
                     ln = y_selection_map[sline_y][0]
                     if ln != 0:
                         sb = block_info[step_data[ln - 1][STEP_DATA_BI_IDX]][2]
-                        dy = max((CELL_SIZE * 2) // sb, MIN_SPLIT_SIZE)
+                        dy = min(max((CELL_SIZE * 2) // sb, MIN_SPLIT_SIZE), CELL_SIZE)
                         sline_y -= dy
                         if not pressed_keys[pygame.K_LSHIFT]:
                             sline_y_init = sline_y
@@ -517,7 +613,7 @@ while running:
                     ln = y_selection_map[sline_y][0]
                     if ln != len(step_data) - 1:
                         sb = block_info[step_data[ln][STEP_DATA_BI_IDX]][2]
-                        dy = max((CELL_SIZE * 2) // sb, MIN_SPLIT_SIZE)
+                        dy = min(max((CELL_SIZE * 2) // sb, MIN_SPLIT_SIZE), CELL_SIZE)
                         sline_y += dy
                         if not pressed_keys[pygame.K_LSHIFT]:
                             sline_y_init = sline_y
@@ -559,7 +655,9 @@ while running:
                         for i in range(ln_start + 1, ln_end):
                             step_data[i][col] = 3
 
-            elif event.key == pygame.K_BACKSPACE:  # Clear selected lines
+            elif (
+                event.key == pygame.K_BACKSPACE and block_info_idx == -1
+            ):  # Clear selected lines
                 ln_start = y_selection_map[min(sline_y_init, sline_y)][0]
                 ln_end = y_selection_map[max(sline_y_init, sline_y)][0]
                 for i in range(cols):
@@ -795,29 +893,7 @@ while running:
         screen.blit(line_text, line_text_rect)
 
     # Draw Option Area
-    pygame.draw.rect(screen, BLACK, (option_x_start, 0, OPTION_WIDTH, screen_height), 3)
-    pygame.draw.line(
-        screen,
-        BLACK,
-        (option_x_start, FILE_BUTTON_AREA_HEIGHT),
-        (option_x_end, FILE_BUTTON_AREA_HEIGHT),
-        2,
-    )
-
-    pygame.draw.line(
-        screen,
-        BLACK,
-        (option_x_start, BLOCK_INFO_AREA_Y + BLOCK_INFO_AREA_HEIGHT),
-        (option_x_end, BLOCK_INFO_AREA_Y + BLOCK_INFO_AREA_HEIGHT),
-    )
-
-    draw_block_info_area()
-
-    # line_text = font.render(txt, True, BLACK, LIGHT_GRAY)
-    # line_text_rect = line_text.get_rect()
-    # line_text_rect.bottomright = (scrollbar_x, screen_height)
-
-    # block_info_header
+    draw_option_area()
 
     # Fill Block Information
     if line_selected and sline_y_prev != sline_y:
@@ -825,10 +901,14 @@ while running:
 
         ln = y_selection_map[sline_y][0]
         info = block_info[step_data[ln][STEP_DATA_BI_IDX]]
-        update_block_information(info)
+        update_block_information_section(info)
 
     # Enable & Disable block information elements
     if line_selected:
+        block_add_up_button.enable()
+        block_add_down_button.enable()
+        block_split_button.enable()
+        block_delete_button.enable()
         new_info = []
         for textbox in block_information_text_boxes:
             textbox.enable()
@@ -849,6 +929,10 @@ while running:
             block_apply_button.enable()
     else:
         block_apply_button.disable()
+        block_add_up_button.disable()
+        block_add_down_button.disable()
+        block_split_button.disable()
+        block_delete_button.disable()
         for textbox in block_information_text_boxes:
             textbox.set_text("")
             textbox.disable()
