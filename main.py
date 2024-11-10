@@ -8,10 +8,14 @@ from pygame import Surface
 
 pygame.init()
 
+
+screen_width, screen_height = SCREEN_WIDTH, SCREEN_HEIGHT
+# pygame Manager
+manager = pygame_gui.UIManager((screen_width, screen_height))
+
 font = pygame.font.SysFont("Verdana", 18)
 header_font = pygame.font.SysFont("Verdana", 24)
 
-screen_width, screen_height = 800, 500
 screen = pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
 
 # scroll
@@ -29,7 +33,6 @@ sline_y = -100
 hline_y = -100
 
 # Total Grid Height
-grid_height = 0
 max_y = 0
 
 # Scroll Bar Variable
@@ -49,6 +52,12 @@ copy_pressed = False
 paste_pressed = False
 playing = False
 typing = False
+
+# TAB Focus Index
+# (selected line index, )
+sui_x, sui_y, sui_w, sui_h = -100, -100, -100, -100
+focus_state = -1
+vanishing_element = pygame.Rect(-100, -100, 0, 0)
 
 # Key Combination Status
 key_combination_status = {
@@ -101,12 +110,181 @@ y_coors = []
 block_idx, y_coor = 0, 0
 initial_bpm, bpm, delay, beat, split, lcnt = 0, 0, 0, 0, 0, 0
 
+### File Buttons
+# Play/Stop Button
+play_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect(
+        (FILE_BUTTON_WIDTH * 0, FILE_BUTTON_AREA_Y), FILE_BUTTON_SIZE
+    ),
+    text="Play",
+    manager=manager,
+)
+save_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect(
+        (FILE_BUTTON_WIDTH * 1, FILE_BUTTON_AREA_Y),
+        FILE_BUTTON_SIZE,
+    ),
+    text="Save",
+    manager=manager,
+)
+load_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect(
+        (
+            FILE_BUTTON_WIDTH * 2,
+            FILE_BUTTON_AREA_Y,
+        ),
+        FILE_BUTTON_SIZE,
+    ),
+    text="Load",
+    manager=manager,
+)
+undo_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect(
+        (
+            FILE_BUTTON_WIDTH * 3,
+            FILE_BUTTON_AREA_Y,
+        ),
+        FILE_BUTTON_SIZE,
+    ),
+    text="Undo",
+    manager=manager,
+)
+redo_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect(
+        (
+            FILE_BUTTON_WIDTH * 4,
+            FILE_BUTTON_AREA_Y,
+        ),
+        FILE_BUTTON_SIZE,
+    ),
+    text="Redo",
+    manager=manager,
+)
+file_buttons = [play_button, save_button, load_button, undo_button, redo_button]
+
+### Block Info Buttons
+# Adjust Block Size
+block_apply_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect(
+        (
+            OPTION_WIDTH - BLOCK_BUTTON_SIZE[0] - BLOCK_INFO_GAP,
+            BLOCK_INFO_AREA_Y
+            + BLOCK_INFO_AREA_HEIGHT
+            - BLOCK_BUTTON_SIZE[1]
+            - BLOCK_INFO_GAP,
+        ),
+        BLOCK_BUTTON_SIZE,
+    ),
+    text="Apply",
+    manager=manager,
+)
+
+### Block Information Textbox
+bpm_textbox = pygame_gui.elements.UITextEntryLine(
+    relative_rect=pygame.Rect(Bx1, BLOCK_INFO_AREA_Y + By0, Bw1, Bh),
+    manager=manager,
+    object_id="BI_bpm",
+)
+bm_textbox = pygame_gui.elements.UITextEntryLine(
+    relative_rect=pygame.Rect(Bx1, BLOCK_INFO_AREA_Y + By1, Bw1, Bh),
+    manager=manager,
+    object_id="BI_bm",
+)
+sb_textbox = pygame_gui.elements.UITextEntryLine(
+    relative_rect=pygame.Rect(Bx1, BLOCK_INFO_AREA_Y + By2, Bw1, Bh),
+    manager=manager,
+    object_id="BI_sb",
+)
+delay_textbox = pygame_gui.elements.UITextEntryLine(
+    relative_rect=pygame.Rect(Bx1, BLOCK_INFO_AREA_Y + By3, Bw1, Bh),
+    manager=manager,
+    object_id="BI_delay",
+)
+measures_textbox = pygame_gui.elements.UITextEntryLine(
+    relative_rect=pygame.Rect(Bx3, BLOCK_INFO_AREA_Y + By0, Bw3, Bh),
+    manager=manager,
+    object_id="BI_measures",
+)
+beats_textbox = pygame_gui.elements.UITextEntryLine(
+    relative_rect=pygame.Rect(Bx3, BLOCK_INFO_AREA_Y + By1, Bw3, Bh),
+    manager=manager,
+    object_id="BI_beats",
+)
+splits_textbox = pygame_gui.elements.UITextEntryLine(
+    relative_rect=pygame.Rect(Bx3, BLOCK_INFO_AREA_Y + By2, Bw3, Bh),
+    manager=manager,
+    object_id="BI_splits",
+)
+
+
+bpm_textbox.set_allowed_characters([f"{i}" for i in range(10)] + ["."])
+bm_textbox.set_allowed_characters("numbers")
+sb_textbox.set_allowed_characters("numbers")
+delay_textbox.set_allowed_characters("numbers")
+measures_textbox.set_allowed_characters("numbers")
+beats_textbox.set_allowed_characters("numbers")
+splits_textbox.set_allowed_characters("numbers")
+
+block_information_text_boxes = [
+    bpm_textbox,
+    bm_textbox,
+    sb_textbox,
+    delay_textbox,
+    measures_textbox,
+    beats_textbox,
+    splits_textbox,
+]
+
+### BLock Operation Buttons
+block_add_up_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect((BO_x0, BO_y0), BLOCK_OPER_BUTTON_SIZE),
+    text="Add ^",
+    manager=manager,
+    object_id="BO_add_up",
+)
+block_add_down_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect((BO_x1, BO_y0), BLOCK_OPER_BUTTON_SIZE),
+    text="Add v",
+    manager=manager,
+    object_id="BO_add_down",
+)
+block_split_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect((BO_x2, BO_y0), BLOCK_OPER_BUTTON_SIZE),
+    text="Split",
+    manager=manager,
+    object_id="BO_split",
+)
+block_delete_button = pygame_gui.elements.UIButton(
+    relative_rect=pygame.Rect((BO_x3, BO_y0), BLOCK_OPER_BUTTON_SIZE),
+    text="Delete",
+    manager=manager,
+    object_id="BO_delete",
+)
+block_operation_buttons = [
+    block_add_up_button,
+    block_add_down_button,
+    block_split_button,
+    block_delete_button,
+]
+
+
+total_UI_elements = (
+    file_buttons
+    + block_information_text_boxes
+    + [block_apply_button]
+    + block_operation_buttons
+)
+
 
 def empty_if_none(a: any):
     if a is None:
         return ""
     else:
         return str(a)
+
+
+def turn_music():
+    pass
 
 
 def update_y_selection_map():
@@ -203,11 +381,11 @@ def add_rectangle_with_text(
 def draw_option_area():
     global screen
 
-    pygame.draw.rect(screen, BLACK, (option_x_start, 0, OPTION_WIDTH, screen_height), 3)
+    pygame.draw.rect(screen, BLACK, (0, 0, OPTION_WIDTH, screen_height), 3)
     pygame.draw.rect(
         screen,
         BLACK,
-        (option_x_start, FILE_BUTTON_AREA_HEIGHT, OPTION_WIDTH, BLOCK_INFO_AREA_HEIGHT),
+        (0, FILE_BUTTON_AREA_HEIGHT, OPTION_WIDTH, BLOCK_INFO_AREA_HEIGHT),
         3,
     )
     pygame.draw.rect(
@@ -215,7 +393,7 @@ def draw_option_area():
         BLACK,
         (
             (
-                option_x_start,
+                0,
                 BLOCK_OPER_AREA_Y - 3,
                 OPTION_WIDTH,
                 BLOCK_OPER_AREA_HEIGHT,
@@ -226,14 +404,14 @@ def draw_option_area():
 
     # Draw "Block Information" Section
     offset = BLOCK_INFO_GAP
-    x0 = option_x_start + BLOCK_INFO_GAP
+    x0 = BLOCK_INFO_GAP
     x1 = x0 + 120
     y0 = BLOCK_INFO_AREA_Y
     st, sw, sh = 12, 60, 20
     add_text(
         screen,
         "Block Information",
-        option_x_start + BLOCK_INFO_GAP,
+        BLOCK_INFO_GAP,
         BLOCK_INFO_AREA_Y + BLOCK_INFO_GAP,
         30,
         0,
@@ -243,52 +421,52 @@ def draw_option_area():
     add_rectangle_with_text(
         "BPM",
         st,
-        (option_x_start + Bx0, BLOCK_INFO_AREA_Y + By0, sw, sh),
+        (Bx0, BLOCK_INFO_AREA_Y + By0, sw, sh),
         LIGHT_GRAY,
     )
     add_rectangle_with_text(
         "Measures",
         st,
-        (option_x_start + Bx2, BLOCK_INFO_AREA_Y + By0, sw, sh),
+        (Bx2, BLOCK_INFO_AREA_Y + By0, sw, sh),
         LIGHT_GRAY,
     )
     offset += sh + BLOCK_INFO_GAP
     add_rectangle_with_text(
         "B/M",
         st,
-        (option_x_start + Bx0, BLOCK_INFO_AREA_Y + By1, sw, sh),
+        (Bx0, BLOCK_INFO_AREA_Y + By1, sw, sh),
         LIGHT_GRAY,
     )
     add_rectangle_with_text(
         "Beats",
         st,
-        (option_x_start + Bx2, BLOCK_INFO_AREA_Y + By1, sw, sh),
+        (Bx2, BLOCK_INFO_AREA_Y + By1, sw, sh),
         LIGHT_GRAY,
     )
     offset += sh + BLOCK_INFO_GAP
     add_rectangle_with_text(
         "S/B",
         st,
-        (option_x_start + Bx0, BLOCK_INFO_AREA_Y + By2, sw, sh),
+        (Bx0, BLOCK_INFO_AREA_Y + By2, sw, sh),
         LIGHT_GRAY,
     )
     add_rectangle_with_text(
         "Splits",
         st,
-        (option_x_start + Bx2, BLOCK_INFO_AREA_Y + By2, sw, sh),
+        (Bx2, BLOCK_INFO_AREA_Y + By2, sw, sh),
         LIGHT_GRAY,
     )
     offset += sh + BLOCK_INFO_GAP
     add_rectangle_with_text(
         "Delay",
         st,
-        (option_x_start + Bx0, BLOCK_INFO_AREA_Y + By3, sw, sh),
+        (Bx0, BLOCK_INFO_AREA_Y + By3, sw, sh),
         LIGHT_GRAY,
     )
     add_rectangle_with_text(
         "m/s",
         st,
-        (option_x_start + Bx2, BLOCK_INFO_AREA_Y + By3, sw, sh),
+        (Bx2, BLOCK_INFO_AREA_Y + By3, sw, sh),
         WHITE,
     )
     # pass
@@ -297,7 +475,7 @@ def draw_option_area():
     add_text(
         screen,
         "Block Operation",
-        option_x_start + 10,
+        10,
         BLOCK_OPER_AREA_Y + 10,
         30,
         0,
@@ -305,151 +483,31 @@ def draw_option_area():
     )
 
 
-# pygame Manager
-manager = pygame_gui.UIManager((screen_width, screen_height))
+def update_focus_state():
+    global focus_state, total_UI_elements, sui_x, sui_y, sui_w, sui_h
+    if focus_state == -1:
+        element = vanishing_element
+        sui_x, sui_y = element.topleft
+        sui_w, sui_h = element.size
+
+    else:
+        element = total_UI_elements[focus_state]
+        sui_x, sui_y = element.get_abs_rect().topleft
+        sui_w, sui_h = element.get_abs_rect().size
 
 
 format, mode, block_info, step_data = load_ucs_file("sample.ucs")
 
 rows, cols = len(step_data), len(step_data[0]) - STEP_DATA_OFFSET
 SELECTION_WIDTH = CELL_SIZE * cols
-step_x_start = MEASURE_DESCRIPTOR_WIDTH
-step_x_end = MEASURE_DESCRIPTOR_WIDTH + CELL_SIZE * cols
-scrollbar_x = step_x_end
-option_x_start = scrollbar_x + SCROLL_BAR_WIDTH
-option_x_end = option_x_start + OPTION_WIDTH
+step_x_start = OPTION_WIDTH  # MEASURE_DESCRIPTOR_WIDTH
+step_x_end = step_x_start + CELL_SIZE * cols
+scrollbar_x_start = step_x_end + MEASURE_DESCRIPTOR_WIDTH
+scrollbar_x_end = scrollbar_x_start + SCREEN_WIDTH
 
 running = True
 
 update_y_selection_map()
-
-### File Buttons
-# Play/Stop Button
-play_button = pygame_gui.elements.UIButton(
-    relative_rect=pygame.Rect(
-        (option_x_start + FILE_BUTTON_GAP, FILE_BUTTON_GAP), FILE_BUTTON_SIZE
-    ),
-    text="Play",
-    manager=manager,
-)
-save_button = pygame_gui.elements.UIButton(
-    relative_rect=pygame.Rect(
-        (option_x_start + FILE_BUTTON_GAP * 2 + FILE_BUTTON_WIDTH, FILE_BUTTON_GAP),
-        FILE_BUTTON_SIZE,
-    ),
-    text="Save",
-    manager=manager,
-)
-load_button = pygame_gui.elements.UIButton(
-    relative_rect=pygame.Rect(
-        (
-            option_x_start + FILE_BUTTON_GAP * 3 + FILE_BUTTON_WIDTH * 2,
-            FILE_BUTTON_GAP,
-        ),
-        FILE_BUTTON_SIZE,
-    ),
-    text="Load",
-    manager=manager,
-)
-
-### Block Info Buttons
-# Adjust Block Size
-block_apply_button = pygame_gui.elements.UIButton(
-    relative_rect=pygame.Rect(
-        (
-            option_x_end - BLOCK_BUTTON_SIZE[0] - BLOCK_INFO_GAP,
-            BLOCK_INFO_AREA_Y
-            + BLOCK_INFO_AREA_HEIGHT
-            - BLOCK_BUTTON_SIZE[1]
-            - BLOCK_INFO_GAP,
-        ),
-        BLOCK_BUTTON_SIZE,
-    ),
-    text="Apply",
-    manager=manager,
-)
-
-### BLock Operation Buttons
-block_add_up_button = pygame_gui.elements.UIButton(
-    relative_rect=pygame.Rect((option_x_start + BO_x0, BO_y0), BLOCK_OPER_BUTTON_SIZE),
-    text="Add ^",
-    manager=manager,
-    object_id="BO_add_up",
-)
-block_add_down_button = pygame_gui.elements.UIButton(
-    relative_rect=pygame.Rect((option_x_start + BO_x1, BO_y0), BLOCK_OPER_BUTTON_SIZE),
-    text="Add v",
-    manager=manager,
-    object_id="BO_add_down",
-)
-block_split_button = pygame_gui.elements.UIButton(
-    relative_rect=pygame.Rect((option_x_start + BO_x2, BO_y0), BLOCK_OPER_BUTTON_SIZE),
-    text="Split",
-    manager=manager,
-    object_id="BO_split",
-)
-block_delete_button = pygame_gui.elements.UIButton(
-    relative_rect=pygame.Rect((option_x_start + BO_x3, BO_y0), BLOCK_OPER_BUTTON_SIZE),
-    text="Delete",
-    manager=manager,
-    object_id="BO_delete",
-)
-
-### Block Information Textbox
-bpm_textbox = pygame_gui.elements.UITextEntryLine(
-    relative_rect=pygame.Rect(option_x_start + Bx1, BLOCK_INFO_AREA_Y + By0, Bw1, Bh),
-    manager=manager,
-    object_id="BI_bpm",
-)
-bm_textbox = pygame_gui.elements.UITextEntryLine(
-    relative_rect=pygame.Rect(option_x_start + Bx1, BLOCK_INFO_AREA_Y + By1, Bw1, Bh),
-    manager=manager,
-    object_id="BI_bm",
-)
-sb_textbox = pygame_gui.elements.UITextEntryLine(
-    relative_rect=pygame.Rect(option_x_start + Bx1, BLOCK_INFO_AREA_Y + By2, Bw1, Bh),
-    manager=manager,
-    object_id="BI_sb",
-)
-delay_textbox = pygame_gui.elements.UITextEntryLine(
-    relative_rect=pygame.Rect(option_x_start + Bx1, BLOCK_INFO_AREA_Y + By3, Bw1, Bh),
-    manager=manager,
-    object_id="BI_delay",
-)
-measures_textbox = pygame_gui.elements.UITextEntryLine(
-    relative_rect=pygame.Rect(option_x_start + Bx3, BLOCK_INFO_AREA_Y + By0, Bw3, Bh),
-    manager=manager,
-    object_id="BI_measures",
-)
-beats_textbox = pygame_gui.elements.UITextEntryLine(
-    relative_rect=pygame.Rect(option_x_start + Bx3, BLOCK_INFO_AREA_Y + By1, Bw3, Bh),
-    manager=manager,
-    object_id="BI_beats",
-)
-splits_textbox = pygame_gui.elements.UITextEntryLine(
-    relative_rect=pygame.Rect(option_x_start + Bx3, BLOCK_INFO_AREA_Y + By2, Bw3, Bh),
-    manager=manager,
-    object_id="BI_splits",
-)
-
-
-bpm_textbox.set_allowed_characters([f"{i}" for i in range(10)] + ["."])
-bm_textbox.set_allowed_characters("numbers")
-sb_textbox.set_allowed_characters("numbers")
-delay_textbox.set_allowed_characters("numbers")
-measures_textbox.set_allowed_characters("numbers")
-beats_textbox.set_allowed_characters("numbers")
-splits_textbox.set_allowed_characters("numbers")
-
-block_information_text_boxes = [
-    bpm_textbox,
-    bm_textbox,
-    sb_textbox,
-    delay_textbox,
-    measures_textbox,
-    beats_textbox,
-    splits_textbox,
-]
 
 
 def update_block_information_section(info: List[int | float]):
@@ -487,11 +545,25 @@ while running:
                     play_button.set_text("Stop")
                 elif play_button.text == "Stop":
                     play_button.set_text("Play")
+                focus_state = 0
+                update_focus_state()
             elif event.ui_element == save_button:
                 save_ucs_file("result.ucs", format, mode, step_data, block_info)
+                focus_state = 1
+                update_focus_state()
             elif event.ui_element == load_button:
                 print("LOAD NEW UCS FILE")
+                focus_state = 2
+                update_focus_state()
                 # load_ucs_file("sample.ucs")
+            elif event.ui_element == undo_button:
+                print("UNDO ACTION")
+                focus_state = 3
+                update_focus_state()
+            elif event.ui_element == redo_button:
+                print("REDO ACTION")
+                focus_state = 4
+                update_focus_state()
             elif event.ui_element == block_apply_button:
                 # Assume block_apply_button is enabled
                 # = Line is selected and Block information is valid
@@ -509,19 +581,25 @@ while running:
                 update_block_information_section(new_info)
                 sline_y = y_selection_map[sline_y][1]
                 sline_y_init = y_selection_map[sline_y_init][1]
+                focus_state = 12
+                update_focus_state()
+                # load_ucs_file("sample.ucs")
             elif event.ui_element == block_add_up_button:
                 block_idx = step_data[y_selection_map[sline_y][0]][STEP_DATA_BI_IDX]
                 step_data, block_info = add_block_up(step_data, block_info, block_idx)
                 update_y_selection_map()
                 sline_y = y_selection_map[sline_y][1]
                 sline_y_init = y_selection_map[sline_y_init][1]
-                pass
+                focus_state = 13
+                update_focus_state()
             elif event.ui_element == block_add_down_button:
                 block_idx = step_data[y_selection_map[sline_y][0]][STEP_DATA_BI_IDX]
                 step_data, block_info = add_block_down(step_data, block_info, block_idx)
                 update_y_selection_map()
                 sline_y = y_selection_map[sline_y][1]
                 sline_y_init = y_selection_map[sline_y_init][1]
+                focus_state = 14
+                update_focus_state()
             elif event.ui_element == block_split_button:
                 ln = y_selection_map[sline_y][0]
                 block_idx = step_data[ln][STEP_DATA_BI_IDX]
@@ -532,7 +610,8 @@ while running:
                 update_block_information_section(block_info[block_idx + 1])
                 sline_y = y_selection_map[sline_y][1]
                 sline_y_init = y_selection_map[sline_y_init][1]
-                pass
+                focus_state = 15
+                update_focus_state()
             elif event.ui_element == block_delete_button:
                 block_idx = step_data[y_selection_map[sline_y][0]][STEP_DATA_BI_IDX]
                 step_data, block_info = delete_block(step_data, block_info, block_idx)
@@ -540,6 +619,8 @@ while running:
                 line_selected = False
                 # Vanish selection square by moving it to out of the screen
                 sline_y_init = sline_y_prev = sline_y = -100
+                focus_state = -1
+                update_focus_state()
             else:
                 print(event.ui_element.object_ids)
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -568,7 +649,7 @@ while running:
 
                 # Select Scrollbar
                 elif (
-                    scrollbar_x <= mouse_x < option_x_start
+                    scrollbar_x_start <= mouse_x < scrollbar_x_end
                     and scrollbar_y <= mouse_y < scrollbar_y + scrollbar_height
                     and not scrollbar_clicked
                 ):
@@ -672,6 +753,51 @@ while running:
                 # Vanish selection square by moving it to out of the screen
                 sline_y_init = sline_y_prev = sline_y = -100
 
+                # Initialize Focus
+                focus = -1
+                element = vanishing_element
+                sui_x, sui_y = element.get_abs_rect().topleft
+                sui_w, sui_h = element.get_abs_rect().size
+
+            elif event.key == pygame.K_TAB and focus_state != -1:
+                print("heloo", focus_state)
+                element = None
+                if 5 <= focus_state < 12:
+                    total_UI_elements[focus_state].unfocus()
+
+                while True:
+                    if pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]:
+                        focus_state = (focus_state - 1 + len(total_UI_elements)) % len(
+                            total_UI_elements
+                        )
+                    else:
+                        focus_state = (focus_state + 1) % len(total_UI_elements)
+                    element = total_UI_elements[focus_state]
+                    if element.is_enabled:
+                        break
+                print(focus_state)
+                if 5 <= focus_state < 12:
+                    element.focus()
+                update_focus_state()
+
+            elif event.key in [pygame.K_RETURN, pygame.K_KP_ENTER]:
+                print("Enter : ", focus_state)
+                if focus_state == -1:
+                    turn_music()
+                elif 0 <= focus_state < 5 or 12 <= focus_state:
+                    # File Buttons
+                    element = total_UI_elements[focus_state]
+                    print(element.get_object_ids())
+                    pygame.event.post(
+                        pygame.event.Event(
+                            pygame_gui.UI_BUTTON_PRESSED,
+                            {
+                                "user_type": pygame_gui.UI_BUTTON_PRESSED,
+                                "ui_element": element,
+                            },
+                        )
+                    )
+
         manager.process_events(event)
 
     manager.update(time_delta)
@@ -769,21 +895,29 @@ while running:
             dy = min(max((CELL_SIZE * 2) // split, MIN_SPLIT_SIZE), CELL_SIZE)
         if mi == 0 and bti == 0 and si == 0:  # Start of Blcok
             pygame.draw.line(
-                screen, RED, (0, y - scr_y), (option_x_start, y - scr_y), 3
+                screen,
+                RED,
+                (step_x_start, y - scr_y),
+                (scrollbar_x_start, y - scr_y),
+                3,
             )
             text = font.render("{}:{}".format(bi + 1, mi + 1), True, BLACK)
             text_rect = text.get_rect()
-            text_rect.topright = (step_x_start, y - scr_y)
+            text_rect.topleft = (step_x_end, y - scr_y)
 
             screen.blit(text, text_rect)
 
         elif bti == 0 and si == 0:  # Start of Measure
             pygame.draw.line(
-                screen, ROYAL_BLUE, (0, y - scr_y), (step_x_end, y - scr_y), 2
+                screen,
+                ROYAL_BLUE,
+                (step_x_start, y - scr_y),
+                (scrollbar_x_start, y - scr_y),
+                2,
             )
             text = font.render("{}:{}".format(bi + 1, mi + 1), True, BLACK)
             text_rect = text.get_rect()
-            text_rect.topright = (step_x_start, y - scr_y)
+            text_rect.topleft = (step_x_end, y - scr_y)
 
             screen.blit(text, text_rect)
 
@@ -796,17 +930,6 @@ while running:
                 1,
             )
 
-        # elif (split % 3 == 0 and si % (split // 3) == 0) or (
-        #     split % 2 == 0 and si * 2 == split
-        # ):
-        #     # Split line
-        #     pygame.draw.line(
-        #         screen,
-        #         LIGHT_GREEN,
-        #         (step_x_start, y - scr_y),
-        #         (step_x_end, y - scr_y),
-        #         1,
-        #     )
         elif triple_split:
             if si % (split // 3) == 0:
                 pygame.draw.line(
@@ -867,7 +990,7 @@ while running:
         screen,
         DARK_GRAY,
         (
-            scrollbar_x,
+            scrollbar_x_start,
             scrollbar_y,
             SCROLL_BAR_WIDTH,
             scrollbar_height,
@@ -889,7 +1012,7 @@ while running:
             txt, True, BLACK, LIGHT_GRAY
         )
         line_text_rect = line_text.get_rect()
-        line_text_rect.bottomright = (scrollbar_x, screen_height)
+        line_text_rect.bottomright = (step_x_start, screen_height)
         screen.blit(line_text, line_text_rect)
 
     # Draw Option Area
@@ -938,5 +1061,8 @@ while running:
             textbox.disable()
 
     manager.draw_ui(screen)
+
+    # Draw TAB Square
+    pygame.draw.rect(screen, DARK_GRAY, (sui_x, sui_y, sui_w, sui_h), 2)
 
     pygame.display.flip()
