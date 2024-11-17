@@ -212,10 +212,14 @@ class TabKey(KeyBase):
             state.focus_idx = (
                 state.focus_idx + 18
             ) % 19  # 19 = Total number of UI elements
+            if state.focus_idx == 12 and not state.APPLY_ENABLED:
+                state.focus_idx -= 1
         else:
             state.focus_idx = (
                 state.focus_idx + 1
             ) % 19  # 19 = Total number of UI elements
+            if state.focus_idx == 12 and not state.APPLY_ENABLED:
+                state.focus_idx += 1
 
 
 class EscKey(KeyBase):
@@ -245,22 +249,38 @@ class AreaKey(KeyBase):
             pressed_keys[pygame.K_LCTRL]
             and event.type == pygame.KEYDOWN
             and event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4]
-            and not (5 <= state.focus_idx < 13)
         )
 
     def action(self, state: State, event: pygame.Event) -> None:
+
+        state.focus_idx_prev = state.focus_idx
         if event.key == pygame.K_1:
             # Update focus to Play button
-            focus_state = 0
+            state.focus_idx = 0
         elif event.key == pygame.K_2:
             # Update focus to BPM textbox in Block Information area
-            focus_state = 5
+            state.focus_idx = 5
         elif event.key == pygame.K_3:
             # Update focus to "Add ^" button in Block Operation area
-            focus_state = 13
+            state.focus_idx = 13
         elif event.key == pygame.K_4:
             # Update selection square at top square in current scr_y
             state.y_base = state.y_cur = state.y_info[state.scr_y][1]
+
+
+class EnterKey(KeyBase):
+    def __init__(self):
+        super().__init__()
+
+    def condition(self, state: State, event: pygame.Event) -> bool:
+        return event.type == pygame.KEYDOWN and event.key in [
+            pygame.K_RETURN,
+            pygame.K_KP_ENTER,
+        ]
+
+    def action(self, state: State, event: pygame.Event) -> None:
+        print("hello")
+        state.EMIT_BUTTON_PRESS = True
 
 
 class BackspaceKey(KeyBase):
@@ -304,6 +324,8 @@ class KeyboardManager:
             AreaKey(),
             # Backspace
             BackspaceKey(),
+            # Enter
+            EnterKey(),
         ]
 
     def process_event(self, state: State, event: pygame.Event):

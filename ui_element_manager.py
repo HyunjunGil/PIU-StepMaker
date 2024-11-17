@@ -247,8 +247,10 @@ class BlockInformationText(ElementBase):
             info = [_num_to_str(x) for x in info]
             if _enable_apply_button(info, new_info):
                 ui_elements["012_BI_Apply"].enable()
+                state.APPLY_ENABLED = True
             else:
                 ui_elements["012_BI_Apply"].disable()
+                state.APPLY_ENABLED = False
             self.e.redraw()
         else:
             pygame.event.post(

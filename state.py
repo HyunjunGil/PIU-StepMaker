@@ -10,6 +10,8 @@ class State:
         self.SCROLLBAR_CLICKED = False
         self.LINE_SELECTED = False
         self.UPDATE_BLOCK_INFORMATION_TEXTBOX = False
+        self.EMIT_BUTTON_PRESS = False
+        self.APPLY_ENABLED = False
         self.SCREEN_SIZE_CHANGED = False
         self.MUSIC_PLAYING = False
         self.TYPING = False

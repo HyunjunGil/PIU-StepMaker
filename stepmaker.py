@@ -5,16 +5,10 @@ from enum import Enum
 from constants import *
 from state import State
 from scroll_manager import ScrollManager
-from ui_element_manager import UIElementManager
+from ui_element_manager import UIElementManager, ElementBase
 from mouse_manager import MouseManager
 from keyboard_manager import KeyboardManager
 from file_manager import *
-
-
-def focus_idx_to_str(idx: int):
-    assert idx != -1, "Focus idx shoud not be -1"
-    res = str(idx)
-    return "0" * (3 - len(res)) + res
 
 
 class StepMaker:
@@ -53,11 +47,77 @@ class StepMaker:
             LONG_TAIL_IMAGES,
         ]
 
+    def _get_focused_ui_element(self, idx: int) -> ElementBase:
+        ui_elements = self.ui_manger.get_ui_elements()
+        assert idx != -1, "Focus idx shoud not be -1"
+        focus_idx_str = str(idx)
+        focus_idx_str = "0" * (3 - len(focus_idx_str)) + focus_idx_str
+        for k, element in ui_elements.items():
+            if k.startswith(focus_idx_str):
+                return element
+
     def load_initial_ucs_file(self, path: str):
         load_ucs_file(path, self.state)
         ScrollManager.update_scrollbar_info(self.state)
         self.ui_manger.update_block_information_textbox(self.state)
         self.ui_manger.ui_elements["012_BI_Apply"].e.disable()
+
+    def resize_screen(self, event: pygame.Event):
+        w, h = event.size
+        self.state.screen_width = w
+        self.state.screen_height = h
+        self.screen = pygame.display.set_mode((w, h), pygame.RESIZABLE)
+        self.ui_manger.manager.set_window_resolution((w, h))
+        ScrollManager.update_scrollbar_info(self.state)
+
+    def update_ui_elements(self):
+        state = self.state
+
+        if state.UPDATE_BLOCK_INFORMATION_TEXTBOX:
+            self.ui_manger.update_block_information_textbox(state)
+            self.ui_manger.ui_elements["012_BI_Apply"].disable()
+            state.APPLY_ENABLED = False
+            state.UPDATE_BLOCK_INFORMATION_TEXTBOX = False
+
+        if state.EMIT_BUTTON_PRESS:
+            element = self._get_focused_ui_element(state.focus_idx)
+            pygame.event.post(
+                pygame.event.Event(
+                    pygame_gui.UI_BUTTON_PRESSED,
+                    {
+                        "user_type": pygame_gui.UI_BUTTON_PRESSED,
+                        "ui_element": element.e,
+                        # "ui_object_id": button.most_specific_combined_id,
+                    },
+                )
+            )
+            state.EMIT_BUTTON_PRESS = False
+
+        if state.focus_idx != state.focus_idx_prev:
+            if state.focus_idx_prev != -1:
+                element = self._get_focused_ui_element(state.focus_idx_prev)
+                element.unfocus()
+            state.focus_idx_prev = state.focus_idx
+
+            if state.focus_idx != -1:
+                element = self._get_focused_ui_element(state.focus_idx)
+                element.focus()
+
+    def process_mouse_event(self, event: pygame.Event):
+        MouseManager.process_event(self.state, event)
+        self.ui_manger.check_textbox_clicked(self.state, event)
+        self.update_ui_elements()
+
+    def process_keyboard_event(self, event: pygame.Event):
+        self.keyboard_manager.process_event(self.state, event)
+        self.update_ui_elements()
+
+    def process_ui_element_event(self, event: pygame.Event):
+        self.ui_manger.process_event(self.state, event)
+        self.update_ui_elements()
+
+    def process_ui_manager_event(self, event: pygame.Event):
+        self.ui_manger.manager.process_events(event)
 
     def draw(self):
         self.screen.fill(WHITE)
@@ -446,14 +506,10 @@ class StepMaker:
         focus_idx = state.focus_idx
         if focus_idx == -1:
             return
-        focus_idx_str = focus_idx_to_str(state.focus_idx)
-        ui_elements = self.ui_manger.get_ui_elements()
-        for k, element in ui_elements.items():
-            if k.startswith(focus_idx_str):
-                x, y = element.e.get_abs_rect().topleft
-                w, h = element.e.get_abs_rect().size
-                pygame.draw.rect(screen, DARK_GRAY, (x, y, w, h), 3)
-                break
+        element = self._get_focused_ui_element(state.focus_idx)
+        x, y = element.e.get_abs_rect().topleft
+        w, h = element.e.get_abs_rect().size
+        pygame.draw.rect(screen, DARK_GRAY, (x, y, w, h), 3)
 
     def draw_line_descriptor(self):
         state, screen = self.state, self.screen
@@ -476,52 +532,3 @@ class StepMaker:
         line_text_rect = line_text.get_rect()
         line_text_rect.bottomleft = (state.step_x_start, state.screen_height)
         screen.blit(line_text, line_text_rect)
-
-    def resize_screen(self, event: pygame.Event):
-        w, h = event.size
-        self.state.screen_width = w
-        self.state.screen_height = h
-        self.screen = pygame.display.set_mode((w, h), pygame.RESIZABLE)
-        self.ui_manger.manager.set_window_resolution((w, h))
-        ScrollManager.update_scrollbar_info(self.state)
-
-    def update_block_information_textbox(self):
-        if self.state.UPDATE_BLOCK_INFORMATION_TEXTBOX:
-            self.ui_manger.update_block_information_textbox(self.state)
-            self.state.UPDATE_BLOCK_INFORMATION_TEXTBOX = False
-        elif self.state.focus_idx == -1 and self.state.focus_idx_prev != -1:
-            focus_idx_str = focus_idx_to_str(self.state.focus_idx_prev)
-            for k, element in self.ui_manger.get_ui_elements().items():
-                if k.startswith(focus_idx_str):
-                    element.unfocus()
-                    break
-            self.state.focus_idx_prev = -1
-        elif 5 <= self.state.focus_idx < 12:
-            if self.state.focus_idx_prev != -1:
-                focus_idx_str = focus_idx_to_str(self.state.focus_idx_prev)
-                for k, element in self.ui_manger.get_ui_elements().items():
-                    if k.startswith(focus_idx_str):
-                        element.unfocus()
-                        break
-                self.state.focus_idx_prev = -1
-            focus_idx_str = focus_idx_to_str(self.state.focus_idx)
-            for k, element in self.ui_manger.get_ui_elements().items():
-                if k.startswith(focus_idx_str):
-                    element.focus()
-                    break
-
-    def process_mouse_event(self, event: pygame.Event):
-        MouseManager.process_event(self.state, event)
-        self.ui_manger.check_textbox_clicked(self.state, event)
-        self.update_block_information_textbox()
-
-    def process_keyboard_event(self, event: pygame.Event):
-        self.keyboard_manager.process_event(self.state, event)
-        self.update_block_information_textbox()
-
-    def process_ui_element_event(self, event: pygame.Event):
-        self.ui_manger.process_event(self.state, event)
-        self.update_block_information_textbox()
-
-    def process_ui_manager_event(self, event: pygame.Event):
-        self.ui_manger.manager.process_events(event)
