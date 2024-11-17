@@ -2,16 +2,18 @@ import os
 
 from typing import List, Tuple
 from constants import *
+from state import State
 
 
 def load_ucs_file(
     path: str,
+    state: State,
 ) -> Tuple[int, str, List[List[int]], List[List[int | float]]]:
 
     block_info: List[List[int]] = []
     step_data: List[List[int]] = []
 
-    format, mode = -1, ""
+    format, mode, cols = -1, "", 0
 
     with open(path, "r") as f:
         file_lines = f.readlines()
@@ -100,17 +102,31 @@ def load_ucs_file(
         ]
     )
 
-    return format, mode, block_info, step_data
+    state.format = format
+    state.mode = mode
+    state.block_info = block_info
+    state.step_data = step_data
+    state.update_y_info()
+
+    step_data, block_info, y_info = state.get_step_info()
+    print(len(step_data), len(block_info), len(y_info), state.max_y, state.scr_y)
+
+    state.measure_x_start = state.step_x_start + state.step_size * cols
+    state.scrollbar_x_start = state.measure_x_start + MEASURE_DESCRIPTOR_WIDTH
+
+    print(state.step_x_start, state.measure_x_start, state.scrollbar_x_start)
 
 
 def save_ucs_file(
-    path: str,
-    format: int,
-    mode: str,
-    step_data: List[List[int]],
-    block_info: List[List[int | float]],
+    state: State,
+    # path: str,
+    # format: int,
+    # mode: str,
+    # step_data: List[List[int]],
+    # block_info: List[List[int | float]],
 ):
-
+    path, format, mode = state.ucs_save_path, state.format, state.mode
+    step_data, block_info = state.get_step_info()
     rows, cols = len(step_data), len(step_data[0]) - STEP_DATA_OFFSET
     with open("result.ucs", "w") as f:
         f.write(":Format=1\n")
