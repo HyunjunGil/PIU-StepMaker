@@ -31,12 +31,15 @@ class ElementBase:
         self.e.disable()
 
     def focus(self):
-        if type(self.t) == pygame_gui.elements.UITextEntryLine:
+        if type(self.e) == pygame_gui.elements.UITextEntryLine:
             self.e.focus()
 
     def unfocus(self):
-        if type(self.t) == pygame_gui.elements.UITextEntryLine:
+        if type(self.e) == pygame_gui.elements.UITextEntryLine:
             self.e.unfocus()
+
+    def get_text(self):
+        return self.e.get_text()
 
     def condition(self, state: State, event: pygame.Event):
         if type(self.e) == pygame_gui.elements.UIButton:
@@ -128,7 +131,7 @@ class LoadButton(ElementBase):
     def action(
         self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
     ):
-        load_ucs_file(state)
+        load_ucs_file(state.ucs_file_path, state)
 
 
 # UI_INDEX : 3
@@ -154,7 +157,7 @@ class UndoButton(ElementBase):
     def action(
         self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
     ):
-        return super().action(state)
+        print("Press Undo Button")
 
 
 # UI_INDEX : 4
@@ -180,23 +183,43 @@ class RedoButton(ElementBase):
     def action(
         self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
     ):
-        return super().action(state)
+        print("Press Redo Button")
 
 
 def _get_block_info_texts(ui_elements: Dict[str, ElementBase]) -> List[str]:
     info = []
-    for k in ["BPM", "B/M", "S/B", "Delay", "Measures", "Beats", "Splits"]:
-        info.append(round(float(ui_elements[k].e.get_text()), 4))
+    for k in [
+        "005_BI_BPM",
+        "006_BI_B/M",
+        "007_BI_S/B",
+        "008_BI_Delay",
+        "009_BI_Measures",
+        "010_BI_Beats",
+        "011_BI_Splits",
+    ]:
+        info.append(ui_elements[k].get_text())
     return info
 
 
-def _block_info_changed(info: List[int | float], new_info: List[int | float]) -> bool:
+def _str_to_num(x: str):
+    try:
+        return int(x)
+    except:
+        return round(float(x), 4)
+
+
+def _num_to_str(x: int | float):
+    return str(x)
+
+
+def _enable_apply_button(info: List[int | float], new_info: List[int | float]) -> bool:
     assert len(info) == len(
         new_info
-    ), "len(info) != len(new_info) in _block_info_changed"
-
+    ), "len(info) != len(new_info) in _enable_apply_button"
     for v, nv in zip(info, new_info):
-        if v != nv:
+        if nv == "":
+            return False
+        elif v != nv:
             return True
     return False
 
@@ -218,19 +241,22 @@ class BlockInformationText(ElementBase):
     ):
         if event.type == pygame_gui.UI_TEXT_ENTRY_CHANGED:
             new_info = _get_block_info_texts(ui_elements)
+
             step_data, block_info, y_info = state.get_step_info()
             info = block_info[step_data[y_info[state.y_cur][0]][STEP_DATA_BI_IDX]]
-            if _block_info_changed(info, new_info):
-                ui_elements["Apply"].enable()
+            info = [_num_to_str(x) for x in info]
+            if _enable_apply_button(info, new_info):
+                ui_elements["012_BI_Apply"].enable()
             else:
-                ui_elements["Apply"].disable()
+                ui_elements["012_BI_Apply"].disable()
+            self.e.redraw()
         else:
             pygame.event.post(
                 pygame.event.Event(
                     pygame_gui.UI_BUTTON_PRESSED,
                     {
                         "user_type": pygame_gui.UI_BUTTON_PRESSED,
-                        "ui_element": ui_elements["Apply"].e,
+                        "ui_element": ui_elements["012_BI_Apply"].e,
                         # "ui_object_id": button.most_specific_combined_id,
                     },
                 )
@@ -405,14 +431,19 @@ class ApplyButton(ElementBase):
         super().__init__(
             pygame_gui.elements.UIButton(
                 relative_rect=pygame.Rect(
-                    (0, 0),
+                    (
+                        OPTION_WIDTH - BLOCK_BUTTON_SIZE[0] - BLOCK_INFO_GAP,
+                        BLOCK_INFO_AREA_Y
+                        + BLOCK_INFO_AREA_HEIGHT
+                        - BLOCK_BUTTON_SIZE[1]
+                        - BLOCK_INFO_GAP,
+                    ),
                     BLOCK_BUTTON_SIZE,
                 ),
                 text="Apply",
                 manager=manager,
             )
         )
-        self.e.get_abs_rect().bottomright = (OPTION_WIDTH - 5, BLOCK_OPER_AREA_Y - 5)
 
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
@@ -420,7 +451,7 @@ class ApplyButton(ElementBase):
     def action(
         self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
     ):
-        new_info = _get_block_info_texts(ui_elements)
+        new_info = [_str_to_num(x) for x in _get_block_info_texts(ui_elements)]
         step_data, block_info, y_info = state.get_step_info()
         block_idx = step_data[y_info[state.y_cur][0]][STEP_DATA_BI_IDX]
         step_data, block_info = modify_block(step_data, block_info, new_info, block_idx)
@@ -431,6 +462,8 @@ class ApplyButton(ElementBase):
         state.y_base = state.y_info[state.y_base][1]
         if state.focus_idx == 12:
             state.focus_idx = -1
+
+        state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
 
 
 # UI_INDEX : 13
@@ -451,7 +484,7 @@ class BlockAddAboveButton(ElementBase):
         self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
     ):
         step_data, block_info, y_info = state.get_step_info()
-        block_idx = step_data[y_info[state.y_cur[0]]][STEP_DATA_BI_IDX]
+        block_idx = step_data[y_info[state.y_cur][0]][STEP_DATA_BI_IDX]
         state.step_data, state.block_info = add_block_up(
             step_data, block_info, block_idx
         )
@@ -460,7 +493,6 @@ class BlockAddAboveButton(ElementBase):
         state.y_base = state.y_info[state.y_base][1]
 
         state.focus_idx = 13
-        state.update_ui_text = False
 
 
 # UI_INDEX : 14
@@ -481,7 +513,7 @@ class BlockAddBelowButton(ElementBase):
         self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
     ):
         step_data, block_info, y_info = state.get_step_info()
-        block_idx = step_data[y_info[state.y_cur[0]]][STEP_DATA_BI_IDX]
+        block_idx = step_data[y_info[state.y_cur][0]][STEP_DATA_BI_IDX]
         state.step_data, state.block_info = add_block_down(
             step_data, block_info, block_idx
         )
@@ -490,7 +522,6 @@ class BlockAddBelowButton(ElementBase):
         state.y_base = state.y_info[state.y_base][1]
 
         state.focus_idx = 14
-        state.update_ui_text = False
 
 
 # UI_INDEX : 15
@@ -521,7 +552,7 @@ class BlockSplitButton(ElementBase):
         state.y_base = state.y_info[state.y_base][1]
 
         state.focus_idx = 15
-        state.update_ui_text = True
+        state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
 
 
 # UI_INDEX : 16
@@ -554,7 +585,7 @@ class BlockDeleteButton(ElementBase):
 
         state.y_cur = state.y_base = state.y_info[min(state.max_y - 1, state.y_cur)][1]
         state.focus_idx = 16
-        state.update_ui_text = True
+        state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
 
 
 # UI_INDEX : 17
@@ -611,30 +642,33 @@ class UIElementManager:
     def __init__(self, manager: pygame_gui.UIManager):
         self.manager = manager
         self.ui_elements: Dict[str, ElementBase] = {
-            "Play": PlayButton(manager),
-            "Save": SaveButton(manager),
-            "Load": LoadButton(manager),
-            "Undo": UndoButton(manager),
-            "Redo": RedoButton(manager),
-            "BPM": BPMTexbox(manager),
-            "B/M": BeatPerMeasureTextbox(manager),
-            "S/B": SplitPerBeatTextbox(manager),
-            "Delay": DelayTexbox(manager),
-            "Measures": MeasuresTexbox(manager),
-            "Beats": BeatsTexbox(manager),
-            "Splits": SplitsTexbox(manager),
-            "Apply": ApplyButton(manager),
-            "BlockAddAbove": BlockAddAboveButton(manager),
-            "BlockAddBelow": BlockAddBelowButton(manager),
-            "BlockSplit": BlockSplitButton(manager),
-            "BlockDelete": BlockDeleteButton(manager),
-            "ScrollUp": ScrollUpButton(manager, (0, 0), (SCROLL_BAR_WIDTH, 30)),
-            "ScrollDown": ScrollDownButton(manager, (0, 0), (SCROLL_BAR_WIDTH, 30)),
+            "000_Play": PlayButton(manager),
+            "001_Save": SaveButton(manager),
+            "002_Load": LoadButton(manager),
+            "003_Undo": UndoButton(manager),
+            "004_Redo": RedoButton(manager),
+            "005_BI_BPM": BPMTexbox(manager),
+            "006_BI_B/M": BeatPerMeasureTextbox(manager),
+            "007_BI_S/B": SplitPerBeatTextbox(manager),
+            "008_BI_Delay": DelayTexbox(manager),
+            "009_BI_Measures": MeasuresTexbox(manager),
+            "010_BI_Beats": BeatsTexbox(manager),
+            "011_BI_Splits": SplitsTexbox(manager),
+            "012_BI_Apply": ApplyButton(manager),
+            "013_BlockAddAbove": BlockAddAboveButton(manager),
+            "014_BlockAddBelow": BlockAddBelowButton(manager),
+            "015_BlockSplit": BlockSplitButton(manager),
+            "016_BlockDelete": BlockDeleteButton(manager),
+            "017_ScrollUp": ScrollUpButton(manager, (0, 0), (SCROLL_BAR_WIDTH, 30)),
+            "018_ScrollDown": ScrollDownButton(manager, (0, 0), (SCROLL_BAR_WIDTH, 30)),
         }
 
+    def get_ui_elements(self):
+        return self.ui_elements
+
     def draw(self, state: State, screen: pygame.Surface):
-        self.ui_elements["ScrollUp"].set_location((state.scrollbar_x_start, 0))
-        self.ui_elements["ScrollDown"].set_location(
+        self.ui_elements["017_ScrollUp"].set_location((state.scrollbar_x_start, 0))
+        self.ui_elements["018_ScrollDown"].set_location(
             (state.scrollbar_x_start, state.screen_height)
         )
         self.manager.draw_ui(screen)
@@ -654,5 +688,30 @@ class UIElementManager:
             ):
                 state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = False, False
                 state.focus_idx = i
-                state.KEEP_SELECTED_LINE_ON_SCREEN = False
                 break
+
+    def update_block_information_textbox(self, state: State):
+        step_data, block_info, y_info = state.get_step_info()
+        info = block_info[step_data[y_info[state.y_cur][0]][STEP_DATA_BI_IDX]]
+        [bpm, bm, sb, delay, measures, beats, splits] = info
+
+        self.ui_elements["005_BI_BPM"].e.set_text(str(bpm))
+        self.ui_elements["005_BI_BPM"].e.redraw()
+
+        self.ui_elements["006_BI_B/M"].e.set_text(str(bm))
+        self.ui_elements["006_BI_B/M"].e.redraw()
+
+        self.ui_elements["007_BI_S/B"].e.set_text(str(sb))
+        self.ui_elements["007_BI_S/B"].e.redraw()
+
+        self.ui_elements["008_BI_Delay"].e.set_text(str(delay))
+        self.ui_elements["008_BI_Delay"].e.redraw()
+
+        self.ui_elements["009_BI_Measures"].e.set_text(str(measures))
+        self.ui_elements["009_BI_Measures"].e.redraw()
+
+        self.ui_elements["010_BI_Beats"].e.set_text(str(beats))
+        self.ui_elements["010_BI_Beats"].e.redraw()
+
+        self.ui_elements["011_BI_Splits"].e.set_text(str(splits))
+        self.ui_elements["011_BI_Splits"].e.redraw()

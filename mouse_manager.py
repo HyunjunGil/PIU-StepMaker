@@ -25,10 +25,9 @@ class MouseManager:
         pressed_keys = pygame.key.get_pressed()
 
         if state.step_x_start <= mouse_x < state.measure_x_start:
+            state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
             state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = True, False
             state.focus_idx = -1
-
-            state.KEEP_SELECTED_LINE_ON_SCREEN = True
 
             state.y_cur = state.y_info[mouse_y + state.scr_y][1]
 
@@ -38,8 +37,6 @@ class MouseManager:
         elif state.measure_x_start <= mouse_x < state.scrollbar_x_start:
             state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = False, False
             state.focus_idx = -1
-
-            state.KEEP_SELECTED_LINE_ON_SCREEN = True
 
             step_data, block_info, y_info = state.get_step_info()
 
@@ -64,16 +61,13 @@ class MouseManager:
             <= mouse_x
             < state.scrollbar_x_start + SCROLL_BAR_WIDTH
         ) and (state.scrollbar_y <= mouse_y < state.scrollbar_y + state.scrollbar_h):
-            print("SCROLLBAR CLICKED")
             state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = False, True
             state.focus_idx = -1
-            state.KEEP_SELECTED_LINE_ON_SCREEN = False
 
             state.scr_mouse_init = mouse_y
-            state.scr_y_init = state.scr_y
+            state.scrollbar_y_init = state.scrollbar_y
 
     def _process_mouse_up(state: State, event: pygame.Event):
-        print("Mouse UP")
         state.IS_SCROLL, state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = (
             False,
             False,
@@ -91,4 +85,6 @@ class MouseManager:
         elif event.type == pygame.MOUSEBUTTONUP:
             MouseManager._process_mouse_up(state, event)
         else:
-            raise Exception("Unrecognized event for MouseManager")
+            raise Exception(
+                "Unrecognized event for MouseManager: {}".format(str(event))
+            )

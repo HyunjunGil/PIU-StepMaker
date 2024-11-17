@@ -26,7 +26,6 @@ clock = pygame.time.Clock()
 while running:
     time_delta = clock.tick(60) / 1000.0
     current_time = pygame.time.get_ticks()
-    keep_current_selected_line = False
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -39,6 +38,12 @@ while running:
             stepmaker.process_mouse_event(event)
         elif event.type == pygame.KEYDOWN:
             stepmaker.process_keyboard_event(event)
+        elif event.type in [
+            pygame_gui.UI_BUTTON_PRESSED,
+            pygame_gui.UI_TEXT_ENTRY_CHANGED,
+            pygame_gui.UI_TEXT_ENTRY_FINISHED,
+        ]:
+            stepmaker.process_ui_element_event(event)
 
         stepmaker.process_ui_manager_event(event)
     stepmaker.ui_manger.manager.update(time_delta)

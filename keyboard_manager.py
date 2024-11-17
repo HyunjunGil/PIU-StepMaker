@@ -103,7 +103,8 @@ class UpKey(KeyBase):
         ln = y_info[state.y_cur][0]
         pressed_keys = pygame.key.get_pressed()
         if ln != 0:
-            if pressed_keys[pygame.K_LALT]:
+            block_idx_prev = step_data[ln][STEP_DATA_BI_IDX]
+            if pressed_keys[pygame.K_LALT] or pressed_keys[pygame.K_RALT]:
                 bi, mi = (
                     step_data[ln - 1][STEP_DATA_BI_IDX],
                     step_data[ln - 1][STEP_DATA_MS_IDX],
@@ -123,13 +124,20 @@ class UpKey(KeyBase):
                     y -= 1
                 state.y_cur = y_info[y][1]
             else:
-                info = block_info[step_data[ln][STEP_DATA_BI_IDX]]
+                info = block_info[step_data[ln - 1][STEP_DATA_BI_IDX]]
                 bm, sb = info[1], info[2]
                 dy = min(max((CELL_SIZE * 2) // sb, MIN_SPLIT_SIZE), CELL_SIZE)
                 state.y_cur -= dy
+                ln -= 1
+
+            block_idx = step_data[ln][STEP_DATA_BI_IDX]
+            if block_idx != block_idx_prev:
+                state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
 
             if not pressed_keys[pygame.K_LSHIFT]:
                 state.y_base = state.y_cur
+
+        state.scr_y = min(state.y_cur, state.scr_y)
 
 
 # Down
@@ -146,7 +154,8 @@ class DownKey(KeyBase):
         ln = y_info[state.y_cur][0]
         pressed_keys = pygame.key.get_pressed()
         if ln != len(step_data) - 1:
-            if pressed_keys[pygame.K_LALT]:
+            block_idx_prev = step_data[ln][STEP_DATA_BI_IDX]
+            if pressed_keys[pygame.K_LALT] or pressed_keys[pygame.K_RALT]:
                 bi, mi = (
                     step_data[ln + 1][STEP_DATA_BI_IDX],
                     step_data[ln + 1][STEP_DATA_MS_IDX],
@@ -170,9 +179,18 @@ class DownKey(KeyBase):
                 bm, sb = info[1], info[2]
                 dy = min(max((CELL_SIZE * 2) // sb, MIN_SPLIT_SIZE), CELL_SIZE)
                 state.y_cur += dy
+                ln += 1
 
             if not pressed_keys[pygame.K_LSHIFT]:
                 state.y_base = state.y_cur
+
+            block_idx = step_data[ln][STEP_DATA_BI_IDX]
+            if block_idx != block_idx_prev:
+                state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
+
+        state.scr_y = max(
+            state.y_cur + state.step_size - state.screen_height, state.scr_y
+        )
 
 
 class TabKey(KeyBase):
@@ -188,7 +206,9 @@ class TabKey(KeyBase):
 
     def action(self, state: State, event: pygame.Event) -> None:
         pressed_keys = pygame.key.get_pressed()
+        state.focus_idx_prev = state.focus_idx
         if pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]:
+            state.focus_idx_prev = state.focus_idx
             state.focus_idx = (
                 state.focus_idx + 18
             ) % 19  # 19 = Total number of UI elements
@@ -210,6 +230,7 @@ class EscKey(KeyBase):
         )
 
     def action(self, state: State, event: pygame.Event) -> None:
+        state.focus_idx_prev = state.focus_idx
         state.focus_idx = -1
 
 
