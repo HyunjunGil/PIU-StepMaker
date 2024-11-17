@@ -68,6 +68,8 @@ class StepMaker:
 
         self.draw_selected_lines()
 
+        self.draw_line_descriptor()
+
         self.draw_step_chart()
 
         self.draw_focus_rect()
@@ -452,6 +454,28 @@ class StepMaker:
                 w, h = element.e.get_abs_rect().size
                 pygame.draw.rect(screen, DARK_GRAY, (x, y, w, h), 3)
                 break
+
+    def draw_line_descriptor(self):
+        state, screen = self.state, self.screen
+        step_data, block_info, y_info = state.get_step_info()
+        ln_from, ln_to = (
+            y_info[min(state.y_cur, state.y_base)][0],
+            y_info[max(state.y_cur, state.y_base)][0],
+        )
+
+        if ln_from == ln_to:
+            txt = "Ln{}".format(ln_from + 1)
+        else:
+            txt = "Ln{}~{} ({} selected)".format(
+                ln_from + 1, ln_to + 1, ln_to - ln_from + 1
+            )
+
+        line_text = pygame.font.SysFont("Verdana", 12).render(
+            txt, True, BLACK, LIGHT_GRAY
+        )
+        line_text_rect = line_text.get_rect()
+        line_text_rect.bottomleft = (state.step_x_start, state.screen_height)
+        screen.blit(line_text, line_text_rect)
 
     def resize_screen(self, event: pygame.Event):
         w, h = event.size
