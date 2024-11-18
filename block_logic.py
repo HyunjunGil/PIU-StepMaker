@@ -110,19 +110,17 @@ def delete_block(
     )
     block_lines = mcnt * bm * sb + bcnt * sb + scnt
 
-    s = 0
-    while step_data[s][STEP_DATA_BI_IDX] != block_idx:
-        s += 1
-    e = s + block_lines
+    ln_from = 0
+    while step_data[ln_from][STEP_DATA_BI_IDX] != block_idx:
+        ln_from += 1
+    ln_to = ln_from + block_lines
 
     # Update block_idx for blcok after block_idx
-    for ln in range(e, tot_ln):
+    for ln in range(ln_to, tot_ln):
         step_data[ln][STEP_DATA_BI_IDX] -= 1
 
-    # TODO : Handle case when there are long note between deleting block and others
-
     # Update step_data and block_info
-    step_data = step_data[:s] + step_data[e:]
+    step_data = step_data[:ln_from] + step_data[ln_to:]
     block_info.pop(block_idx)
 
     return step_data, block_info
