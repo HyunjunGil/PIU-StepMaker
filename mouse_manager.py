@@ -33,6 +33,7 @@ class MouseManager:
 
             if not pressed_keys[pygame.K_LSHIFT]:
                 state.y_base = state.y_cur
+            state.sync_scr_y()
 
         elif state.measure_x_start <= mouse_x < state.scrollbar_x_start:
             state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = False, False
@@ -45,10 +46,15 @@ class MouseManager:
             line_info = step_data[ln]
             block = block_info[line_info[STEP_DATA_BI_IDX]]
             # line at start of measure
-            ln_base = ln - line_info[STEP_DATA_BT_IDX] * line_info[STEP_DATA_SP_IDX]
-            ln_cur = ln_base + block[1] * block[2]
+            ln_base = (
+                ln
+                - line_info[STEP_DATA_BT_IDX] * block[2]
+                - line_info[STEP_DATA_SP_IDX]
+            )
+            ln_cur = ln_base + block[1] * block[2] - 1
             state.y_cur = ln_to_y[ln_cur]
             state.y_base = ln_to_y[ln_base]
+            state.sync_scr_y()
 
         elif (
             state.scrollbar_x_start

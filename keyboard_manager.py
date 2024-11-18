@@ -134,7 +134,7 @@ class UpKey(KeyBase):
             if not pressed_keys[pygame.K_LSHIFT]:
                 state.y_base = state.y_cur
 
-        state.scr_y = min(state.y_cur, state.scr_y)
+        state.sync_scr_y()
 
 
 # Down
@@ -183,9 +183,7 @@ class DownKey(KeyBase):
             if block_idx != block_idx_prev:
                 state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
 
-        state.scr_y = max(
-            state.y_cur + state.step_size - state.screen_height, state.scr_y
-        )
+        state.sync_scr_y()
 
 
 class TabKey(KeyBase):
@@ -428,11 +426,7 @@ class PasteKey(KeyBase):
         # Update y_cur, y_base and scr_y
         state.y_base = ln_to_y[ln_from]
         state.y_cur = ln_to_y[ln_to]
-        state.scr_y = max(
-            min(state.scr_y, state.y_cur),
-            state.y_cur + state.step_size - state.screen_height,
-            state.scr_y,
-        )
+        state.sync_scr_y()
 
 
 class KeyboardManager:

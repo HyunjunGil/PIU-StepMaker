@@ -72,6 +72,12 @@ class State:
         # Clipboard
         self.clipboard: List[List[int]] | None = None
 
+    def sync_scr_y(self):
+        self.scr_y = max(
+            min(self.scr_y, self.y_cur),
+            self.y_cur + self.step_size - self.screen_height,
+        )
+
     def get_screen_size(self):
         return self.screen_width, self.screen_height
 
