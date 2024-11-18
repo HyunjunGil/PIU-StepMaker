@@ -46,6 +46,6 @@ while running:
             stepmaker.process_ui_element_event(event)
 
         stepmaker.process_ui_manager_event(event)
-    stepmaker.ui_manger.manager.update(time_delta)
+    stepmaker.ui_manager.manager.update(time_delta)
 
     stepmaker.draw()

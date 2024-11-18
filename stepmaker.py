@@ -16,7 +16,7 @@ class StepMaker:
 
         self.screen = screen
         manager = pygame_gui.UIManager(screen.size)
-        self.ui_manger = UIElementManager(manager)
+        self.ui_manager = UIElementManager(manager)
         self.keyboard_manager = KeyboardManager()
         self.state = State()
 
@@ -48,7 +48,7 @@ class StepMaker:
         ]
 
     def _get_focused_ui_element(self, idx: int) -> ElementBase:
-        ui_elements = self.ui_manger.get_ui_elements()
+        ui_elements = self.ui_manager.get_ui_elements()
         assert idx != -1, "Focus idx shoud not be -1"
         focus_idx_str = str(idx)
         focus_idx_str = "0" * (3 - len(focus_idx_str)) + focus_idx_str
@@ -59,23 +59,23 @@ class StepMaker:
     def load_initial_ucs_file(self, path: str):
         load_ucs_file(path, self.state)
         ScrollManager.update_scrollbar_info(self.state)
-        self.ui_manger.update_block_information_textbox(self.state)
-        self.ui_manger.ui_elements["012_BI_Apply"].e.disable()
+        self.ui_manager.update_block_information_textbox(self.state)
+        self.ui_manager.ui_elements["012_BI_Apply"].e.disable()
 
     def resize_screen(self, event: pygame.Event):
         w, h = event.size
         self.state.screen_width = w
         self.state.screen_height = h
         self.screen = pygame.display.set_mode((w, h), pygame.RESIZABLE)
-        self.ui_manger.manager.set_window_resolution((w, h))
+        self.ui_manager.manager.set_window_resolution((w, h))
         ScrollManager.update_scrollbar_info(self.state)
 
     def update_ui_elements(self):
         state = self.state
 
         if state.UPDATE_BLOCK_INFORMATION_TEXTBOX:
-            self.ui_manger.update_block_information_textbox(state)
-            self.ui_manger.ui_elements["012_BI_Apply"].disable()
+            self.ui_manager.update_block_information_textbox(state)
+            self.ui_manager.ui_elements["012_BI_Apply"].disable()
             state.APPLY_ENABLED = False
             state.UPDATE_BLOCK_INFORMATION_TEXTBOX = False
 
@@ -105,7 +105,7 @@ class StepMaker:
 
     def process_mouse_event(self, event: pygame.Event):
         MouseManager.process_event(self.state, event)
-        self.ui_manger.check_textbox_clicked(self.state, event)
+        self.ui_manager.check_textbox_clicked(self.state, event)
         self.update_ui_elements()
 
     def process_keyboard_event(self, event: pygame.Event):
@@ -113,11 +113,11 @@ class StepMaker:
         self.update_ui_elements()
 
     def process_ui_element_event(self, event: pygame.Event):
-        self.ui_manger.process_event(self.state, event)
+        self.ui_manager.process_event(self.state, event)
         self.update_ui_elements()
 
     def process_ui_manager_event(self, event: pygame.Event):
-        self.ui_manger.manager.process_events(event)
+        self.ui_manager.manager.process_events(event)
 
     def draw(self):
         self.screen.fill(WHITE)
@@ -134,7 +134,7 @@ class StepMaker:
 
         self.draw_focus_rect()
 
-        self.ui_manger.draw(self.state, self.screen)
+        self.ui_manager.draw(self.state, self.screen)
 
         pygame.display.flip()
 
