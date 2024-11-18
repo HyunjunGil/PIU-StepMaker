@@ -48,7 +48,9 @@ class State:
 
         # Information for each y
         self.max_y = -1
-        self.y_info: List[List[int]] = [[0, 0] for _ in range(100000)]
+        # self.y_info: List[List[int]] = [[0, 0] for _ in range(100000)]
+        self.y_to_ln: List[int] = [0 for _ in range(100000)]
+        self.ln_to_y: List[int] = [0 for _ in range(100000)]
 
         # selected line info
         self.y_cur = 0
@@ -77,7 +79,10 @@ class State:
         return self.focus_x, self.focus_y, self.focus_w, self.focus_h
 
     def get_step_info(self):
-        return self.step_data, self.block_info, self.y_info
+        return self.step_data, self.block_info
+
+    def get_y_info(self):
+        return self.y_to_ln, self.ln_to_y
 
     def update_y_info(self):
         block_idx, measure, bpm, beat, split = -1, 0, 0, 0, 0
@@ -93,9 +98,9 @@ class State:
 
             line_height = min(max((CELL_SIZE * 2) // split, MIN_SPLIT_SIZE), CELL_SIZE)
             ny = y + line_height
+            self.ln_to_y[ln] = y
             for i in range(y, ny):
-                self.y_info[i][0] = ln
-                self.y_info[i][1] = y
+                self.y_to_ln[i] = ln
 
             y = ny
 

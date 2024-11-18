@@ -242,8 +242,9 @@ class BlockInformationText(ElementBase):
         if event.type == pygame_gui.UI_TEXT_ENTRY_CHANGED:
             new_info = _get_block_info_texts(ui_elements)
 
-            step_data, block_info, y_info = state.get_step_info()
-            info = block_info[step_data[y_info[state.y_cur][0]][STEP_DATA_BI_IDX]]
+            step_data, block_info = state.get_step_info()
+            y_to_ln = state.y_to_ln
+            info = block_info[step_data[y_to_ln[state.y_cur]][STEP_DATA_BI_IDX]]
             info = [_num_to_str(x) for x in info]
             if _enable_apply_button(info, new_info):
                 ui_elements["012_BI_Apply"].enable()
@@ -454,14 +455,16 @@ class ApplyButton(ElementBase):
         self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
     ):
         new_info = [_str_to_num(x) for x in _get_block_info_texts(ui_elements)]
-        step_data, block_info, y_info = state.get_step_info()
-        block_idx = step_data[y_info[state.y_cur][0]][STEP_DATA_BI_IDX]
+        step_data, block_info = state.get_step_info()
+        y_to_ln, ln_to_y = state.get_y_info()
+        ln = y_to_ln[state.y_cur]
+        block_idx = step_data[ln][STEP_DATA_BI_IDX]
         step_data, block_info = modify_block(step_data, block_info, new_info, block_idx)
         state.step_data = step_data
         state.block_info = block_info
         state.update_y_info()
-        state.y_cur = state.y_info[state.y_cur][1]
-        state.y_base = state.y_info[state.y_base][1]
+        state.y_cur = state.ln_to_y[state.y_to_ln[state.y_cur]]
+        state.y_base = state.ln_to_y[state.y_to_ln[state.y_base]]
         if state.focus_idx == 12:
             state.focus_idx = -1
 
@@ -485,14 +488,16 @@ class BlockAddAboveButton(ElementBase):
     def action(
         self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
     ):
-        step_data, block_info, y_info = state.get_step_info()
-        block_idx = step_data[y_info[state.y_cur][0]][STEP_DATA_BI_IDX]
+        step_data, block_info = state.get_step_info()
+        y_to_ln, ln_to_y = state.get_y_info()
+        ln = y_to_ln[state.y_cur]
+        block_idx = step_data[ln][STEP_DATA_BI_IDX]
         state.step_data, state.block_info = add_block_up(
             step_data, block_info, block_idx
         )
         state.update_y_info()
-        state.y_cur = state.y_info[state.y_cur][1]
-        state.y_base = state.y_info[state.y_base][1]
+        state.y_cur = state.ln_to_y[state.y_to_ln[state.y_cur]]
+        state.y_base = state.ln_to_y[state.y_to_ln[state.y_base]]
 
         state.focus_idx = 13
 
@@ -514,14 +519,16 @@ class BlockAddBelowButton(ElementBase):
     def action(
         self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
     ):
-        step_data, block_info, y_info = state.get_step_info()
-        block_idx = step_data[y_info[state.y_cur][0]][STEP_DATA_BI_IDX]
+        step_data, block_info = state.get_step_info()
+        y_to_ln, ln_to_y = state.get_y_info()
+        ln = y_to_ln[state.y_cur]
+        block_idx = step_data[ln][STEP_DATA_BI_IDX]
         state.step_data, state.block_info = add_block_down(
             step_data, block_info, block_idx
         )
         state.update_y_info()
-        state.y_cur = state.y_info[state.y_cur][1]
-        state.y_base = state.y_info[state.y_base][1]
+        state.y_cur = state.ln_to_y[state.y_to_ln[state.y_cur]]
+        state.y_base = state.ln_to_y[state.y_to_ln[state.y_base]]
 
         state.focus_idx = 14
 
@@ -543,15 +550,16 @@ class BlockSplitButton(ElementBase):
     def action(
         self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
     ):
-        step_data, block_info, y_info = state.get_step_info()
-        ln = y_info[state.y_cur][0]
+        step_data, block_info = state.get_step_info()
+        y_to_ln, ln_to_y = state.get_y_info()
+        ln = y_to_ln[state.y_cur]
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
         state.step_data, state.block_info = split_block(
             step_data, block_info, block_idx, ln
         )
         state.update_y_info()
-        state.y_cur = state.y_info[state.y_cur][1]
-        state.y_base = state.y_info[state.y_base][1]
+        state.y_cur = state.ln_to_y[state.y_to_ln[state.y_cur]]
+        state.y_base = state.ln_to_y[state.y_to_ln[state.y_base]]
 
         state.focus_idx = 15
         state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
@@ -574,18 +582,21 @@ class BlockDeleteButton(ElementBase):
     def action(
         self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
     ):
-        step_data, block_info, y_info = state.get_step_info()
+        step_data, block_info = state.get_step_info()
+        y_to_ln, ln_to_y = state.get_y_info()
         if len(block_info) == 1:
             print("Cannot delete last block")
             return
-        ln, y = y_info[state.y_cur][0], y_info[state.y_cur][0]
+        ln = y_to_ln[state.y_cur]
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
         state.step_data, state.block_info = delete_block(
             step_data, block_info, block_idx
         )
         state.update_y_info()
 
-        state.y_cur = state.y_base = state.y_info[min(state.max_y - 1, state.y_cur)][1]
+        state.y_cur = state.y_base = state.ln_to_y[
+            state.y_to_ln[min(state.max_y - 1, state.y_cur)]
+        ]
         state.focus_idx = 16
         state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
 
@@ -693,8 +704,11 @@ class UIElementManager:
                 break
 
     def update_block_information_textbox(self, state: State):
-        step_data, block_info, y_info = state.get_step_info()
-        info = block_info[step_data[y_info[state.y_cur][0]][STEP_DATA_BI_IDX]]
+        step_data, block_info = state.get_step_info()
+        y_to_ln, ln_to_y = state.get_y_info()
+        ln = y_to_ln[state.y_cur]
+        block_idx = step_data[ln][STEP_DATA_BI_IDX]
+        info = block_info[block_idx]
         [bpm, bm, sb, delay, measures, beats, splits] = info
 
         self.ui_elements["005_BI_BPM"].e.set_text(str(bpm))

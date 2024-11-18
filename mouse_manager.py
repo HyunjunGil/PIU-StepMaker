@@ -29,7 +29,7 @@ class MouseManager:
             state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = True, False
             state.focus_idx = -1
 
-            state.y_cur = state.y_info[mouse_y + state.scr_y][1]
+            state.y_cur = state.ln_to_y[state.y_to_ln[mouse_y + state.scr_y]]
 
             if not pressed_keys[pygame.K_LSHIFT]:
                 state.y_base = state.y_cur
@@ -38,23 +38,17 @@ class MouseManager:
             state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = False, False
             state.focus_idx = -1
 
-            step_data, block_info, y_info = state.get_step_info()
-
-            ln, y = (
-                y_info[mouse_y + state.scr_y][0],
-                y_info[mouse_y + state.scr_y][1],
-            )
+            step_data, block_info = state.get_step_info()
+            y_to_ln, ln_to_y = state.get_y_info()
+            ln = y_to_ln[mouse_y + state.scr_y]
 
             line_info = step_data[ln]
             block = block_info[line_info[STEP_DATA_BI_IDX]]
             # line at start of measure
             ln_base = ln - line_info[STEP_DATA_BT_IDX] * line_info[STEP_DATA_SP_IDX]
             ln_cur = ln_base + block[1] * block[2]
-            state_y_cur = state_y_base = mouse_y + state.scr_y
-            while y_info[state.y_base][0] >= ln_base and y > 0:
-                state.y_base -= 1
-            while y_info[state.y_cur][0] < ln_cur and y < state.max_y - 1:
-                state.y_cur += 1
+            state.y_cur = ln_to_y[ln_cur]
+            state.y_base = ln_to_y[ln_base]
 
         elif (
             state.scrollbar_x_start

@@ -108,7 +108,7 @@ def load_ucs_file(
     state.step_data = step_data
     state.update_y_info()
 
-    step_data, block_info, y_info = state.get_step_info()
+    step_data, block_info = state.get_step_info()
 
     state.measure_x_start = state.step_x_start + state.step_size * cols
     state.scrollbar_x_start = state.measure_x_start + MEASURE_DESCRIPTOR_WIDTH
@@ -123,7 +123,7 @@ def save_ucs_file(
     # block_info: List[List[int | float]],
 ):
     path, format, mode = state.ucs_save_path, state.format, state.mode
-    step_data, block_info, _ = state.get_step_info()
+    step_data, block_info = state.get_step_info()
     rows, cols = len(step_data), len(step_data[0]) - STEP_DATA_OFFSET
     with open("result.ucs", "w") as f:
         f.write(":Format=1\n")

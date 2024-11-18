@@ -57,10 +57,11 @@ class StepChartKey(KeyBase):
         )
 
     def action(self, state: State, event: pygame.Event) -> None:
-        step_data, block_info, y_info = state.get_step_info()
+        step_data, block_info = state.get_step_info()
+        y_to_ln, ln_to_y = state.get_y_info()
         col = STEP_DATA_OFFSET + KEY_DOUBLE[pygame.key.name(event.key)]
-        ln_start = y_info[min(state.y_cur, state.y_base)][0]
-        ln_end = y_info[max(state.y_cur, state.y_base)][0]
+        ln_start = y_to_ln[min(state.y_cur, state.y_base)]
+        ln_end = y_to_ln[max(state.y_cur, state.y_base)]
 
         if ln_start == ln_end:  # Only one line is selected
             step = step_data[ln_start][col]
@@ -98,9 +99,9 @@ class UpKey(KeyBase):
         return event.type == pygame.KEYDOWN and event.key == pygame.K_UP
 
     def action(self, state: State, event: pygame.Event) -> None:
-        step_data, block_info, y_info = state.get_step_info()
-
-        ln = y_info[state.y_cur][0]
+        step_data, block_info = state.get_step_info()
+        y_to_ln, ln_to_y = state.get_y_info()
+        ln = y_to_ln[state.y_cur]
         pressed_keys = pygame.key.get_pressed()
         if ln != 0:
             block_idx_prev = step_data[ln][STEP_DATA_BI_IDX]
@@ -118,11 +119,7 @@ class UpKey(KeyBase):
                 ):
                     ln -= 1
                 ln += 1
-
-                y = state.y_cur
-                while y_info[y][0] != ln:
-                    y -= 1
-                state.y_cur = y_info[y][1]
+                state.y_cur = ln_to_y[ln]
             else:
                 info = block_info[step_data[ln - 1][STEP_DATA_BI_IDX]]
                 bm, sb = info[1], info[2]
@@ -149,9 +146,10 @@ class DownKey(KeyBase):
         return event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN
 
     def action(self, state: State, event: pygame.Event) -> None:
-        step_data, block_info, y_info = state.get_step_info()
+        step_data, block_info = state.get_step_info()
+        y_to_ln, ln_to_y = state.get_y_info()
 
-        ln = y_info[state.y_cur][0]
+        ln = y_to_ln[state.y_cur]
         pressed_keys = pygame.key.get_pressed()
         if ln != len(step_data) - 1:
             block_idx_prev = step_data[ln][STEP_DATA_BI_IDX]
@@ -170,10 +168,7 @@ class DownKey(KeyBase):
                     ln += 1
                 ln -= 1
 
-                y = state.y_cur
-                while y_info[y][0] != ln:
-                    y += 1
-                state.y_cur = y_info[y][1]
+                state.y_cur = ln_to_y[ln]
             else:
                 info = block_info[step_data[ln][STEP_DATA_BI_IDX]]
                 bm, sb = info[1], info[2]
@@ -295,9 +290,10 @@ class BackspaceKey(KeyBase):
         )
 
     def action(self, state: State, event: pygame.Event) -> None:
-        step_data, block_info, y_info = state.get_step_info()
-        ln_start = y_info[min(state.y_base, state.y_cur)][0]
-        ln_end = y_info[max(state.y_base, state.y_cur)][0]
+        step_data, block_info = state.get_step_info()
+        y_to_ln, ln_to_y = state.get_y_info()
+        ln_start = y_to_ln[min(state.y_base, state.y_cur)]
+        ln_end = y_to_ln[max(state.y_base, state.y_cur)]
         cols = 5 if state.mode == "Single" else 10
         for i in range(cols):
             clear_step(step_data, ln_start, STEP_DATA_OFFSET + i)
@@ -321,10 +317,11 @@ class CopyKey(KeyBase):
 
     def action(self, state: State, event: pygame.Event) -> None:
         print("COPY")
-        step_data, block_info, y_info = state.get_step_info()
+        step_data, block_info = state.get_step_info()
+        y_to_ln, ln_to_y = state.get_y_info()
         ln_from, ln_to = (
-            y_info[min(state.y_cur, state.y_base)][0],
-            y_info[max(state.y_cur, state.y_base)][0],
+            y_to_ln[min(state.y_cur, state.y_base)],
+            y_to_ln[max(state.y_cur, state.y_base)],
         )
 
         cols = 5 if state.mode == "Single" else 10
@@ -359,10 +356,11 @@ class CutKey(KeyBase):
 
     def action(self, state: State, event: pygame.Event) -> None:
         print("CUT")
-        step_data, block_info, y_info = state.get_step_info()
+        step_data, block_info = state.get_step_info()
+        y_to_ln, ln_to_y = state.get_y_info()
         ln_from, ln_to = (
-            y_info[min(state.y_cur, state.y_base)][0],
-            y_info[max(state.y_cur, state.y_base)][0],
+            y_to_ln[min(state.y_cur, state.y_base)],
+            y_to_ln[max(state.y_cur, state.y_base)],
         )
 
         cols = 5 if state.mode == "Single" else 10
@@ -406,9 +404,11 @@ class PasteKey(KeyBase):
         if state.clipboard is None:
             return
 
-        step_data, block_info, y_info = state.get_step_info()
+        step_data, block_info = state.get_step_info()
+        y_to_ln, ln_to_y = state.get_y_info()
+
         clipboard = state.clipboard
-        ln_from = y_info[min(state.y_cur, state.y_base)][0]
+        ln_from = y_to_ln[min(state.y_cur, state.y_base)]
         ln_to = ln_from + len(clipboard) - 1
 
         if ln_to >= len(step_data):
@@ -426,13 +426,8 @@ class PasteKey(KeyBase):
                     step_data[ln_from + i][col] = clipboard[i][col]
 
         # Update y_cur, y_base and scr_y
-        y = 0
-        while y_info[y][0] != ln_from:
-            y += 1
-        state.y_base = y
-        while y_info[y][0] != ln_to:
-            y += 1
-        state.y_cur = y
+        state.y_base = ln_to_y[ln_from]
+        state.y_cur = ln_to_y[ln_to]
         state.scr_y = max(
             min(state.scr_y, state.y_cur),
             state.y_cur + state.step_size - state.screen_height,

@@ -307,8 +307,10 @@ class StepMaker:
 
     def draw_step_chart(self):
         state = self.state
-        step_data, block_info, y_info = state.get_step_info()
-        ln, y = y_info[state.scr_y][0], y_info[state.scr_y][1]
+        step_data, block_info = state.get_step_info()
+        y_to_ln, ln_to_y = state.get_y_info()
+        ln = y_to_ln[state.scr_y]
+        y = ln_to_y[ln]
         font = pygame.font.SysFont("Verdana", 18)
         tot_ln = len(step_data)
         screen_bottom = state.scr_y + state.screen_height
@@ -513,10 +515,11 @@ class StepMaker:
 
     def draw_line_descriptor(self):
         state, screen = self.state, self.screen
-        step_data, block_info, y_info = state.get_step_info()
+        step_data, block_info = state.get_step_info()
+        y_to_ln = state.y_to_ln
         ln_from, ln_to = (
-            y_info[min(state.y_cur, state.y_base)][0],
-            y_info[max(state.y_cur, state.y_base)][0],
+            y_to_ln[min(state.y_cur, state.y_base)],
+            y_to_ln[max(state.y_cur, state.y_base)],
         )
 
         if ln_from == ln_to:
