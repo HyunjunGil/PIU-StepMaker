@@ -84,7 +84,3 @@ class MouseManager:
             MouseManager._process_mouse_click(state, event)
         elif event.type == pygame.MOUSEBUTTONUP:
             MouseManager._process_mouse_up(state, event)
-        else:
-            raise Exception(
-                "Unrecognized event for MouseManager: {}".format(str(event))
-            )
