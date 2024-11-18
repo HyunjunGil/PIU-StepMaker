@@ -491,7 +491,7 @@ class BlockAddAboveButton(ElementBase):
         y_to_ln, ln_to_y = state.get_y_info()
         ln = y_to_ln[state.y_cur]
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
-        ln_from, ln_to = state.get_block_range(state.y_cur)
+        ln_from, _ = state.get_block_range_by_y(state.y_cur)
 
         cols = state.get_cols()
         for i in range(cols):
@@ -534,12 +534,12 @@ class BlockAddBelowButton(ElementBase):
         y_to_ln, ln_to_y = state.get_y_info()
         ln = y_to_ln[state.y_cur]
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
-        ln_from, ln_to = state.get_block_range(state.y_cur)
+        ln_from, ln_to = state.get_block_range_by_y(state.y_cur)
 
         cols = state.get_cols()
         for i in range(cols):
             col = STEP_DATA_OFFSET + i
-            if step_data[ln_to][col] in [2, 3]:
+            if step_data[ln_to - 1][col] in [2, 3]:
                 # Unable to do operation since there are long note between block
                 print(
                     "Unable to operate BLOCK_ADD_BELOW : There are long note between current block and previous block"
@@ -607,9 +607,23 @@ class BlockDeleteButton(ElementBase):
     ):
         step_data, block_info = state.get_step_info()
         y_to_ln, ln_to_y = state.get_y_info()
+
+        # Check that there is only one block
         if len(block_info) == 1:
             print("Cannot delete last block")
             return
+
+        # Check that there are long between target block and adjacent blocks
+        ln_from, ln_to = state.get_block_range_by_y(state.y_cur)
+        cols = state.get_cols()
+        for i in range(cols):
+            col = STEP_DATA_OFFSET + i
+            if step_data[ln_from][col] in [3, 4] or step_data[ln_to - 1] in [2, 3]:
+                print(
+                    "Cannot delete block : There are long notes between current block and adjacent blocks"
+                )
+                return
+
         ln = y_to_ln[state.y_cur]
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
         state.step_data, state.block_info = delete_block(

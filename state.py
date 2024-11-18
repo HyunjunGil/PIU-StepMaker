@@ -80,17 +80,17 @@ class State:
         else:
             raise Exception("Invalid mode : {}".format(self.mode))
 
-    def get_measure_range(self, y: int) -> Tuple[int, int]:
+    def get_measure_range_by_y(self, y: int) -> Tuple[int, int]:
         step_data, block_info = self.get_step_info()
         y_to_ln = self.y_to_ln
         ln = y_to_ln[y]
         block = block_info[step_data[ln][STEP_DATA_BI_IDX]]
         line = step_data[ln]
         ln_from = ln - (line[STEP_DATA_BT_IDX] * block[2] + line[STEP_DATA_SP_IDX])
-        ln_to = ln_from + block[1] * block[2] - 1
+        ln_to = ln_from + block[1] * block[2]
         return ln_from, ln_to
 
-    def get_block_range(self, y: int):
+    def get_block_range_by_y(self, y: int):
         step_data, block_info = self.get_step_info()
         y_to_ln = self.y_to_ln
         ln = y_to_ln[y]
@@ -100,7 +100,18 @@ class State:
             (line[STEP_DATA_MS_IDX] * block[1] + line[STEP_DATA_BT_IDX]) * block[2]
             + line[STEP_DATA_SP_IDX]
         )
-        ln_to = ln_from + ((block[4] * block[1] + block[5]) * block[2] + block[6]) - 1
+        ln_to = ln_from + ((block[4] * block[1] + block[5]) * block[2] + block[6])
+        return ln_from, ln_to
+
+    def get_block_range_by_block_idx(self, block_idx: int):
+        ln_from, idx = 0, 0
+        while idx < self.block_idx:
+            block = self.block_info[idx]
+            ln_from += (block[4] * block[1] + block[5]) * block[2] + block[
+                6
+            ]  # number of lines in the block
+        block = self.block_info[self.block_idx + 1]
+        ln_to = ln_from + (block[4] * block[1] + block[5]) * block[2] + block[6]
         return ln_from, ln_to
 
     def sync_scr_y(self):
