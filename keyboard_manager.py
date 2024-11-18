@@ -3,7 +3,6 @@ import pygame, copy
 from typing import List, Tuple
 from state import State
 from constants import *
-from enum import Enum
 
 
 def check_hk_pressed(hk: List[int]):

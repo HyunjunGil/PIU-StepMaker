@@ -2,7 +2,6 @@ import pygame, pygame_gui
 
 from abc import *
 from typing import List, Tuple, Dict
-from enum import Enum
 
 from pygame_gui.elements.ui_button import UIButton
 from pygame_gui.elements.ui_text_entry_line import UITextEntryLine

@@ -1,7 +1,6 @@
 import pygame, pygame_gui, numpy as np
 
 from typing import List, Tuple, Dict
-from enum import Enum
 from constants import *
 from state import State
 from scroll_manager import ScrollManager
