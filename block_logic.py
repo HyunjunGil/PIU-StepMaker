@@ -24,7 +24,7 @@ def modify_block(
     step_data: List[List[int]],
     block_info: List[List[int | float]],
     new_info: List[
-        int
+        float | int
     ],  # [bpm, beat/measure, split/beat, delay, #measures, #beats, #splits]
     block_idx: int,
 ) -> Tuple[List[List[int]], List[List[int | float]]]:
@@ -118,6 +118,8 @@ def delete_block(
     # Update block_idx for blcok after block_idx
     for ln in range(e, tot_ln):
         step_data[ln][STEP_DATA_BI_IDX] -= 1
+
+    # TODO : Handle case when there are long note between deleting block and others
 
     # Update step_data and block_info
     step_data = step_data[:s] + step_data[e:]
