@@ -93,8 +93,8 @@ def load_ucs_file(
     block_info.append(
         [
             bpm,
-            beat,
-            split,
+            beat,  # beat per measure
+            split,  # split per beat
             delay,
             lcnt // (beat * split),  # number of measures
             (lcnt % (beat * split)) // split,  # number of beats
