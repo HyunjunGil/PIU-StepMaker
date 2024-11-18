@@ -66,10 +66,9 @@ class State:
         # Element Focus Rectangle
         self.focus_idx_prev = -1
         self.focus_idx = -1
-        # self.focus_x = -100
-        # self.focus_y = -100
-        # self.focus_w = -100
-        # self.focus_h = -100
+
+        # Clipboard
+        self.clipboard: List[List[int]] | None = None
 
     def get_screen_size(self):
         return self.screen_width, self.screen_height

@@ -1,4 +1,4 @@
-import pygame
+import pygame, copy
 
 from typing import List, Tuple
 from state import State
@@ -307,6 +307,139 @@ class BackspaceKey(KeyBase):
                 step_data[i][j] = 0
 
 
+class CopyKey(KeyBase):
+    def __init__(self):
+        super().__init__()
+
+    def condition(self, state: State, event: pygame.Event) -> bool:
+        pressed_keys = pygame.key.get_pressed()
+        return (
+            event.type == pygame.KEYDOWN
+            and (pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL])
+            and event.key == pygame.K_c
+        )
+
+    def action(self, state: State, event: pygame.Event) -> None:
+        print("COPY")
+        step_data, block_info, y_info = state.get_step_info()
+        ln_from, ln_to = (
+            y_info[min(state.y_cur, state.y_base)][0],
+            y_info[max(state.y_cur, state.y_base)][0],
+        )
+
+        cols = 5 if state.mode == "Single" else 10
+
+        state.clipboard = copy.deepcopy(step_data[ln_from : ln_to + 1])
+
+        for i in range(cols):
+            col = STEP_DATA_OFFSET + i
+            ln = 0
+            while ln < len(state.clipboard) and state.clipboard[ln][col] in [3, 4]:
+                state.clipboard[ln][col] = 0
+                ln += 1
+
+            ln = len(state.clipboard) - 1
+            while ln >= 0 and state.clipboard[ln][col] in [2, 3]:
+                state.clipboard[ln][col] = 0
+                ln -= 1
+
+
+class CutKey(KeyBase):
+
+    def __init__(self):
+        super().__init__()
+
+    def condition(self, state: State, event: pygame.Event) -> bool:
+        pressed_keys = pygame.key.get_pressed()
+        return (
+            event.type == pygame.KEYDOWN
+            and (pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL])
+            and event.key == pygame.K_x
+        )
+
+    def action(self, state: State, event: pygame.Event) -> None:
+        print("CUT")
+        step_data, block_info, y_info = state.get_step_info()
+        ln_from, ln_to = (
+            y_info[min(state.y_cur, state.y_base)][0],
+            y_info[max(state.y_cur, state.y_base)][0],
+        )
+
+        cols = 5 if state.mode == "Single" else 10
+
+        state.clipboard = copy.deepcopy(step_data[ln_from : ln_to + 1])
+
+        for i in range(cols):
+            col = STEP_DATA_OFFSET + i
+            ln = 0
+            while ln < len(state.clipboard) and state.clipboard[ln][col] in [3, 4]:
+                state.clipboard[ln][col] = 0
+                ln += 1
+
+            ln = len(state.clipboard) - 1
+            while ln >= 0 and state.clipboard[ln][col] in [2, 3]:
+                state.clipboard[ln][col] = 0
+                ln -= 1
+
+        # Erase copied lane
+        for i in range(len(state.clipboard)):
+            for j in range(cols):
+                col = STEP_DATA_OFFSET + j
+                if state.clipboard[i][col] != 0 and step_data[ln_from + i][col] != 0:
+                    clear_step(step_data, ln_from + i, col)
+
+
+class PasteKey(KeyBase):
+    def __init__(self):
+        super().__init__()
+
+    def condition(self, state: State, event: pygame.Event) -> bool:
+        pressed_keys = pygame.key.get_pressed()
+        return (
+            event.type == pygame.KEYDOWN
+            and (pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL])
+            and event.key == pygame.K_v
+        )
+
+    def action(self, state: State, event: pygame.Event) -> None:
+        print("PASTE")
+        if state.clipboard is None:
+            return
+
+        step_data, block_info, y_info = state.get_step_info()
+        clipboard = state.clipboard
+        ln_from = y_info[min(state.y_cur, state.y_base)][0]
+        ln_to = ln_from + len(clipboard) - 1
+
+        if ln_to >= len(step_data):
+            # Unable to paste steps
+            return
+
+        cols = 5 if state.mode == "Single" else 10
+
+        for i in range(len(clipboard)):
+            for j in range(cols):
+                col = STEP_DATA_OFFSET + j
+                if clipboard[i][col] != 0:
+                    if step_data[ln_from + i][col] > 1:
+                        clear_step(step_data, ln_from + i, col)
+                    step_data[ln_from + i][col] = clipboard[i][col]
+
+        # Update y_cur, y_base and scr_y
+        y = 0
+        while y_info[y][0] != ln_from:
+            y += 1
+        state.y_base = y
+        while y_info[y][0] != ln_to:
+            y += 1
+        state.y_cur = y
+        state.scr_y = max(
+            min(state.scr_y, state.y_cur),
+            state.y_cur + state.step_size - state.screen_height,
+            state.scr_y,
+        )
+
+
 class KeyboardManager:
 
     def __init__(self):
@@ -326,6 +459,10 @@ class KeyboardManager:
             BackspaceKey(),
             # Enter
             EnterKey(),
+            # Copy, Cut, Paste
+            CopyKey(),
+            CutKey(),
+            PasteKey(),
         ]
 
     def process_event(self, state: State, event: pygame.Event):
