@@ -72,6 +72,37 @@ class State:
         # Clipboard
         self.clipboard: List[List[int]] | None = None
 
+    def get_cols(self) -> int:
+        if self.mode == "Single":
+            return 5
+        elif self.mode == "Double":
+            return 10
+        else:
+            raise Exception("Invalid mode : {}".format(self.mode))
+
+    def get_measure_range(self, y: int) -> Tuple[int, int]:
+        step_data, block_info = self.get_step_info()
+        y_to_ln = self.y_to_ln
+        ln = y_to_ln[y]
+        block = block_info[step_data[ln][STEP_DATA_BI_IDX]]
+        line = step_data[ln]
+        ln_from = ln - (line[STEP_DATA_BT_IDX] * block[2] + line[STEP_DATA_SP_IDX])
+        ln_to = ln_from + block[1] * block[2] - 1
+        return ln_from, ln_to
+
+    def get_block_range(self, y: int):
+        step_data, block_info = self.get_step_info()
+        y_to_ln = self.y_to_ln
+        ln = y_to_ln[y]
+        block = block_info[step_data[ln][STEP_DATA_BI_IDX]]
+        line = step_data[ln]
+        ln_from = ln - (
+            (line[STEP_DATA_MS_IDX] * block[1] + line[STEP_DATA_BT_IDX]) * block[2]
+            + line[STEP_DATA_SP_IDX]
+        )
+        ln_to = ln_from + ((block[4] * block[1] + block[5]) * block[2] + block[6]) - 1
+        return ln_from, ln_to
+
     def sync_scr_y(self):
         self.scr_y = max(
             min(self.scr_y, self.y_cur),

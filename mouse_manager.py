@@ -39,19 +39,9 @@ class MouseManager:
             state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = False, False
             state.focus_idx = -1
 
-            step_data, block_info = state.get_step_info()
             y_to_ln, ln_to_y = state.get_y_info()
-            ln = y_to_ln[mouse_y + state.scr_y]
 
-            line_info = step_data[ln]
-            block = block_info[line_info[STEP_DATA_BI_IDX]]
-            # line at start of measure
-            ln_base = (
-                ln
-                - line_info[STEP_DATA_BT_IDX] * block[2]
-                - line_info[STEP_DATA_SP_IDX]
-            )
-            ln_cur = ln_base + block[1] * block[2] - 1
+            ln_base, ln_cur = state.get_measure_range(state.y_cur)
             state.y_cur = ln_to_y[ln_cur]
             state.y_base = ln_to_y[ln_base]
             state.sync_scr_y()

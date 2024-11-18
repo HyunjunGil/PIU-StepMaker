@@ -492,6 +492,18 @@ class BlockAddAboveButton(ElementBase):
         y_to_ln, ln_to_y = state.get_y_info()
         ln = y_to_ln[state.y_cur]
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
+        ln_from, ln_to = state.get_block_range(state.y_cur)
+
+        cols = state.get_cols()
+        for i in range(cols):
+            col = STEP_DATA_OFFSET + i
+            if step_data[ln_from][col] in [3, 4]:
+                # Unable to do operation since there are long note between block
+                print(
+                    "Unable to operate BLOCK_ADD_ABOVE : There are long note between current block and previous block"
+                )
+                return
+
         state.step_data, state.block_info = add_block_up(
             step_data, block_info, block_idx
         )
@@ -523,6 +535,18 @@ class BlockAddBelowButton(ElementBase):
         y_to_ln, ln_to_y = state.get_y_info()
         ln = y_to_ln[state.y_cur]
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
+        ln_from, ln_to = state.get_block_range(state.y_cur)
+
+        cols = state.get_cols()
+        for i in range(cols):
+            col = STEP_DATA_OFFSET + i
+            if step_data[ln_to][col] in [2, 3]:
+                # Unable to do operation since there are long note between block
+                print(
+                    "Unable to operate BLOCK_ADD_BELOW : There are long note between current block and previous block"
+                )
+                return
+
         state.step_data, state.block_info = add_block_down(
             step_data, block_info, block_idx
         )
