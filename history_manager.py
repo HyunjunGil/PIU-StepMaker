@@ -249,9 +249,8 @@ class BlockSplitDelta(StateDelta):
         super().redo(state)
 
 
-class StateManager:
+class HistoryManager:
     def __init__(self):
-        self.state: State = State()
         self.history: List[StateDelta] = []
         self.cur_idx = 0
         self.initialized = False
