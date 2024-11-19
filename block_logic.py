@@ -71,11 +71,12 @@ def modify_block(
         if i < block_lines:
             # If block line exists, copy it
             new_block_step_data.append(
-                line + [step_data[s + i][STEP_DATA_OFFSET + j] for j in range(cols)]
+                line
+                + [step_data[s + i][STEP_DATA_OFFSET - 1 + j] for j in range(cols + 1)]
             )
         else:
             # If block line does not exists, create empty line
-            new_block_step_data.append(line + [0 for _ in range(cols)])
+            new_block_step_data.append(line + [1] + [0 for _ in range(cols)])
 
     # Update step_data and block_info
     step_data = step_data[:s] + new_block_step_data + step_data[e:]
@@ -152,6 +153,7 @@ def add_block_up(
                 i // (bm * sb),
                 (i % (bm * sb)) // sb,
                 i % sb,
+                1,
             ]
             + [0 for _ in range(cols)]
             for i in range(bm * sb)
@@ -198,6 +200,7 @@ def add_block_down(
             i // (bm * sb),
             (i % (bm * sb)) // sb,
             i % sb,
+            1,
         ]
         + [0 for _ in range(cols)]
         for i in range(bm * sb)
@@ -227,26 +230,26 @@ def split_block(
     )
     block_lines = mcnt * bm * sb + bcnt * sb + scnt
 
-    s = 0
-    while step_data[s][STEP_DATA_BI_IDX] != block_idx:
-        s += 1
-    e = s + block_lines
+    ln_from = 0
+    while step_data[ln_from][STEP_DATA_BI_IDX] != block_idx:
+        ln_from += 1
+    ln_to = ln_from + block_lines
 
-    if s > line_idx:
+    if ln_from > line_idx:
         raise Exception("Invalid parameter : s > line_idx")
     # If given line_idx is equal to line_idx, do nothing
-    elif s == line_idx:
+    elif ln_from == line_idx:
         return step_data, block_info
 
-    assert s < line_idx < e
-    new_block_lines = e - line_idx
+    assert ln_from < line_idx < ln_to
+    new_block_lines = ln_to - line_idx
 
     # Update block_idx for blcok after line_idx
     for ln in range(line_idx, tot_ln):
         step_data[ln][STEP_DATA_BI_IDX] += 1
 
     # Update
-    for ln in range(line_idx, e):
+    for ln in range(line_idx, ln_to):
         lcnt = ln - line_idx
         step_data[ln][STEP_DATA_MS_IDX] = lcnt // (bm * sb)
         step_data[ln][STEP_DATA_BT_IDX] = (lcnt % (bm * sb)) // sb
@@ -257,9 +260,9 @@ def split_block(
         bm,
         sb,
         delay,
-        (line_idx - s) // (bm * sb),
-        ((line_idx - s) % (bm * sb)) // sb,
-        (line_idx - s) % sb,
+        (line_idx - ln_from) // (bm * sb),
+        ((line_idx - ln_from) % (bm * sb)) // sb,
+        (line_idx - ln_from) % sb,
     ]
     block_info.insert(
         block_idx + 1,

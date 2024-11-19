@@ -4,6 +4,7 @@ from typing import List, Tuple, Dict
 from state import State
 from enum import Enum
 from block_logic import *
+from utils import update_validity
 
 
 class DeltaType(Enum):
@@ -18,27 +19,34 @@ class DeltaType(Enum):
 
 class StateDelta:
     def __init__(
-        self, y_undo: Tuple[int, int], y_redo: Tuple[int, int], delta_type: DeltaType
+        self,
+        coor_undo: Tuple[Tuple[int, int], Tuple[int, int]],
+        coor_redo: Tuple[Tuple[int, int], Tuple[int, int]],
+        delta_type: DeltaType,
     ):
-        self.y_undo = y_undo
-        self.y_redo = y_redo
+        self.coor_undo = coor_undo
+        self.coor_redo = coor_redo
         self.delta_type = delta_type
 
     def undo(self, state: State):
 
         state.update_y_info()
-        state.y_cur, state.y_base = self.y_undo()
+        state.coor_cur, state.coor_base = self.coor_undo
         state.sync_scr_y()
 
     def redo(self, state: State):
         state.update_y_info()
-        state.y_cur, state.y_base = self.y_redo()
+        state.coor_cur, state.coor_base = self.coor_redo
         state.sync_scr_y()
 
 
 class InitialDelta(StateDelta):
-    def __init__(self, y_undo: Tuple[int], y_redo: Tuple[int]):
-        super().__init__(y_undo, y_redo, DeltaType.INITIAL)
+    def __init__(
+        self,
+        coor_undo: Tuple[Tuple[int, int], Tuple[int, int]],
+        coor_redo: Tuple[Tuple[int, int], Tuple[int, int]],
+    ):
+        super().__init__(coor_undo, coor_redo, DeltaType.INITIAL)
 
     def undo(self, state: State):
         raise Exception("InitialDelta should not be undo")
@@ -50,13 +58,13 @@ class InitialDelta(StateDelta):
 class StepChartChangeDelta(StateDelta):
     def __init__(
         self,
-        y_undo: Tuple[int, int],
-        y_redo: Tuple[int, int],
+        coor_undo: Tuple[Tuple[int, int], Tuple[int, int]],
+        coor_redo: Tuple[Tuple[int, int], Tuple[int, int]],
         step_diff: List[
             Tuple[int, int, int, int]
         ],  # ln, col(added STEP_DATA_OFFSET), before, after
     ):
-        super().__init__(y_undo, y_redo, DeltaType.STEP_CHART_CHANGE)
+        super().__init__(coor_undo, coor_redo, DeltaType.STEP_CHART_CHANGE)
         self.step_diff = step_diff
 
     def undo(self, state: State):
@@ -65,7 +73,13 @@ class StepChartChangeDelta(StateDelta):
             ln, col, prev, _ = diff
             step_data[ln][col] = prev
 
-        state.y_cur, state.y_base = self.y_undo()
+        ln_from, ln_to = (
+            min([x[0] for x in self.step_diff]),
+            max([x[0] for x in self.step_diff]) + 1,
+        )
+        update_validity(step_data, ln_from - 1, ln_to + 1)
+
+        state.coor_cur, state.coor_base = self.coor_undo
         state.sync_scr_y()
 
     def redo(self, state: State):
@@ -74,25 +88,31 @@ class StepChartChangeDelta(StateDelta):
             ln, col, _, cur = diff
             step_data[ln][col] = cur
 
-        state.y_cur, state.y_base = self.y_redo()
+        ln_from, ln_to = (
+            min([x[0] for x in self.step_diff]),
+            max([x[0] for x in self.step_diff]) + 1,
+        )
+        update_validity(step_data, ln_from - 1, ln_to + 1)
+
+        state.coor_cur, state.coor_base = self.coor_redo
         state.sync_scr_y()
 
 
 class BlockModifyDelta(StateDelta):
     def __init__(
         self,
-        y_undo: Tuple[int],
-        y_redo: Tuple[int],
-        block_idx: int,
+        coor_undo: Tuple[Tuple[int, int], Tuple[int, int]],
+        coor_redo: Tuple[Tuple[int, int], Tuple[int, int]],
         prev_block_step_data: List[List[int]],
-        prev_block: List[float | int],
+        prev_block_info: List[float | int],
         new_info: List[float | int],
+        block_idx: int,
     ):
-        super().__init__(y_undo, y_redo, DeltaType.BLOCK_MODIFY)
-        self.block_idx = block_idx
+        super().__init__(coor_undo, coor_redo, DeltaType.BLOCK_MODIFY)
         self.prev_block_step_data = prev_block_step_data
-        self.prev_block = prev_block
+        self.prev_block_info = prev_block_info
         self.new_info = new_info
+        self.block_idx = block_idx
 
     def undo(self, state: State):
         step_data, block_info = state.get_step_info()
@@ -100,124 +120,157 @@ class BlockModifyDelta(StateDelta):
         state.step_data = (
             step_data[:ln_from] + self.prev_block_step_data + step_data[ln_to:]
         )
-        state.block_info[self.block_idx] = self.prev_block
+        ln_from, ln_to = state.get_block_range_by_block_idx(self.block_idx)
+        update_validity(state.step_data, ln_from - 1, ln_from + 1)
+        update_validity(state.step_data, ln_to - 1, ln_to + 1)
+        state.block_info[self.block_idx] = self.prev_block_info
         super().undo(state)
 
     def redo(self, state: State):
+        step_data, block_info = state.get_step_info()
         state.step_data, state.block_info = modify_block(
             state.step_data, state.block_info, self.new_info, self.block_idx
         )
+        ln_from, ln_to = state.get_block_range_by_block_idx(self.block_idx)
+        update_validity(state.step_data, ln_from - 1, ln_from + 1)
+        update_validity(state.step_data, ln_to - 1, ln_to + 1)
         super().redo(state)
 
 
 class BlockDeleteDelta(StateDelta):
     def __init__(
         self,
-        y_undo: Tuple[int],
-        y_redo: Tuple[int],
-        block_idx: int,
+        coor_undo: Tuple[Tuple[int, int], Tuple[int, int]],
+        coor_redo: Tuple[Tuple[int, int], Tuple[int, int]],
         deleted_step_data: List[List[int]],
         deleted_block_info: List[float | int],
+        block_idx: int,
     ):
-        super().__init__(y_undo, y_redo, DeltaType.BLOCK_DELETE)
-        self.block_idx = block_idx
+        super().__init__(coor_undo, coor_redo, DeltaType.BLOCK_DELETE)
         self.deleted_step_data = deleted_step_data
         self.deleted_block_info = deleted_block_info
+        self.block_idx = block_idx
 
     def undo(self, state: State):
         step_data, block_info = state.get_step_info()
-        _, ln_to = state.get_block_range_by_y(state.ln_to_y[self.ln - 1])
-        for ln in range(ln_to, len(step_data)):
+        ln_from, _ = state.get_block_range_by_block_idx(self.block_idx)
+        for ln in range(ln_from, len(step_data)):
             step_data[ln][STEP_DATA_BI_IDX] += 1
-        state.step_data = step_data[:ln_to] + self.deleted_step_data + step_data[ln_to:]
+        state.step_data = (
+            step_data[:ln_from] + self.deleted_step_data + step_data[ln_from:]
+        )
         block_info.insert(self.block_idx, self.deleted_block_info)
+
+        ln_from, ln_to = state.get_block_range_by_block_idx(self.block_idx)
+        update_validity(state.step_data, ln_from - 1, ln_from + 1)
+        update_validity(state.step_data, ln_to - 1, ln_to + 1)
 
         super().undo(state)
 
     def redo(self, state: State):
+        step_data, block_info = state.get_step_info()
+        ln_from, _ = state.get_block_range_by_block_idx(self.block_idx)
         state.step_data, state.block_info = delete_block(
             state.step_data, state.block_info, self.block_idx
         )
+        update_validity(state.step_data, ln_from - 1, ln_from + 1)
         super().redo(state)
 
 
 class BlockAddAboveDelta(StateDelta):
     def __init__(
-        self, y_undo: Tuple[int, int], y_redo: Tuple[int, int], block_idx: int
+        self,
+        coor_undo: Tuple[Tuple[int, int], Tuple[int, int]],
+        coor_redo: Tuple[Tuple[int, int], Tuple[int, int]],
+        block_idx: int,
     ):
 
-        super().__init__(y_undo, y_redo, DeltaType.BLOCK_ADD_ABOVE)
+        super().__init__(coor_undo, coor_redo, DeltaType.BLOCK_ADD_ABOVE)
         self.block_idx: int = block_idx  # origin block idx (= added block idx + 1)
 
     def undo(self, state: State):
         step_data, block_info = state.get_step_info()
-        ln_from, idx = 0, 0
-        while idx < self.block_idx - 1:
-            block = block_info[idx]
-            ln_from += (block[4] * block[1] + block[5]) * block[2] + block[
-                6
-            ]  # number of lines in the block
-        block = block_info[self.block_idx]
-        ln_to = ln_from + (block[4] * block[1] + block[5]) * block[2] + block[6]
+        ln_from, ln_to = state.get_block_range_by_block_idx(self.block_idx)
 
+        for ln in range(ln_to, len(step_data)):
+            step_data[ln][STEP_DATA_BI_IDX] -= 1
+        print(ln_from, ln_to)
         state.step_data = step_data[:ln_from] + step_data[ln_to:]
-        state.block_info.pop(self.block_idx - 1)
+        update_validity(state.step_data, ln_from - 1, ln_from + 1)
+        state.block_info.pop(self.block_idx)
 
         super().undo(state)
 
     def redo(self, state: State):
+        step_data, block_info = state.get_step_info()
         state.step_data, state.block_info = add_block_up(
             state.step_data, state.block_info, self.block_idx
         )
+
+        ln_from, ln_to = state.get_block_range_by_block_idx(self.block_idx)
+
+        update_validity(state.step_data, ln_from - 1, ln_from + 1)
+        update_validity(state.step_data, ln_to - 1, ln_to + 1)
 
         super().redo(state)
 
 
 class BlockAddBelowDelta(StateDelta):
     def __init__(
-        self, y_undo: Tuple[int, int], y_redo: Tuple[int, int], block_idx: int
+        self,
+        coor_undo: Tuple[Tuple[int, int], Tuple[int, int]],
+        coor_redo: Tuple[Tuple[int, int], Tuple[int, int]],
+        block_idx: int,
     ):
 
-        super().__init__(y_undo, y_redo, DeltaType.BLOCK_ADD_BELOW)
+        super().__init__(coor_undo, coor_redo, DeltaType.BLOCK_ADD_BELOW)
         self.block_idx: int = block_idx  # origin block idx (= added block idx - 1)
 
     def undo(self, state: State):
         step_data, block_info = state.get_step_info()
-        ln_from, idx = 0, 0
-        while idx < self.block_idx:
-            block = block_info[idx]
-            ln_from += (block[4] * block[1] + block[5]) * block[2] + block[
-                6
-            ]  # number of lines in the block
-        block = block_info[self.block_idx + 1]
-        ln_to = ln_from + (block[4] * block[1] + block[5]) * block[2] + block[6]
+        ln_from, ln_to = state.get_block_range_by_block_idx(self.block_idx + 1)
 
+        for ln in range(ln_to, len(step_data)):
+            step_data[ln][STEP_DATA_BI_IDX] -= 1
         state.step_data = step_data[:ln_from] + step_data[ln_to:]
+        update_validity(state.step_data, ln_from - 1, ln_from + 1)
         state.block_info.pop(self.block_idx + 1)
 
         super().undo(state)
 
     def redo(self, state: State):
+        step_data, block_info = state.get_step_info()
         state.step_data, state.block_info = add_block_down(
             state.step_data, state.block_info, self.block_idx
         )
+
+        ln_from, ln_to = state.get_block_range_by_block_idx(self.block_idx + 1)
+
+        update_validity(state.step_data, ln_from - 1, ln_from + 1)
+        update_validity(state.step_data, ln_to - 1, ln_to + 1)
 
         super().redo(state)
 
 
 class BlockSplitDelta(StateDelta):
-    def __init__(self, y_undo: Tuple[int], y_redo: Tuple[int], block_idx: int, ln: int):
-        super().__init__(y_undo, y_redo, DeltaType.BLOCK_SPLIT)
+    def __init__(
+        self,
+        coor_undo: Tuple[Tuple[int, int], Tuple[int, int]],
+        coor_redo: Tuple[Tuple[int, int], Tuple[int, int]],
+        block_idx: int,
+        ln: int,
+    ):
+        super().__init__(coor_undo, coor_redo, DeltaType.BLOCK_SPLIT)
         self.block_idx: int = block_idx
         self.ln: int = ln
 
     def undo(self, state: State):
         step_data, block_info = state.get_step_info()
-        ln_from, _ = state.get_block_range_by_y(state.ln_to_y[self.ln])
-        _, ln_to = state.get_block_range_by_y(state.ln_to_y[self.ln + 1])
+        ln_from, _ = state.get_block_range_by_y(state.ln_to_y[self.ln - 1])
+        _, ln_to = state.get_block_range_by_y(state.ln_to_y[self.ln])
 
         tot_ln = ln_to - ln_from
-        block = block_info[step_data[self.ln][STEP_DATA_BI_IDX]]
+        block = block_info[self.block_idx]
         bpm, bm, sb, delay = block[0], block[1], block[2], block[3]
         for ln in range(ln_from, ln_to):
             lcnt = ln - ln_from
@@ -256,8 +309,11 @@ class HistoryManager:
         self.initialized = False
 
     def initialize(self, state: State):
+        self.history.clear()
         self.history.append(
-            InitialDelta((state.y_cur, state.y_base), (state.y_cur, state.y_base))
+            InitialDelta(
+                (state.coor_cur, state.coor_base), (state.coor_cur, state.coor_base)
+            )
         )
         self.initialized = True
 
@@ -265,26 +321,31 @@ class HistoryManager:
         assert (
             self.initialized
         ), "Unable to perform undo() : HistoryManager is not Initialized"
+        print("UNDO in history_manager")
         if self.cur_idx == 0:
             return
-        self.history[self.cur_idx].undo()
+        self.history[self.cur_idx].undo(state)
         self.cur_idx -= 1
 
     def redo(self, state: State):
         assert (
             self.initialized
         ), "Unable to perform redo() : HistoryManager is not Initialized"
-        if self.cur_idx >= len(self.history):
+
+        print("REDO in history_manager")
+        if self.cur_idx + 1 >= len(self.history):
             return
         self.cur_idx += 1
-        self.history[self.cur_idx].redo()
+        self.history[self.cur_idx].redo(state)
 
     def append(self, state_delta: StateDelta):
         assert (
             self.initialized
         ), "Unable to perform append() : HistoryManager is not Initialized"
+        print("Append in history_manager")
         self.history = self.history[: self.cur_idx + 1]
         self.history.append(state_delta)
+        self.cur_idx += 1
 
 
 if __name__ == "__main__":

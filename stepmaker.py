@@ -7,6 +7,7 @@ from scroll_manager import ScrollManager
 from ui_element_manager import UIElementManager, ElementBase
 from mouse_manager import MouseManager
 from keyboard_manager import KeyboardManager
+from history_manager import HistoryManager
 from file_manager import *
 
 
@@ -18,6 +19,7 @@ class StepMaker:
         self.ui_manager = UIElementManager(manager)
         self.keyboard_manager = KeyboardManager()
         self.state = State()
+        self.history_manager = HistoryManager()
 
         # Images
         # Image Load
@@ -60,6 +62,8 @@ class StepMaker:
         ScrollManager.update_scrollbar_info(self.state)
         self.ui_manager.update_block_information_textbox(self.state)
         self.ui_manager.ui_elements["012_BI_Apply"].e.disable()
+
+        self.history_manager.initialize(self.state)
 
     def resize_screen(self, event: pygame.Event):
         w, h = event.size
@@ -108,28 +112,31 @@ class StepMaker:
         self.update_ui_elements()
 
     def process_keyboard_event(self, event: pygame.Event):
-        self.keyboard_manager.process_event(self.state, event)
+        self.keyboard_manager.process_event(self.history_manager, self.state, event)
         self.update_ui_elements()
 
     def process_ui_element_event(self, event: pygame.Event):
-        self.ui_manager.process_event(self.state, event)
+        self.ui_manager.process_event(self.history_manager, self.state, event)
         self.update_ui_elements()
 
     def process_ui_manager_event(self, event: pygame.Event):
         self.ui_manager.manager.process_events(event)
 
     def draw(self):
+        # ORDERING IS IMPORTANT
         self.screen.fill(WHITE)
 
         self.draw_frame()
 
         self.draw_scrollbar()
 
-        self.draw_selected_lines()
-
-        self.draw_line_descriptor()
+        self.draw_hovered_area()
 
         self.draw_step_chart()
+
+        self.draw_selected_area()
+
+        self.draw_line_descriptor()
 
         self.draw_focus_rect()
 
@@ -349,6 +356,21 @@ class StepMaker:
                 dy = min(
                     max((state.step_size * 2) // split, MIN_SPLIT_SIZE), state.step_size
                 )
+
+            # Fill background
+            bg_color = None
+            if row[STEP_DATA_VD_IDX] == 1:
+                bg_color = LIGHT_BLUE if block_idx % 2 == 0 else LIGHT_YELLOW
+            else:
+                bg_color = LIGHT_RED
+
+            pygame.draw.rect(
+                self.screen,
+                bg_color,
+                (state.scrollbar_x_start, 0, SCROLL_BAR_WIDTH, state.screen_height),
+                3,
+            )
+
             if mi == 0 and bti == 0 and si == 0:  # Start of Blcok
                 pygame.draw.line(
                     self.screen,
@@ -471,10 +493,18 @@ class StepMaker:
         )
         # print(state.scrollbar_x_start, state.scrollbar_y, state.scrollbar_h)
 
-    def draw_selected_lines(self):
-
+    def draw_hovered_area(self):
         state, screen = self.state, self.screen
         cols = 5 if state.mode == "Single" else 10
+
+        y_cur, y_base = (
+            state.ln_to_y[state.coor_cur[1]],
+            state.ln_to_y[state.coor_base[1]],
+        )
+        x_cur, x_base = (
+            state.step_x_start + state.coor_cur[0] * state.step_size,
+            state.step_x_start + state.coor_base[0] * state.step_size,
+        )
 
         # Draw hovered square
         pygame.draw.rect(
@@ -482,10 +512,25 @@ class StepMaker:
             LIGHT_GRAY,
             (
                 state.step_x_start,
-                state.y_cur - state.scr_y,
+                y_cur - state.scr_y,
                 cols * state.step_size,
                 state.step_size,
             ),
+        )
+        pass
+
+    def draw_selected_area(self):
+
+        state, screen = self.state, self.screen
+        cols = 5 if state.mode == "Single" else 10
+
+        y_cur, y_base = (
+            state.ln_to_y[state.coor_cur[1]],
+            state.ln_to_y[state.coor_base[1]],
+        )
+        x_cur, x_base = (
+            state.step_x_start + state.coor_cur[0] * state.step_size,
+            state.step_x_start + state.coor_base[0] * state.step_size,
         )
 
         # Draw selection square
@@ -493,10 +538,10 @@ class StepMaker:
             screen,
             BLACK,
             (
-                state.step_x_start,
-                min(state.y_base, state.y_cur) - state.scr_y,
-                state.step_size * cols,
-                abs(state.y_base - state.y_cur) + state.step_size,
+                min(x_base, x_cur),
+                min(y_base, y_cur) - state.scr_y,
+                abs(x_base - x_cur) + state.step_size,
+                abs(y_base - y_cur) + state.step_size,
             ),
             3,
         )
@@ -516,9 +561,13 @@ class StepMaker:
         state, screen = self.state, self.screen
         step_data, block_info = state.get_step_info()
         y_to_ln = state.y_to_ln
+        y_cur, y_base = (
+            state.ln_to_y[state.coor_cur[1]],
+            state.ln_to_y[state.coor_base[1]],
+        )
         ln_from, ln_to = (
-            y_to_ln[min(state.y_cur, state.y_base)],
-            y_to_ln[max(state.y_cur, state.y_base)],
+            y_to_ln[min(y_cur, y_base)],
+            y_to_ln[max(y_cur, y_base)],
         )
 
         if ln_from == ln_to:

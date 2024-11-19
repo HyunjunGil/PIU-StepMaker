@@ -1,4 +1,4 @@
-import pygame, pygame_gui
+import pygame, pygame_gui, copy
 
 from abc import *
 from typing import List, Tuple, Dict
@@ -6,6 +6,15 @@ from typing import List, Tuple, Dict
 from pygame_gui.elements.ui_button import UIButton
 from pygame_gui.elements.ui_text_entry_line import UITextEntryLine
 from state import State
+from history_manager import (
+    HistoryManager,
+    BlockModifyDelta,
+    BlockAddAboveDelta,
+    BlockAddBelowDelta,
+    BlockSplitDelta,
+    BlockDeleteDelta,
+)
+from utils import update_validity
 from constants import *
 from block_logic import *
 
@@ -55,7 +64,11 @@ class ElementBase:
             raise Exception("Invalid type of self.e : ${}".format(type(self.e)))
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, "ElementBase"]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, "ElementBase"],
     ):
         raise Exception("Action for ElementBase is not implemented")
 
@@ -80,8 +93,13 @@ class PlayButton(ElementBase):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
+        print("PLAY!")
         pass
 
 
@@ -102,7 +120,11 @@ class SaveButton(ElementBase):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
         save_ucs_file(state)
 
@@ -128,9 +150,14 @@ class LoadButton(ElementBase):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
         load_ucs_file(state.ucs_file_path, state)
+        history_manager.initialize(state)
 
 
 # UI_INDEX : 3
@@ -154,9 +181,14 @@ class UndoButton(ElementBase):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
         print("Press Undo Button")
+        history_manager.undo(state)
 
 
 # UI_INDEX : 4
@@ -180,9 +212,14 @@ class RedoButton(ElementBase):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
         print("Press Redo Button")
+        history_manager.redo(state)
 
 
 def _get_block_info_texts(ui_elements: Dict[str, ElementBase]) -> List[str]:
@@ -236,14 +273,18 @@ class BlockInformationText(ElementBase):
         )
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
         if event.type == pygame_gui.UI_TEXT_ENTRY_CHANGED:
             new_info = _get_block_info_texts(ui_elements)
 
             step_data, block_info = state.get_step_info()
             y_to_ln = state.y_to_ln
-            info = block_info[step_data[y_to_ln[state.y_cur]][STEP_DATA_BI_IDX]]
+            info = block_info[step_data[state.coor_cur[1]][STEP_DATA_BI_IDX]]
             info = [_num_to_str(x) for x in info]
             if _enable_apply_button(info, new_info):
                 ui_elements["012_BI_Apply"].enable()
@@ -284,9 +325,13 @@ class BPMTexbox(BlockInformationText):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
-        return super().action(state, event, ui_elements)
+        return super().action(history_manager, state, event, ui_elements)
 
 
 # UI_INDEX : 6
@@ -307,9 +352,13 @@ class BeatPerMeasureTextbox(BlockInformationText):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
-        return super().action(state, event, ui_elements)
+        return super().action(history_manager, state, event, ui_elements)
 
 
 # UI_INDEX : 7
@@ -330,9 +379,13 @@ class SplitPerBeatTextbox(BlockInformationText):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
-        return super().action(state, event, ui_elements)
+        return super().action(history_manager, state, event, ui_elements)
 
 
 # UI_INDEX : 8
@@ -353,9 +406,13 @@ class DelayTexbox(BlockInformationText):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
-        return super().action(state, event, ui_elements)
+        return super().action(history_manager, state, event, ui_elements)
 
 
 # UI_INDEX : 9
@@ -376,9 +433,13 @@ class MeasuresTexbox(BlockInformationText):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
-        return super().action(state, event, ui_elements)
+        return super().action(history_manager, state, event, ui_elements)
 
 
 # UI_INDEX : 10
@@ -399,9 +460,13 @@ class BeatsTexbox(BlockInformationText):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
-        return super().action(state, event, ui_elements)
+        return super().action(history_manager, state, event, ui_elements)
 
 
 # UI_INDEX : 11
@@ -422,9 +487,13 @@ class SplitsTexbox(BlockInformationText):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
-        return super().action(state, event, ui_elements)
+        return super().action(history_manager, state, event, ui_elements)
 
 
 # UI_INDEX : 12
@@ -451,23 +520,47 @@ class ApplyButton(ElementBase):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
         new_info = [_str_to_num(x) for x in _get_block_info_texts(ui_elements)]
         step_data, block_info = state.get_step_info()
-        y_to_ln, ln_to_y = state.get_y_info()
-        ln = y_to_ln[state.y_cur]
+        coor_undo = (state.coor_cur, state.coor_base)
+        ln = state.coor_cur[1]
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
+        ln_from, ln_to = state.get_block_range_by_block_idx(block_idx)
+        prev_block_step_data = copy.deepcopy(step_data[ln_from:ln_to])
+        prev_block_info = block_info[block_idx]
+
         step_data, block_info = modify_block(step_data, block_info, new_info, block_idx)
+        update_validity(step_data, ln_from, ln_to)
         state.step_data = step_data
         state.block_info = block_info
         state.update_y_info()
-        state.y_cur = state.ln_to_y[state.y_to_ln[state.y_cur]]
-        state.y_base = state.ln_to_y[state.y_to_ln[state.y_base]]
+
+        state.coor_cur = (state.coor_cur[0], min(len(step_data) - 1, state.coor_cur[1]))
+        state.coor_base = (
+            state.coor_base[0],
+            min(len(step_data) - 1, state.coor_base[1]),
+        )
+        coor_redo = (state.coor_cur, state.coor_base)
         if state.focus_idx == 12:
             state.focus_idx = -1
 
         state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
+        history_manager.append(
+            BlockModifyDelta(
+                coor_undo,
+                coor_redo,
+                prev_block_step_data,
+                prev_block_info,
+                new_info,
+                block_idx,
+            )
+        )
 
 
 # UI_INDEX : 13
@@ -485,32 +578,31 @@ class BlockAddAboveButton(ElementBase):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
         step_data, block_info = state.get_step_info()
-        y_to_ln, ln_to_y = state.get_y_info()
-        ln = y_to_ln[state.y_cur]
-        block_idx = step_data[ln][STEP_DATA_BI_IDX]
-        ln_from, _ = state.get_block_range_by_y(state.y_cur)
 
-        cols = state.get_cols()
-        for i in range(cols):
-            col = STEP_DATA_OFFSET + i
-            if step_data[ln_from][col] in [3, 4]:
-                # Unable to do operation since there are long note between block
-                print(
-                    "Unable to operate BLOCK_ADD_ABOVE : There are long note between current block and previous block"
-                )
-                return
+        ln = state.coor_cur[1]
+        block_idx = step_data[ln][STEP_DATA_BI_IDX]
+
+        coor_undo = (state.coor_cur, state.coor_base)
 
         state.step_data, state.block_info = add_block_up(
             step_data, block_info, block_idx
         )
         state.update_y_info()
-        state.y_cur = state.ln_to_y[state.y_to_ln[state.y_cur]]
-        state.y_base = state.ln_to_y[state.y_to_ln[state.y_base]]
+        ln_from, ln_to = state.get_block_range_by_block_idx(block_idx)
+        update_validity(state.step_data, ln_from, ln_to)
+
+        coor_redo = (state.coor_cur, state.coor_base)
 
         state.focus_idx = 13
+
+        history_manager.append(BlockAddAboveDelta(coor_undo, coor_redo, block_idx))
 
 
 # UI_INDEX : 14
@@ -528,32 +620,31 @@ class BlockAddBelowButton(ElementBase):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
         step_data, block_info = state.get_step_info()
-        y_to_ln, ln_to_y = state.get_y_info()
-        ln = y_to_ln[state.y_cur]
-        block_idx = step_data[ln][STEP_DATA_BI_IDX]
-        ln_from, ln_to = state.get_block_range_by_y(state.y_cur)
 
-        cols = state.get_cols()
-        for i in range(cols):
-            col = STEP_DATA_OFFSET + i
-            if step_data[ln_to - 1][col] in [2, 3]:
-                # Unable to do operation since there are long note between block
-                print(
-                    "Unable to operate BLOCK_ADD_BELOW : There are long note between current block and previous block"
-                )
-                return
+        ln = state.coor_cur[1]
+        block_idx = step_data[ln][STEP_DATA_BI_IDX]
+
+        coor_undo = (state.coor_cur, state.coor_base)
 
         state.step_data, state.block_info = add_block_down(
             step_data, block_info, block_idx
         )
         state.update_y_info()
-        state.y_cur = state.ln_to_y[state.y_to_ln[state.y_cur]]
-        state.y_base = state.ln_to_y[state.y_to_ln[state.y_base]]
+        ln_from, ln_to = state.get_block_range_by_block_idx(block_idx)
+        update_validity(state.step_data, ln_from, ln_to)
+
+        coor_redo = (state.coor_cur, state.coor_base)
 
         state.focus_idx = 14
+
+        history_manager.append(BlockAddBelowDelta(coor_undo, coor_redo, block_idx))
 
 
 # UI_INDEX : 15
@@ -571,21 +662,27 @@ class BlockSplitButton(ElementBase):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
         step_data, block_info = state.get_step_info()
-        y_to_ln, ln_to_y = state.get_y_info()
-        ln = y_to_ln[state.y_cur]
+        coor_undo = (state.coor_cur, state.coor_base)
+        ln = state.coor_cur[1]
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
         state.step_data, state.block_info = split_block(
             step_data, block_info, block_idx, ln
         )
         state.update_y_info()
-        state.y_cur = state.ln_to_y[state.y_to_ln[state.y_cur]]
-        state.y_base = state.ln_to_y[state.y_to_ln[state.y_base]]
+
+        coor_redo = (state.coor_cur, state.coor_base)
 
         state.focus_idx = 15
         state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
+
+        history_manager.append(BlockSplitDelta(coor_undo, coor_redo, block_idx, ln))
 
 
 # UI_INDEX : 16
@@ -603,39 +700,51 @@ class BlockDeleteButton(ElementBase):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
         step_data, block_info = state.get_step_info()
-        y_to_ln, ln_to_y = state.get_y_info()
 
         # Check that there is only one block
         if len(block_info) == 1:
             print("Cannot delete last block")
             return
 
-        # Check that there are long between target block and adjacent blocks
-        ln_from, ln_to = state.get_block_range_by_y(state.y_cur)
-        cols = state.get_cols()
-        for i in range(cols):
-            col = STEP_DATA_OFFSET + i
-            if step_data[ln_from][col] in [3, 4] or step_data[ln_to - 1] in [2, 3]:
-                print(
-                    "Cannot delete block : There are long notes between current block and adjacent blocks"
-                )
-                return
+        coor_undo = (state.coor_cur, state.coor_base)
 
-        ln = y_to_ln[state.y_cur]
+        ln = state.coor_cur[1]
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
+        ln_from, ln_to = state.get_block_range_by_block_idx(block_idx)
+        deleted_step_data = copy.deepcopy(step_data[ln_from:ln_to])
+        deleted_block_info = copy.deepcopy(block_info[block_idx])
         state.step_data, state.block_info = delete_block(
             step_data, block_info, block_idx
         )
+        update_validity(state.step_data, ln_from - 1, ln_from + 1)
         state.update_y_info()
 
-        state.y_cur = state.y_base = state.ln_to_y[
-            state.y_to_ln[min(state.max_y - 1, state.y_cur)]
-        ]
+        state.coor_cur = (
+            state.coor_cur[0],
+            min(len(state.step_data) - 1, state.coor_cur[1]),
+        )
+        state.coor_base = (
+            state.coor_base[0],
+            min(len(state.step_data) - 1, state.coor_base[1]),
+        )
+
+        coor_redo = (state.coor_cur, state.coor_base)
+
         state.focus_idx = 16
         state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
+
+        history_manager.append(
+            BlockDeleteDelta(
+                coor_undo, coor_redo, deleted_step_data, deleted_block_info, block_idx
+            )
+        )
 
 
 # UI_INDEX : 17
@@ -655,7 +764,11 @@ class ScrollUpButton(ElementBase):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
         state.scr_y = max(state.scr_y - SCROLL_SPEED, 0)
 
@@ -680,7 +793,11 @@ class ScrollDownButton(ElementBase):
         return super().condition(state, event)
 
     def action(
-        self, state: State, event: pygame.Event, ui_elements: Dict[str, ElementBase]
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
     ):
         state.scr_y = min(state.scr_y + SCROLL_SPEED, state.max_y)
 
@@ -723,10 +840,12 @@ class UIElementManager:
         )
         self.manager.draw_ui(screen)
 
-    def process_event(self, state: State, event: pygame.Event):
+    def process_event(
+        self, history_manager: HistoryManager, state: State, event: pygame.Event
+    ):
         for k, element in self.ui_elements.items():
             if element.condition(state, event):
-                element.action(state, event, self.ui_elements)
+                element.action(history_manager, state, event, self.ui_elements)
                 break
 
     def check_textbox_clicked(self, state: State, event: pygame.Event):
@@ -743,7 +862,7 @@ class UIElementManager:
     def update_block_information_textbox(self, state: State):
         step_data, block_info = state.get_step_info()
         y_to_ln, ln_to_y = state.get_y_info()
-        ln = y_to_ln[state.y_cur]
+        ln = state.coor_cur[1]
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
         info = block_info[block_idx]
         [bpm, bm, sb, delay, measures, beats, splits] = info

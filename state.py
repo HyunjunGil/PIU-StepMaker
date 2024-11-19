@@ -53,8 +53,8 @@ class State:
         self.ln_to_y: List[int] = [0 for _ in range(100000)]
 
         # selected line info
-        self.y_cur = 0
-        self.y_base = 0
+        self.coor_cur = (0, 0)
+        self.coor_base = (0, 0)
 
         # scroll location info
         self.scr_y = 0
@@ -105,19 +105,21 @@ class State:
 
     def get_block_range_by_block_idx(self, block_idx: int):
         ln_from, idx = 0, 0
-        while idx < self.block_idx:
+        while idx < block_idx:
             block = self.block_info[idx]
             ln_from += (block[4] * block[1] + block[5]) * block[2] + block[
                 6
             ]  # number of lines in the block
-        block = self.block_info[self.block_idx + 1]
+            idx += 1
+        block = self.block_info[block_idx]
         ln_to = ln_from + (block[4] * block[1] + block[5]) * block[2] + block[6]
         return ln_from, ln_to
 
     def sync_scr_y(self):
+        y_cur = self.ln_to_y[self.coor_cur[1]]
         self.scr_y = max(
-            min(self.scr_y, self.y_cur),
-            self.y_cur + self.step_size - self.screen_height,
+            min(self.scr_y, y_cur),
+            y_cur + self.step_size - self.screen_height,
         )
 
     def get_screen_size(self):
@@ -133,15 +135,17 @@ class State:
         return self.y_to_ln, self.ln_to_y
 
     def update_y_info(self):
+
+        step_data, block_info = self.get_step_info()
         block_idx, measure, bpm, beat, split = -1, 0, 0, 0, 0
         y, ny = 0, 0
-        tot_ln = len(self.step_data)
+        tot_ln = len(step_data)
         for ln in range(tot_ln):
-            row = self.step_data[ln]
+            row = step_data[ln]
             bi = row[STEP_DATA_BI_IDX]
             if bi != block_idx:
                 block_idx = bi
-                block = self.block_info[bi]
+                block = block_info[bi]
                 bpm, beat, split, delay = block[0], block[1], block[2], block[3]
 
             line_height = min(max((CELL_SIZE * 2) // split, MIN_SPLIT_SIZE), CELL_SIZE)

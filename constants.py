@@ -43,6 +43,9 @@ LIGHT_GRAY = (200, 200, 200)
 DARK_GRAY = (169, 169, 169)
 ROYAL_BLUE = (65, 105, 205)
 LIGHT_GREEN = (144, 238, 144)
+LIGHT_BLUE = (221, 254, 243)
+LIGHT_YELLOW = (255, 255, 222)
+LIGHT_RED = (255, 99, 103)
 
 # Size config
 CELL_SIZE = 48
@@ -69,7 +72,8 @@ STEP_DATA_BI_IDX = 0  # index for block index
 STEP_DATA_MS_IDX = 1  # index for measure index
 STEP_DATA_BT_IDX = 2  # index for beat index
 STEP_DATA_SP_IDX = 3  # index for split index
-STEP_DATA_OFFSET = 4  # length of total metadata index
+STEP_DATA_VD_IDX = 4  # index for validity index
+STEP_DATA_OFFSET = 5  # length of total metadata index
 
 
 # File Buttons Options

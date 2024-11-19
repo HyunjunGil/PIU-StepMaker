@@ -3,6 +3,7 @@ import os
 from typing import List, Tuple
 from constants import *
 from state import State
+from utils import update_validity
 
 
 def load_ucs_file(
@@ -85,6 +86,7 @@ def load_ucs_file(
                     lcnt // (beat * split),  # measure index
                     (lcnt % (beat * split)) // split,  # beat index
                     lcnt % split,  # split index
+                    1,  # validity index
                 ] + [STEP_TO_CODE[c] for c in file_lines[ln].strip()]
                 step_data.append(parsed_line)
                 lcnt += 1
@@ -101,6 +103,8 @@ def load_ucs_file(
             lcnt % split,  # number of split
         ]
     )
+
+    update_validity(step_data, 0, len(step_data))
 
     state.format = format
     state.mode = mode
