@@ -1,2 +1,4 @@
 *.ucs
 *.mp3
+*.pyc
+temp/
