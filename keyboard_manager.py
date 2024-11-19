@@ -515,17 +515,41 @@ class RedoKey(KeyBase):
 
 
 # TODO: Implemente below
+# Goto the error line
 class FindKey(KeyBase):
     def __init__(self):
         super().__init__()
 
     def condition(self, state: State, event: pygame.Event) -> bool:
-        return super().condition(state, event)
+        pressed_keys = pygame.key.get_pressed()
+        return (
+            event.type == pygame.KEYDOWN
+            and (pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL])
+            and event.key == pygame.K_f
+        )
 
     def action(
-        self, state: State, event: pygame.Event, history_manager: HistoryManager
+        self, history_manager: HistoryManager, state: State, event: pygame.Event
     ) -> None:
-        return super().action(state, event, history_manager)
+        pressed_keys = pygame.key.get_pressed()
+        step_data, block_info = state.get_step_info()
+        ln, tot_ln = state.coor_cur[1], len(step_data)
+
+        d, ln_condition = (
+            (-1, lambda x: x >= 0)
+            if (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT])
+            else (1, lambda x: x < tot_ln)
+        )
+        if step_data[ln][STEP_DATA_VD_IDX] != 0:
+            ln = 0
+
+        for i in range(1, tot_ln + 1):
+            ln = (ln + d + tot_ln) % tot_ln
+            if step_data[ln][STEP_DATA_VD_IDX] == 0:
+                state.coor_base = (0, ln)
+                state.coor_cur = (state.get_cols() - 1, ln)
+                state.sync_scr_y()
+                return
 
 
 class KeyboardManager:
@@ -556,6 +580,8 @@ class KeyboardManager:
             # Undo, Redo
             UndoKey(),
             RedoKey(),
+            # Find Error
+            FindKey(),
         ]
 
     def process_event(
