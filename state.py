@@ -87,7 +87,11 @@ class State:
         block = block_info[step_data[ln][STEP_DATA_BI_IDX]]
         line = step_data[ln]
         ln_from = ln - (line[STEP_DATA_BT_IDX] * block[2] + line[STEP_DATA_SP_IDX])
-        ln_to = ln_from + block[1] * block[2]
+        ln_to = ln_from + (
+            block[5] * block[6]
+            if block[4] == line[STEP_DATA_MS_IDX]
+            else block[1] * block[2]
+        )
         return ln_from, ln_to
 
     def get_block_range_by_y(self, y: int):

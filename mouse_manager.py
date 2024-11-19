@@ -46,7 +46,7 @@ class MouseManager:
 
             ln_from, ln_to = state.get_measure_range_by_y(mouse_y + state.scr_y)
             state.coor_base = (0, ln_from)
-            state.coor_cur = (state.get_cols() - 1, ln_to)
+            state.coor_cur = (state.get_cols() - 1, ln_to - 1)
             state.sync_scr_y()
 
         elif (
