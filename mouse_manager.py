@@ -18,6 +18,7 @@ class MouseManager:
 
     def _process_mouse_click(state: State, event: pygame.Event):
         state.LATTICE_CLICKED = state.SCROLLBAR_CLICKED = False
+        state.MOUSE_CLICKED = True
         state.focus_idx = -1
 
         mouse_x, mouse_y = event.pos
@@ -34,7 +35,7 @@ class MouseManager:
                 state.y_to_ln[mouse_y + state.scr_y],
             )
 
-            if not pressed_keys[pygame.K_LSHIFT]:
+            if not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
                 state.coor_base = state.coor_cur
             state.sync_scr_y()
 
@@ -61,11 +62,23 @@ class MouseManager:
             state.scrollbar_y_init = state.scrollbar_y
 
     def _process_mouse_up(state: State, event: pygame.Event):
-        state.IS_SCROLL, state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = (
-            False,
-            False,
-            False,
-        )
+        (
+            state.IS_SCROLL,
+            state.LATTICE_CLICKED,
+            state.SCROLLBAR_CLICKED,
+            state.MOUSE_CLICKED,
+        ) = (False, False, False, False)
+
+    def _process_mouse_motion(state: State, event: pygame.Event):
+        state.mouse_pos = event.pos
+        print(state.mouse_pos)
+        if state.MOUSE_CLICKED:
+            mouse_x, mouse_y = event.pos
+            if state.step_x_start <= mouse_x < state.measure_x_start:
+                state.coor_cur = (
+                    (mouse_x - state.step_x_start) // state.step_size,
+                    state.y_to_ln[mouse_y + state.scr_y],
+                )
 
     @staticmethod
     def process_event(state: State, event: pygame.Event):
@@ -77,3 +90,5 @@ class MouseManager:
             MouseManager._process_mouse_click(state, event)
         elif event.type == pygame.MOUSEBUTTONUP:
             MouseManager._process_mouse_up(state, event)
+        elif event.type == pygame.MOUSEMOTION:
+            MouseManager._process_mouse_motion(state, event)

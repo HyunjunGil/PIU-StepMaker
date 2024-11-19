@@ -34,7 +34,11 @@ while running:
 
         elif event.type == pygame.VIDEORESIZE:
             stepmaker.resize_screen(event)
-        elif event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.MOUSEBUTTONUP:
+        elif event.type in [
+            pygame.MOUSEBUTTONDOWN,
+            pygame.MOUSEBUTTONUP,
+            pygame.MOUSEMOTION,
+        ]:
             stepmaker.process_mouse_event(event)
         elif event.type == pygame.KEYDOWN:
             stepmaker.process_keyboard_event(event)
@@ -46,6 +50,7 @@ while running:
             stepmaker.process_ui_element_event(event)
 
         stepmaker.process_ui_manager_event(event)
+    stepmaker.update_scr_y()
     stepmaker.ui_manager.manager.update(time_delta)
 
     stepmaker.draw()

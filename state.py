@@ -9,6 +9,7 @@ class State:
         self.LATTICE_CLICKED = False
         self.SCROLLBAR_CLICKED = False
         self.LINE_SELECTED = False
+        self.MOUSE_CLICKED = False
         self.UPDATE_BLOCK_INFORMATION_TEXTBOX = False
         self.EMIT_BUTTON_PRESS = False
         self.APPLY_ENABLED = False
@@ -71,6 +72,9 @@ class State:
 
         # Clipboard
         self.clipboard: List[List[int]] | None = None
+
+        # Last Mouse Position
+        self.mouse_pos: Tuple[int, int] = (0, 0)
 
     def get_cols(self) -> int:
         if self.mode == "Single":

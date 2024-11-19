@@ -122,6 +122,24 @@ class StepMaker:
     def process_ui_manager_event(self, event: pygame.Event):
         self.ui_manager.manager.process_events(event)
 
+    def update_scr_y(self):
+        state = self.state
+        if (
+            not state.MUSIC_PLAYING
+            and state.MOUSE_CLICKED
+            and state.step_x_start <= state.mouse_pos[0] < state.measure_x_start
+        ):
+            mouse_y = state.mouse_pos[1]
+            if mouse_y < 0:
+                speed = max(-mouse_y, 100) // 20
+                state.scr_y = max(0, state.scr_y - speed)
+            elif state.mouse_pos[1] > state.screen_height:
+                speed = max(mouse_y - state.screen_height, 100) // 20
+                state.scr_y = min(
+                    state.max_y - state.screen_height + state.step_size,
+                    state.scr_y + speed,
+                )
+
     def draw(self):
         # ORDERING IS IMPORTANT
         self.screen.fill(WHITE)
