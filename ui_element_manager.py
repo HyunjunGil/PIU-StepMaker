@@ -187,7 +187,6 @@ class UndoButton(ElementBase):
         event: pygame.Event,
         ui_elements: Dict[str, ElementBase],
     ):
-        print("Press Undo Button")
         history_manager.undo(state)
 
 
@@ -218,7 +217,6 @@ class RedoButton(ElementBase):
         event: pygame.Event,
         ui_elements: Dict[str, ElementBase],
     ):
-        print("Press Redo Button")
         history_manager.redo(state)
 
 

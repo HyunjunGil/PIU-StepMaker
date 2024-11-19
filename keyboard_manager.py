@@ -3,7 +3,7 @@ import pygame, copy
 from typing import List, Tuple
 from state import State
 from history_manager import HistoryManager, StepChartChangeDelta
-from utils import get_step_diff, update_validity
+from utils import get_step_diff, update_validity, clear_step
 from constants import *
 
 
@@ -47,40 +47,44 @@ class StepChartKey(KeyBase):
 
         prev_step_data = copy.deepcopy(step_data[ln_from:ln_to])
 
-        if ln_from == ln_to - 1:  # Only one line is selected
-            step_data[ln_from][col] = 1 - step_data[ln_from][col]
-        else:  # Many lines are selected
-            flag = True
-            for ln in range(ln_from, ln_to):
-                if ln == ln_from:
-                    flag = flag and step_data[ln][col] == 2
-                elif ln < ln_to - 1:
-                    flag = flag and step_data[ln][col] == 3
-                else:
-                    flag = flag and step_data[ln][col] == 4
-                if not flag:
-                    break
+        step_diff: List[Tuple[int, int, int, int]] = []
 
-            if flag:
-                # If already there are exact long note in the lane
-                for i in range(ln_from, ln_to):
-                    step_data[i][col] = 0
+        if ln_from == ln_to - 1:  # Only one line is selected
+            if step_data[ln_from][col] == 0:
+                step_data[ln_from][col] = 1
+                step_diff.append((ln_from, col, 0, 1))
             else:
-                step_data[ln_from][col] = 2
-                step_data[ln_to - 1][col] = 4
-                for i in range(ln_from + 1, ln_to - 1):
-                    step_data[i][col] = 3
+                step_diff = step_diff + clear_step(step_data, ln_from, ln_to, col)
+        else:  # Many lines are selected
+            clear = True
+            for ln in range(ln_from, ln_to):
+                clear &= step_data[ln][col] == 0
+                if not clear:
+                    break
+            if clear:
+                # If there are no notes in the column, fill it
+                for ln in range(ln_from, ln_to):
+                    if ln == ln_from:
+                        step_data[ln][col] = 2
+                        step_diff.append((ln, col, 0, 2))
+                    elif ln < ln_to - 1:
+                        step_data[ln][col] = 3
+                        step_diff.append((ln, col, 0, 3))
+                    else:
+                        step_data[ln][col] = 4
+                        step_diff.append((ln, col, 0, 4))
+            else:
+                step_diff = clear_step(step_data, ln_from, ln_to, col)
+                for ln in range(ln_from, ln_to):
+                    if step_data[ln][col] != 0:
+                        step_diff.append((ln, col, step_data[ln][col], 0))
+                        step_data[ln][col] = 0
+
         update_validity(step_data, ln_from - 1, ln_to + 1, col)
 
         coor_redo = (state.coor_cur, state.coor_base)
 
-        history_manager.append(
-            StepChartChangeDelta(
-                coor_undo,
-                coor_redo,
-                get_step_diff(prev_step_data, step_data[ln_from:ln_to], ln_from),
-            )
-        )
+        history_manager.append(StepChartChangeDelta(coor_undo, coor_redo, step_diff))
 
 
 # Up
@@ -108,13 +112,12 @@ class UpKey(KeyBase):
             else:
                 state.coor_cur = (state.coor_cur[0], ln)
 
-            if not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
-                state.coor_base = state.coor_cur
-
             block_idx = step_data[state.coor_cur[1]][STEP_DATA_BI_IDX]
             if block_idx != block_idx_prev:
                 state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
-        print(state.coor_cur[1], step_data[state.coor_cur[1]])
+
+        if not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
+            state.coor_base = state.coor_cur
         state.sync_scr_y()
 
 
@@ -130,7 +133,7 @@ class DownKey(KeyBase):
         self, history_manager: HistoryManager, state: State, event: pygame.Event
     ) -> None:
         step_data, block_info = state.get_step_info()
-
+        block_idx_prev = None
         ln = state.coor_cur[1]
         pressed_keys = pygame.key.get_pressed()
         if ln != len(step_data) - 1:
@@ -144,14 +147,13 @@ class DownKey(KeyBase):
             else:
                 state.coor_cur = (state.coor_cur[0], ln + 1)
 
-            if not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
-                state.coor_base = state.coor_cur
-
             block_idx = step_data[state.coor_cur[1]][STEP_DATA_BI_IDX]
             if block_idx != block_idx_prev:
                 state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
 
-        print(state.coor_cur[1], step_data[state.coor_cur[1]])
+        if not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
+            state.coor_base = state.coor_cur
+
         state.sync_scr_y()
 
 
@@ -300,7 +302,6 @@ class EnterKey(KeyBase):
     def action(
         self, history_manager: HistoryManager, state: State, event: pygame.Event
     ) -> None:
-        print("hello")
         state.EMIT_BUTTON_PRESS = True
 
 
@@ -330,21 +331,19 @@ class BackspaceKey(KeyBase):
         )
         cols = state.get_cols()
 
-        prev_step_data = copy.deepcopy(step_data[ln_from:ln_to])
+        step_diff: List[Tuple[int, int, int, int]] = []
 
-        for ln in range(ln_from, ln_to):
-            for col in range(col_from, col_to):
-                step_data[ln][col] = 0
+        for col in range(col_from, col_to):
+            step_diff = step_diff + clear_step(step_data, ln_from, ln_to, col)
+            for ln in range(ln_from, ln_to):
+                if step_data[ln][col] != 0:
+                    step_diff.append((ln, col, step_data[ln][col], 0))
+                    step_data[ln][col] = 0
+
         update_validity(step_data, ln_from - 1, ln_to + 1)
 
         y_undo = y_redo = (state.coor_cur, state.coor_base)
-        history_manager.append(
-            StepChartChangeDelta(
-                y_undo,
-                y_redo,
-                get_step_diff(prev_step_data, step_data[ln_from:ln_to], ln_from),
-            )
-        )
+        history_manager.append(StepChartChangeDelta(y_undo, y_redo, step_diff))
 
 
 class CopyKey(KeyBase):
@@ -362,7 +361,6 @@ class CopyKey(KeyBase):
     def action(
         self, history_manager: HistoryManager, state: State, event: pygame.Event
     ) -> None:
-        print("COPY")
         step_data, block_info = state.get_step_info()
         ln_from, ln_to = (
             min(state.coor_cur[1], state.coor_base[1]),
@@ -396,7 +394,6 @@ class CutKey(KeyBase):
     def action(
         self, history_manager: HistoryManager, state: State, event: pygame.Event
     ) -> None:
-        print("CUT")
         step_data, block_info = state.get_step_info()
         ln_from, ln_to = (
             min(state.coor_cur[1], state.coor_base[1]),
@@ -433,7 +430,6 @@ class PasteKey(KeyBase):
     def action(
         self, history_manager: HistoryManager, state: State, event: pygame.Event
     ) -> None:
-        print("PASTE")
         if state.clipboard is None:
             print("Nothing in clipboard")
             return

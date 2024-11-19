@@ -491,7 +491,6 @@ class StepMaker:
                 state.scrollbar_h,
             ),
         )
-        # print(state.scrollbar_x_start, state.scrollbar_y, state.scrollbar_h)
 
     def draw_hovered_area(self):
         state, screen = self.state, self.screen

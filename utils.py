@@ -17,7 +17,6 @@ def _valid_after(cur: int, next: int) -> bool:
 def update_validity(
     step_data: List[List[int]], ln_from: int, ln_to: int, col: int | None = None
 ):
-    print("update_validity", ln_from, ln_to, col)
     ln_from, ln_to = max(0, ln_from), min(len(step_data), ln_to)
     assert (
         0 <= ln_from < ln_to <= len(step_data)
@@ -65,3 +64,57 @@ def get_step_diff(
                 )
 
     return step_diff
+
+
+def _clear_step(
+    step_data: List[List[int]], ln: int, col: int
+) -> Tuple[List[Tuple[int, int, int, int]], int, int]:
+    res: List[Tuple[int, int, int, int]] = []
+    if step_data[ln][col] == 0:
+        return res, ln, ln
+
+    v = step_data[ln][col]
+    res.append((ln, col, v, 0))
+    step_data[ln][col] = 0
+    if v == 1:
+        return res, ln, ln + 1
+    elif v == 2:
+        e = ln + 1
+        while e < len(step_data) and step_data[e][col] in [3, 4]:
+            res.append((e, col, step_data[e][col], 0))
+            step_data[e][col] = 0
+            e += 1
+        return res, ln, e
+    elif v == 4:
+        s = ln - 1
+        while s >= 0 and step_data[s][col] in [2, 3]:
+            res.append((s, col, step_data[s][col], 0))
+            step_data[s][col] = 0
+            s -= 1
+        return res, s + 1, ln + 1
+    elif v == 3:
+        s = ln - 1
+        while s >= 0 and step_data[s][col] in [2, 3]:
+            res.append((s, col, step_data[s][col], 0))
+            step_data[s][col] = 0
+            s -= 1
+        e = ln + 1
+        while e < len(step_data) and step_data[e][col] in [3, 4]:
+            res.append((e, col, step_data[e][col], 0))
+            step_data[e][col] = 0
+            e += 1
+        return res, s + 1, e
+
+
+# col = with offset
+def clear_step(
+    step_data: List[List[int]], ln_from: int, ln_to: int, col: int  # col with  offset
+) -> List[Tuple[int, int, int, int]]:
+    res: List[Tuple[int, int, int, int]] = []
+    if ln_from == ln_to - 1:
+        res = _clear_step(step_data, ln_from, col)[0]
+    else:
+        res, ln_min, ln_max = _clear_step(step_data, ln_from, col)
+        if ln_max < ln_to:
+            res = res + _clear_step(step_data, ln_to - 1, col)[0]
+    return res

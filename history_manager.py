@@ -194,7 +194,6 @@ class BlockAddAboveDelta(StateDelta):
 
         for ln in range(ln_to, len(step_data)):
             step_data[ln][STEP_DATA_BI_IDX] -= 1
-        print(ln_from, ln_to)
         state.step_data = step_data[:ln_from] + step_data[ln_to:]
         update_validity(state.step_data, ln_from - 1, ln_from + 1)
         state.block_info.pop(self.block_idx)
@@ -321,7 +320,6 @@ class HistoryManager:
         assert (
             self.initialized
         ), "Unable to perform undo() : HistoryManager is not Initialized"
-        print("UNDO in history_manager")
         if self.cur_idx == 0:
             return
         self.history[self.cur_idx].undo(state)
@@ -331,8 +329,6 @@ class HistoryManager:
         assert (
             self.initialized
         ), "Unable to perform redo() : HistoryManager is not Initialized"
-
-        print("REDO in history_manager")
         if self.cur_idx + 1 >= len(self.history):
             return
         self.cur_idx += 1
@@ -342,7 +338,6 @@ class HistoryManager:
         assert (
             self.initialized
         ), "Unable to perform append() : HistoryManager is not Initialized"
-        print("Append in history_manager")
         self.history = self.history[: self.cur_idx + 1]
         self.history.append(state_delta)
         self.cur_idx += 1
