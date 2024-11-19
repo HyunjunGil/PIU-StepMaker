@@ -80,7 +80,7 @@ class StepChartKey(KeyBase):
                         step_diff.append((ln, col, step_data[ln][col], 0))
                         step_data[ln][col] = 0
 
-        update_validity(step_data, ln_from - 1, ln_to + 1, col)
+        update_validity(step_data, ln_from - 1, ln_to + 1)
 
         coor_redo = (state.coor_cur, state.coor_base)
 
@@ -120,6 +120,10 @@ class UpKey(KeyBase):
             state.coor_base = state.coor_cur
         state.sync_scr_y()
 
+        # # Useful Debug
+        # ln = state.coor_cur[1]
+        # print(ln, step_data[ln])
+
 
 # Down
 class DownKey(KeyBase):
@@ -155,6 +159,10 @@ class DownKey(KeyBase):
             state.coor_base = state.coor_cur
 
         state.sync_scr_y()
+
+        # # Useful Debug
+        # ln = state.coor_cur[1]
+        # print(ln, step_data[ln])
 
 
 # Left
@@ -410,9 +418,9 @@ class CutKey(KeyBase):
                 if col_from <= col < col_to:
                     step_data[ln][col] = 0
                 else:
-                    state.clipboard[ln][col] = -1
+                    state.clipboard[ln - ln_from][col] = -1
 
-        update_validity(step_data, ln_from, ln_to)
+        update_validity(step_data, ln_from - 1, ln_to + 1)
 
 
 class PasteKey(KeyBase):

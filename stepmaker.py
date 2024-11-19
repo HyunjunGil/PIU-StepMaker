@@ -126,6 +126,8 @@ class StepMaker:
         # ORDERING IS IMPORTANT
         self.screen.fill(WHITE)
 
+        self.draw_background()
+
         self.draw_frame()
 
         self.draw_scrollbar()
@@ -143,6 +145,30 @@ class StepMaker:
         self.ui_manager.draw(self.state, self.screen)
 
         pygame.display.flip()
+
+    def draw_background(self):
+        state = self.state
+        step_data, block_info = state.get_step_info()
+        y_to_ln, ln_to_y = state.get_y_info()
+        cols = state.get_cols()
+        ln = y_to_ln[state.scr_y]
+        y = ln_to_y[ln]
+        screen_bottom = state.scr_y + state.screen_height
+
+        while ln < len(step_data) and y < screen_bottom:
+            block_idx = step_data[ln][STEP_DATA_BI_IDX]
+            ln_from, ln_to = state.get_block_range_by_block_idx(block_idx)
+            pygame.draw.rect(
+                self.screen,
+                LIGHT_BLUE if block_idx % 2 == 0 else LIGHT_YELLOW,
+                (
+                    state.step_x_start,
+                    ln_to_y[ln_from] - state.scr_y,
+                    state.step_size * cols,
+                    ln_to_y[ln_to] - ln_to_y[ln_from],
+                ),
+            )
+            ln, y = ln_to, ln_to_y[ln_to]
 
     def _add_text(
         self,
@@ -315,6 +341,7 @@ class StepMaker:
         state = self.state
         step_data, block_info = state.get_step_info()
         y_to_ln, ln_to_y = state.get_y_info()
+        cols = state.get_cols()
         ln = y_to_ln[state.scr_y]
         y = ln_to_y[ln]
         font = pygame.font.SysFont("Verdana", 18)
@@ -359,17 +386,17 @@ class StepMaker:
 
             # Fill background
             bg_color = None
-            if row[STEP_DATA_VD_IDX] == 1:
-                bg_color = LIGHT_BLUE if block_idx % 2 == 0 else LIGHT_YELLOW
-            else:
-                bg_color = LIGHT_RED
-
-            pygame.draw.rect(
-                self.screen,
-                bg_color,
-                (state.scrollbar_x_start, 0, SCROLL_BAR_WIDTH, state.screen_height),
-                3,
-            )
+            if row[STEP_DATA_VD_IDX] == 0:
+                pygame.draw.rect(
+                    self.screen,
+                    LIGHT_RED,
+                    (
+                        state.step_x_start,
+                        y - state.scr_y,
+                        state.step_size * cols + 10,
+                        state.step_size,
+                    ),
+                )
 
             if mi == 0 and bti == 0 and si == 0:  # Start of Blcok
                 pygame.draw.line(

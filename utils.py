@@ -14,32 +14,28 @@ def _valid_after(cur: int, next: int) -> bool:
     )
 
 
-def update_validity(
-    step_data: List[List[int]], ln_from: int, ln_to: int, col: int | None = None
-):
+def update_validity(step_data: List[List[int]], ln_from: int, ln_to: int):
     ln_from, ln_to = max(0, ln_from), min(len(step_data), ln_to)
     assert (
         0 <= ln_from < ln_to <= len(step_data)
-    ), "Invalid parameters, {} {} {}".format(ln_from, ln_to, col)
+    ), "Invalid parameters, {} {} {}".format(ln_from, ln_to)
     tot_len = len(step_data[0])
-    cols = range(STEP_DATA_OFFSET, tot_len) if col is None else [col]
+    cols = range(STEP_DATA_OFFSET, tot_len)
     for ln in range(ln_from, ln_to):
         line = step_data[ln]
+        flag = True
         for col in cols:
             if ln == 0:
-                step_data[ln][STEP_DATA_VD_IDX] &= _valid_after(
-                    step_data[ln][col], step_data[ln + 1][col]
-                )
+                flag &= _valid_after(step_data[ln][col], step_data[ln + 1][col])
             elif ln < len(step_data) - 1:
-                step_data[ln][STEP_DATA_VD_IDX] &= _valid_before(
+                flag &= _valid_before(
                     step_data[ln - 1][col], step_data[ln][col]
                 ) and _valid_after(step_data[ln][col], step_data[ln + 1][col])
             else:
-                step_data[ln][STEP_DATA_VD_IDX] &= _valid_before(
-                    step_data[ln - 1][col], step_data[ln][col]
-                )
-            if not step_data[ln][STEP_DATA_VD_IDX]:
+                flag &= _valid_before(step_data[ln - 1][col], step_data[ln][col])
+            if not flag:
                 break
+        step_data[ln][STEP_DATA_VD_IDX] = flag
 
 
 def get_step_diff(

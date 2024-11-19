@@ -140,6 +140,7 @@ class State:
         block_idx, measure, bpm, beat, split = -1, 0, 0, 0, 0
         y, ny = 0, 0
         tot_ln = len(step_data)
+        line_height = 0
         for ln in range(tot_ln):
             row = step_data[ln]
             bi = row[STEP_DATA_BI_IDX]
@@ -155,7 +156,7 @@ class State:
                 self.y_to_ln[i] = ln
 
             y = ny
-
+        self.ln_to_y[tot_ln] = self.ln_to_y[tot_ln - 1] + self.step_size
         self.max_y = y
 
     def clear_step(self, ln: int, col: int):
