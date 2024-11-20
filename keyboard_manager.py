@@ -1,9 +1,9 @@
-import pygame, copy
+import pygame, copy, time
 
 from typing import List, Tuple
 from state import State
 from history_manager import HistoryManager, StepChartChangeDelta
-from utils import get_step_diff, update_validity, clear_step
+from utils import get_step_diff, update_validity, clear_step, binary_search
 from constants import *
 
 
@@ -514,7 +514,6 @@ class RedoKey(KeyBase):
         history_manager.redo(state)
 
 
-# TODO: Implemente below
 # Goto the error line
 class FindKey(KeyBase):
     def __init__(self):
@@ -552,6 +551,26 @@ class FindKey(KeyBase):
                 return
 
 
+class MusicKey(KeyBase):
+    def __init__(self):
+        super().__init__()
+
+    def condition(self, state: State, event: pygame.Event) -> bool:
+        return event.type == pygame.KEYDOWN and event.key == pygame.K_F5
+
+    def action(
+        self, history_manager: HistoryManager, state: State, event: pygame.Event
+    ) -> None:
+        if state.MUSIC_PLAYING:
+            state.MUSIC_PLAYING = False
+            pygame.mixer.music.stop()
+        else:
+            state.music_start_time = int(time.time() * 1000)
+            state.music_start_offset = state.scr_to_time[state.scr_y]
+            state.MUSIC_PLAYING = True
+            pygame.mixer.music.play(loops=0, start=state.music_start_offset / 1000)
+
+
 class KeyboardManager:
 
     def __init__(self):
@@ -582,6 +601,8 @@ class KeyboardManager:
             RedoKey(),
             # Find Error
             FindKey(),
+            # Music Play/Stop
+            MusicKey(),
         ]
 
     def process_event(

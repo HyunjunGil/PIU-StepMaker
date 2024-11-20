@@ -1,4 +1,4 @@
-import pygame, pygame_gui, numpy as np
+import pygame, pygame_gui, numpy as np, time, pandas as pd
 
 from typing import List, Tuple, Dict
 from constants import *
@@ -9,6 +9,7 @@ from mouse_manager import MouseManager
 from keyboard_manager import KeyboardManager
 from history_manager import HistoryManager
 from file_manager import *
+from utils import binary_search
 
 
 class StepMaker:
@@ -57,8 +58,9 @@ class StepMaker:
             if k.startswith(focus_idx_str):
                 return element
 
-    def load_initial_ucs_file(self, path: str):
-        load_ucs_file(path, self.state)
+    def load_initial_file(self, ucs_path: str, music_path: str):
+        load_ucs_file(ucs_path, self.state)
+        load_music_file(music_path, self.state)
         ScrollManager.update_scrollbar_info(self.state)
         self.ui_manager.update_block_information_textbox(self.state)
         self.ui_manager.ui_elements["012_BI_Apply"].e.disable()
@@ -140,7 +142,29 @@ class StepMaker:
                     state.scr_y + speed,
                 )
 
+    def adjust_scr_y_to_music(self):
+        state = self.state
+        t = int(time.time() * 1000)
+        if state.music_start_offset + t - state.music_start_time > state.music_len:
+            state.MUSIC_PLAYING = False
+            return
+        state.scr_y = binary_search(
+            state.scr_to_time[: state.max_y],
+            state.music_start_offset + int(time.time() * 1000) - state.music_start_time,
+        )
+        pass
+
     def draw(self):
+        # print(
+        #     pd.Timestamp(time.time(), tz="utc", unit="s").strftime(
+        #         "%Y-%m-%d %H:%M:%S.%f"
+        #     )
+        # )
+
+        # If music is playing, adjust scr.y
+        if self.state.MUSIC_PLAYING:
+            self.adjust_scr_y_to_music()
+
         # ORDERING IS IMPORTANT
         self.screen.fill(WHITE)
 

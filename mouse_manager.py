@@ -71,7 +71,6 @@ class MouseManager:
 
     def _process_mouse_motion(state: State, event: pygame.Event):
         state.mouse_pos = event.pos
-        print(state.mouse_pos)
         if state.MOUSE_CLICKED:
             mouse_x, mouse_y = event.pos
             if state.step_x_start <= mouse_x < state.measure_x_start:

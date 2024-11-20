@@ -6,6 +6,13 @@ from state import State
 from utils import update_validity
 
 
+def load_music_file(path: str, state: State):
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"No such file: {path}")
+    pygame.mixer.music.load(path)
+    state.music_len = int(pygame.mixer.Sound(path).get_length() * 1000)
+
+
 def load_ucs_file(
     path: str,
     state: State,

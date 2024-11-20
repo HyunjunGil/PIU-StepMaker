@@ -2,6 +2,24 @@ from typing import List, Tuple
 from constants import STEP_DATA_OFFSET, STEP_DATA_VD_IDX
 
 
+def binary_search(arr: List[int], v: int):
+
+    left, right = 0, len(arr) - 1
+    result = -1
+
+    while left <= right:
+        mid = (left + right) // 2
+        if arr[mid] == v:
+            return mid
+        elif arr[mid] < v:
+            result = mid
+            left = mid + 1
+        else:
+            right = mid - 1
+
+    return result
+
+
 def _valid_before(prev: int, cur: int) -> bool:
     return (prev in [0, 1, 4] and cur in [0, 1, 2]) or (
         prev in [2, 3] and cur in [3, 4]

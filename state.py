@@ -76,6 +76,12 @@ class State:
         # Last Mouse Position
         self.mouse_pos: Tuple[int, int] = (0, 0)
 
+        # Music
+        self.scr_to_time: List[int] = [0 for _ in range(100000)]
+        self.music_len: int = 0  # in ms
+        self.music_start_time: int = 0  # in ms
+        self.music_start_offset: int = 0  # in ms
+
     def get_cols(self) -> int:
         if self.mode == "Single":
             return 5
@@ -157,7 +163,9 @@ class State:
                 block = block_info[bi]
                 bpm, beat, split, delay = block[0], block[1], block[2], block[3]
 
-            line_height = min(max((CELL_SIZE * 2) // split, MIN_SPLIT_SIZE), CELL_SIZE)
+                line_height = min(
+                    max((self.step_size * 2) // split, MIN_SPLIT_SIZE), self.step_size
+                )
             ny = y + line_height
             self.ln_to_y[ln] = y
             for i in range(y, ny):
@@ -165,7 +173,30 @@ class State:
 
             y = ny
         self.ln_to_y[tot_ln] = self.ln_to_y[tot_ln - 1] + self.step_size
+
         self.max_y = y
+
+        t, ms_per_pixel = 0, 0.0
+        block_idx, measure, bpm, beat, split = -1, 0, 0, 0, 0
+
+        scr_to_time = self.scr_to_time
+        for y in range(0, self.max_y):
+            scr_to_time[y] = int(t)
+            ln = self.y_to_ln[y]
+            row = step_data[ln]
+            bi = row[STEP_DATA_BI_IDX]
+            if bi != block_idx:
+                block_idx = bi
+                block = block_info[bi]
+                bpm, beat, split, delay = block[0], block[1], block[2], block[3]
+                t += delay
+
+                line_height = min(
+                    max((self.step_size * 2) // split, MIN_SPLIT_SIZE), self.step_size
+                )
+                beat_height = line_height * split
+                ms_per_pixel = 60_000.0 / bpm / beat_height
+            t += ms_per_pixel
 
     def clear_step(self, ln: int, col: int):
         if self.step_data[ln][col] == 0:
