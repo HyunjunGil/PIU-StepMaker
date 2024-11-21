@@ -121,7 +121,7 @@ def load_ucs_file(
 
     step_data, block_info = state.get_step_info()
 
-    state.measure_x_start = state.step_x_start + state.step_size * cols
+    state.measure_x_start = state.step_x_start + state.get_step_size() * cols
     state.scrollbar_x_start = state.measure_x_start + MEASURE_DESCRIPTOR_WIDTH
 
 

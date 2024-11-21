@@ -1,11 +1,15 @@
 from typing import List, Tuple, Dict
 from utils import get_block_size
 from constants import *
+from enum import Enum
 
 
 class State:
     def __init__(self):
         self.initialize()
+
+    def get_step_size(self):
+        return STEP_SIZE_MAP[self.step_size_idx]
 
     def get_cols(self) -> int:
         if self.mode == "Single":
@@ -56,7 +60,7 @@ class State:
         y_cur = self.ln_to_y[self.coor_cur[1]]
         self.scr_y = max(
             min(self.scr_y, y_cur),
-            y_cur + self.step_size - self.screen_height,
+            y_cur + self.get_step_size() - self.screen_height,
         )
 
     def get_screen_size(self):
@@ -71,11 +75,17 @@ class State:
     def get_y_info(self):
         return self.y_to_ln, self.ln_to_y
 
+    def update_x_info(self):
+        step_size, cols = self.get_step_size(), self.get_cols()
+        self.measure_x_start = self.step_x_start + step_size * cols
+        self.scrollbar_x_start = self.measure_x_start + MEASURE_DESCRIPTOR_WIDTH
+
     def update_y_info(self):
 
         step_data, block_info = self.get_step_info()
         block_idx, measure, bpm, beat, split = -1, 0, 0, 0, 0
         y, ny = 0, 0
+        step_size = self.get_step_size()
         tot_ln = len(step_data)
         line_height = 0
         for ln in range(tot_ln):
@@ -87,7 +97,7 @@ class State:
                 bpm, beat, split, delay = block[0], block[1], block[2], block[3]
 
                 line_height = min(
-                    max((self.step_size * 2) // split, MIN_SPLIT_SIZE), self.step_size
+                    max((step_size * 2) // split, MIN_SPLIT_SIZE), step_size
                 )
             ny = y + line_height
             self.ln_to_y[ln] = y
@@ -95,7 +105,7 @@ class State:
                 self.y_to_ln[i] = ln
 
             y = ny
-        self.ln_to_y[tot_ln] = self.ln_to_y[tot_ln - 1] + self.step_size
+        self.ln_to_y[tot_ln] = self.ln_to_y[tot_ln - 1] + step_size
 
         self.max_y = y
 
@@ -115,7 +125,7 @@ class State:
                 t += delay
 
                 line_height = min(
-                    max((self.step_size * 2) // split, MIN_SPLIT_SIZE), self.step_size
+                    max((step_size * 2) // split, MIN_SPLIT_SIZE), step_size
                 )
                 beat_height = line_height * split
                 ms_per_pixel = 60_000.0 / bpm / beat_height
@@ -157,7 +167,7 @@ class State:
         # 0 : small, 24px
         # 1 : medium, 36px
         # 2 : large, 48px
-        self.step_size: int = 48
+        self.step_size_idx = 2
 
         # Initial Chart Information
         self.format: int = 1
@@ -165,7 +175,7 @@ class State:
 
         # Offset for Step Area and Scrollbar Area
         self.step_x_start = OPTION_WIDTH
-        self.measure_x_start = self.step_x_start + self.step_size * 5
+        self.measure_x_start = self.step_x_start + STEP_SIZE_MAP[self.step_size_idx] * 5
         self.scrollbar_x_start = self.measure_x_start + MEASURE_DESCRIPTOR_WIDTH
 
         # Block information

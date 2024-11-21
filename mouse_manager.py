@@ -22,6 +22,7 @@ class MouseManager:
         state.focus_idx = -1
 
         mouse_x, mouse_y = event.pos
+        step_size = state.get_step_size()
 
         pressed_keys = pygame.key.get_pressed()
 
@@ -31,7 +32,7 @@ class MouseManager:
             state.focus_idx = -1
 
             state.coor_cur = (
-                (mouse_x - state.step_x_start) // state.step_size,
+                (mouse_x - state.step_x_start) // step_size,
                 state.y_to_ln[mouse_y + state.scr_y],
             )
 
@@ -71,11 +72,12 @@ class MouseManager:
 
     def _process_mouse_motion(state: State, event: pygame.Event):
         state.mouse_pos = event.pos
+        step_size = state.get_step_size()
         if state.MOUSE_CLICKED:
             mouse_x, mouse_y = event.pos
             if state.step_x_start <= mouse_x < state.measure_x_start:
                 state.coor_cur = (
-                    (mouse_x - state.step_x_start) // state.step_size,
+                    (mouse_x - state.step_x_start) // step_size,
                     state.y_to_ln[mouse_y + state.scr_y],
                 )
 

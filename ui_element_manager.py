@@ -180,7 +180,9 @@ class LoadButton(ElementBase):
         if not os.path.exists(mp3_file_path):
             print("MP3 file is not exists")
             return
+        step_size_idx = state.step_size_idx
         state.initialize()
+        state.step_size_idx = step_size_idx
         load_ucs_file(ucs_file_path, state)
         load_music_file(mp3_file_path, state)
         state.ucs_file_path = ucs_file_path

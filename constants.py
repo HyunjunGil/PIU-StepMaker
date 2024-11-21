@@ -4,6 +4,8 @@ from typing import List
 # Initial Screen Width, Height
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 500
 
+STEP_SIZE_MAP = [24, 36, 48]
+
 # Step <-> Code Inverter
 STEP_TO_CODE = {".": 0, "X": 1, "M": 2, "H": 3, "W": 4}
 CODE_TO_STEP = [".", "X", "M", "H", "W"]

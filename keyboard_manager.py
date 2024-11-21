@@ -609,6 +609,34 @@ class LoadKey(KeyBase):
         state.EMIT_BUTTON_PRESS = True
 
 
+class StepSizeKey(KeyBase):
+    def __init__(self):
+        super().__init__()
+
+    def condition(self, state: State, event: pygame.Event) -> bool:
+        pressed_keys = pygame.key.get_pressed()
+        return (
+            event.type == pygame.KEYDOWN
+            and (pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL])
+            and event.key in [pygame.K_EQUALS, pygame.K_MINUS]
+        )
+
+    def action(
+        self, history_manager: HistoryManager, state: State, event: pygame.Event
+    ) -> None:
+        print("hi", str(event))
+        if event.key == pygame.K_EQUALS and state.step_size_idx != 2:
+            print("Adjust to larger")
+            state.step_size_idx += 1
+            state.update_x_info()
+            state.update_y_info()
+        elif event.key == pygame.K_MINUS and state.step_size_idx != 0:
+            print("Adjust to smaller")
+            state.step_size_idx -= 1
+            state.update_x_info()
+            state.update_y_info()
+
+
 class KeyboardManager:
 
     def __init__(self):
@@ -641,9 +669,11 @@ class KeyboardManager:
             FindKey(),
             # Music Play/Stop
             MusicKey(),
-            # Save
+            # Save, Load
             SaveKey(),
             LoadKey(),
+            # Step Size Adjust
+            StepSizeKey(),
         ]
 
     def process_event(

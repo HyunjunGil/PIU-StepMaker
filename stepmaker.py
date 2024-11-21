@@ -27,30 +27,34 @@ class StepMaker:
 
         # Images
         # Image Load
-        SHORT_IMAGES = [
-            pygame.image.load(f"./images/note{i % 5}_48.png").convert_alpha()
-            for i in range(10)
-        ]
-        LONG_HEAD_IMAGES = [
-            pygame.image.load(f"./images/start{i % 5}_48.png").convert_alpha()
-            for i in range(10)
-        ]
-        LONG_MIDDLE_IMAGES = [
-            pygame.image.load(f"./images/hold{i % 5}_48.png").convert_alpha()
-            for i in range(10)
-        ]
-        LONG_TAIL_IMAGES = [
-            pygame.image.load(f"./images/end{i % 5}_48.png").convert_alpha()
-            for i in range(10)
-        ]
+        self.TOTAL_IMAGES = []
+        for suffix in ["s", "m", "l"]:
+            SHORT_IMAGES = [
+                pygame.image.load(f"./images/note{i % 5}_{suffix}.png").convert_alpha()
+                for i in range(10)
+            ]
+            LONG_HEAD_IMAGES = [
+                pygame.image.load(f"./images/start{i % 5}_{suffix}.png").convert_alpha()
+                for i in range(10)
+            ]
+            LONG_MIDDLE_IMAGES = [
+                pygame.image.load(f"./images/hold{i % 5}_{suffix}.png").convert_alpha()
+                for i in range(10)
+            ]
+            LONG_TAIL_IMAGES = [
+                pygame.image.load(f"./images/end{i % 5}_{suffix}.png").convert_alpha()
+                for i in range(10)
+            ]
 
-        self.TOTAL_IMAGES = [
-            [None for _ in range(10)],
-            SHORT_IMAGES,
-            LONG_HEAD_IMAGES,
-            LONG_MIDDLE_IMAGES,
-            LONG_TAIL_IMAGES,
-        ]
+            self.TOTAL_IMAGES.append(
+                [
+                    [None for _ in range(10)],
+                    SHORT_IMAGES,
+                    LONG_HEAD_IMAGES,
+                    LONG_MIDDLE_IMAGES,
+                    LONG_TAIL_IMAGES,
+                ]
+            )
 
     def _get_focused_ui_element(self, idx: int) -> ElementBase:
         ui_elements = self.ui_manager.get_ui_elements()
@@ -127,6 +131,7 @@ class StepMaker:
 
     def update_scr_y(self):
         state = self.state
+        step_size = state.get_step_size()
         if (
             not state.MUSIC_PLAYING
             and state.MOUSE_CLICKED
@@ -139,7 +144,7 @@ class StepMaker:
             elif state.mouse_pos[1] > state.screen_height:
                 speed = max(mouse_y - state.screen_height, 100) // 20
                 state.scr_y = min(
-                    state.max_y - state.screen_height + state.step_size,
+                    state.max_y - state.screen_height + step_size,
                     state.scr_y + speed,
                 )
 
@@ -197,6 +202,7 @@ class StepMaker:
         cols = state.get_cols()
         ln = y_to_ln[state.scr_y]
         y = ln_to_y[ln]
+        step_size = state.get_step_size()
         screen_bottom = state.scr_y + state.screen_height
 
         while ln < len(step_data) and y < screen_bottom:
@@ -208,7 +214,7 @@ class StepMaker:
                 (
                     state.step_x_start,
                     ln_to_y[ln_from] - state.scr_y,
-                    state.step_size * cols,
+                    step_size * cols,
                     ln_to_y[ln_to] - ln_to_y[ln_from],
                 ),
             )
@@ -389,6 +395,7 @@ class StepMaker:
         ln = y_to_ln[state.scr_y]
         y = ln_to_y[ln]
         font = pygame.font.SysFont("Verdana", 18)
+        step_size = state.get_step_size()
         tot_ln = len(step_data)
         screen_bottom = state.scr_y + state.screen_height
         block_idx, bpm, beat, split, delay, dy = -1, 0, 0, 0, 0, 0
@@ -424,9 +431,7 @@ class StepMaker:
                     even_split, triple_split = True, False
                 else:
                     even_split, triple_split = False, False
-                dy = min(
-                    max((state.step_size * 2) // split, MIN_SPLIT_SIZE), state.step_size
-                )
+                dy = min(max((step_size * 2) // split, MIN_SPLIT_SIZE), step_size)
 
             # Fill background
             bg_color = None
@@ -437,8 +442,8 @@ class StepMaker:
                     (
                         state.step_x_start,
                         y - state.scr_y,
-                        state.step_size * cols + 10,
-                        state.step_size,
+                        step_size * cols + 10,
+                        step_size,
                     ),
                 )
 
@@ -519,8 +524,8 @@ class StepMaker:
         for rect in image_rects:
             z, y, col, code = rect
             self.screen.blit(
-                self.TOTAL_IMAGES[code][col],
-                (state.step_x_start + col * state.step_size, y - state.scr_y),
+                self.TOTAL_IMAGES[state.step_size_idx][code][col],
+                (state.step_x_start + col * step_size, y - state.scr_y),
             )
 
     def draw_scrollbar(self):
@@ -565,6 +570,7 @@ class StepMaker:
 
     def draw_hovered_area(self):
         state, screen = self.state, self.screen
+        step_size = state.get_step_size()
         cols = 5 if state.mode == "Single" else 10
 
         y_cur, y_base = (
@@ -572,8 +578,8 @@ class StepMaker:
             state.ln_to_y[state.coor_base[1]],
         )
         x_cur, x_base = (
-            state.step_x_start + state.coor_cur[0] * state.step_size,
-            state.step_x_start + state.coor_base[0] * state.step_size,
+            state.step_x_start + state.coor_cur[0] * step_size,
+            state.step_x_start + state.coor_base[0] * step_size,
         )
 
         # Draw hovered square
@@ -583,8 +589,8 @@ class StepMaker:
             (
                 state.step_x_start,
                 y_cur - state.scr_y,
-                cols * state.step_size,
-                state.step_size,
+                cols * step_size,
+                step_size,
             ),
         )
         pass
@@ -592,6 +598,7 @@ class StepMaker:
     def draw_selected_area(self):
 
         state, screen = self.state, self.screen
+        step_size = state.get_step_size()
         cols = 5 if state.mode == "Single" else 10
 
         y_cur, y_base = (
@@ -599,8 +606,8 @@ class StepMaker:
             state.ln_to_y[state.coor_base[1]],
         )
         x_cur, x_base = (
-            state.step_x_start + state.coor_cur[0] * state.step_size,
-            state.step_x_start + state.coor_base[0] * state.step_size,
+            state.step_x_start + state.coor_cur[0] * step_size,
+            state.step_x_start + state.coor_base[0] * step_size,
         )
 
         # Draw selection square
@@ -610,8 +617,8 @@ class StepMaker:
             (
                 min(x_base, x_cur),
                 min(y_base, y_cur) - state.scr_y,
-                abs(x_base - x_cur) + state.step_size,
-                abs(y_base - y_cur) + state.step_size,
+                abs(x_base - x_cur) + step_size,
+                abs(y_base - y_cur) + step_size,
             ),
             3,
         )
