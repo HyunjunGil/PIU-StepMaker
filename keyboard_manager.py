@@ -388,6 +388,8 @@ class CopyKey(KeyBase):
                     # ignore unselected lane
                     state.clipboard[ln - ln_from][col] = -1
 
+        print(state.clipboard)
+
 
 class CutKey(KeyBase):
 
@@ -447,20 +449,28 @@ class PasteKey(KeyBase):
 
         step_data, block_info = state.get_step_info()
         y_to_ln, ln_to_y = state.get_y_info()
+        coor_undo = (state.coor_cur, state.coor_base)
 
         clipboard = state.clipboard
-        ln_from, ln_to = (
+        ln_from, ln_to_remove = (
             min(state.coor_cur[1], state.coor_base[1]),
-            max(state.coor_cur[1], state.coor_base[1], len(step_data) - 1) + 1,
+            max(state.coor_cur[1], state.coor_base[1]) + 1,
         )
-        col_from, col_to = (
-            min(state.coor_cur[0], state.coor_base[0]) + STEP_DATA_OFFSET,
-            max(state.coor_cur[0], state.coor_base[0]) + STEP_DATA_OFFSET + 1,
-        )
+        ln_to_paste = min(ln_from + len(clipboard), len(step_data))
+
+        ln_to = max(ln_to_paste, ln_to_remove)
+
+        prev_step_data = copy.deepcopy(step_data[ln_from:ln_to])
+
         target_cols = []
         for col in range(STEP_DATA_OFFSET, len(step_data[0])):
             if clipboard[0][col] != -1:
                 target_cols.append(col)
+
+        col_from, col_to = (
+            min(target_cols) - STEP_DATA_OFFSET,
+            max(target_cols) - STEP_DATA_OFFSET,
+        )
 
         # Remove
         for ln in range(ln_from, ln_to):
@@ -468,15 +478,30 @@ class PasteKey(KeyBase):
                 step_data[ln][col] = 0
 
         # Paste
-        ln_to = min(ln_from + len(clipboard), len(step_data))
         for ln in range(ln_from, ln_to):
             for col in target_cols:
                 step_data[ln][col] = clipboard[ln - ln_from][col]
 
+        update_validity(step_data, ln_from - 1, ln_to + 1)
+
         # Update coor_cur, y_base and coor_cur
-        state.coor_cur = (state.coor_cur[0], ln_to)
-        state.coor_base = (state.coor_base[0], ln_from)
+        state.coor_cur = (col_from, ln_to - 1)
+        state.coor_base = (col_to, ln_from)
+
+        coor_redo = (state.coor_cur, state.coor_base)
         state.sync_scr_y()
+
+        step_diff = get_step_diff(
+            prev_step_data, state.step_data[ln_from:ln_to], ln_from
+        )
+        if len(step_diff):
+            history_manager.append(
+                StepChartChangeDelta(
+                    coor_undo,
+                    coor_redo,
+                    step_diff,
+                )
+            )
 
 
 class UndoKey(KeyBase):
