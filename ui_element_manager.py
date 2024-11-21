@@ -778,6 +778,7 @@ class ScrollUpButton(ElementBase):
 
     def set_location(self, loc: Tuple[int, int]):
         self.e.get_abs_rect().topleft = loc
+        self.e.rebuild()
 
 
 # UI_INDEX : 18
@@ -807,6 +808,7 @@ class ScrollDownButton(ElementBase):
 
     def set_location(self, loc: Tuple[int, int]):
         self.e.get_abs_rect().bottomleft = loc
+        self.e.rebuild()
 
 
 class UIElementManager:
@@ -837,11 +839,13 @@ class UIElementManager:
     def get_ui_elements(self):
         return self.ui_elements
 
-    def draw(self, state: State, screen: pygame.Surface):
+    def relocate_scroll_button(self, state):
         self.ui_elements["017_ScrollUp"].set_location((state.scrollbar_x_start, 0))
         self.ui_elements["018_ScrollDown"].set_location(
             (state.scrollbar_x_start, state.screen_height)
         )
+
+    def draw(self, state: State, screen: pygame.Surface):
         self.manager.draw_ui(screen)
 
     def process_event(

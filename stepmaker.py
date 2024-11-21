@@ -62,6 +62,7 @@ class StepMaker:
         load_ucs_file(ucs_path, self.state)
         load_music_file(music_path, self.state)
         ScrollManager.update_scrollbar_info(self.state)
+        self.ui_manager.relocate_scroll_button(self.state)
         self.ui_manager.update_block_information_textbox(self.state)
         self.ui_manager.ui_elements["012_BI_Apply"].e.disable()
 
@@ -73,6 +74,7 @@ class StepMaker:
         self.state.screen_height = h
         self.screen = pygame.display.set_mode((w, h), pygame.RESIZABLE)
         self.ui_manager.manager.set_window_resolution((w, h))
+        self.ui_manager.relocate_scroll_button(self.state)
         ScrollManager.update_scrollbar_info(self.state)
 
     def update_ui_elements(self):
