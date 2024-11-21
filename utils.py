@@ -10,6 +10,21 @@ from constants import (
 )
 
 
+def num_to_str(num: float | int):
+    if type(num) == float and int(num) == num:
+        return str(int(num))
+    else:
+        return str(num)
+
+
+def ms_to_beats(bpm: float | int, ms: float | int):
+    return round(bpm / 60_000 * ms, 4)
+
+
+def beats_to_ms(bpm: float | int, beats: float | int):
+    return round(60_000 * beats / bpm, 4)
+
+
 def get_block_size(block: List[float | int]) -> int:
     return (block[BLOCK_MS_IDX] * block[BLOCK_BM_IDX] + block[BLOCK_BT_IDX]) * block[
         BLOCK_SB_IDX

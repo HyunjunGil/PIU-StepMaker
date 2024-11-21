@@ -183,6 +183,9 @@ class State:
             [160.0, 4, 2, 0, 1, 0, 0]
         ]  # initial block information
 
+        # Delay unit
+        self.delay_unit = DelayUnit.ms
+
         # Step data
         self.step_data: List[List[int]] = [
             [0, 0, i // 2, i % 2, 1, 0, 0, 0, 0, 0] for i in range(8)

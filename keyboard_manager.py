@@ -238,13 +238,13 @@ class TabKey(KeyBase):
             state.focus_idx = (
                 state.focus_idx + 18
             ) % 19  # 19 = Total number of UI elements
-            if state.focus_idx == 12 and not state.APPLY_ENABLED:
+            if state.focus_idx == 13 and not state.APPLY_ENABLED:
                 state.focus_idx -= 1
         else:
             state.focus_idx = (
                 state.focus_idx + 1
             ) % 19  # 19 = Total number of UI elements
-            if state.focus_idx == 12 and not state.APPLY_ENABLED:
+            if state.focus_idx == 13 and not state.APPLY_ENABLED:
                 state.focus_idx += 1
 
 

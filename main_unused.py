@@ -798,7 +798,7 @@ while running:
 
             elif event.key == pygame.K_TAB and focus_state != -1:
                 element = None
-                if 5 <= focus_state < 12:
+                if 5 <= focus_state < 13:
                     total_UI_elements[focus_state].unfocus()
 
                 while True:
@@ -812,7 +812,7 @@ while running:
                     if element.is_enabled:
                         break
                 print(focus_state)
-                if 5 <= focus_state < 12:
+                if 5 <= focus_state < 13:
                     element.focus()
                 update_focus_state()
 

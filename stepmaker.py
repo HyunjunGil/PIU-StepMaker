@@ -79,7 +79,7 @@ class StepMaker:
 
         if state.UPDATE_BLOCK_INFORMATION_TEXTBOX:
             self.ui_manager.update_block_information_textbox(state)
-            self.ui_manager.ui_elements["012_BI_Apply"].disable()
+            self.ui_manager.ui_elements["013_BI_Apply"].disable()
             state.APPLY_ENABLED = False
             state.UPDATE_BLOCK_INFORMATION_TEXTBOX = False
 
@@ -354,13 +354,6 @@ class StepMaker:
             (BI_x0, BLOCK_INFO_AREA_Y + BI_y3, sw, sh),
             LIGHT_GRAY,
         )
-        self._add_rectangle_with_text(
-            "m/s",
-            st,
-            (BI_x2, BLOCK_INFO_AREA_Y + BI_y3, sw, sh),
-            WHITE,
-        )
-        # pass
 
         # Draw "Block Operation" Section
         self._add_text(
@@ -459,7 +452,7 @@ class StepMaker:
                 )
                 text = font.render("{}:{}".format(bi + 1, mi + 1), True, BLACK)
                 text_rect = text.get_rect()
-                text_rect.topleft = (state.measure_x_start, y - state.scr_y)
+                text_rect.topright = (state.measure_x_start, y - state.scr_y)
 
                 self.screen.blit(text, text_rect)
 
@@ -473,7 +466,7 @@ class StepMaker:
                 )
                 text = font.render("{}:{}".format(bi + 1, mi + 1), True, BLACK)
                 text_rect = text.get_rect()
-                text_rect.topleft = (state.measure_x_start, y - state.scr_y)
+                text_rect.topright = (state.measure_x_start, y - state.scr_y)
 
                 self.screen.blit(text, text_rect)
 

@@ -65,7 +65,7 @@ def load_ucs_file(
                         bpm,
                         beat,
                         split,
-                        delay,
+                        delay,  # in ms
                         lcnt // (beat * split),  # number of measures
                         (lcnt % (beat * split)) // split,  # number of beats
                         lcnt % split,  # number of split

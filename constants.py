@@ -1,5 +1,12 @@
 import pygame
 from typing import List
+from enum import Enum
+
+
+class DelayUnit(Enum):
+    beats = 1
+    ms = 2
+
 
 # Initial Screen Width, Height
 SCREEN_WIDTH, SCREEN_HEIGHT = 800, 500

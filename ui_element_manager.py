@@ -17,7 +17,7 @@ from history_manager import (
     BlockSplitDelta,
     BlockDeleteDelta,
 )
-from utils import update_validity
+from utils import update_validity, ms_to_beats, beats_to_ms, num_to_str
 from constants import *
 from block_logic import *
 
@@ -193,13 +193,13 @@ class LoadButton(ElementBase):
 
         history_manager.initialize(state)
 
-        ui_elements["017_ScrollUp"].set_location((state.scrollbar_x_start, 0))
-        ui_elements["018_ScrollDown"].set_location(
+        ui_elements["018_ScrollUp"].set_location((state.scrollbar_x_start, 0))
+        ui_elements["019_ScrollDown"].set_location(
             (state.scrollbar_x_start, state.screen_height)
         )
         ScrollManager.update_scrollbar_info(state)
         state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
-        ui_elements["012_BI_Apply"].e.disable()
+        ui_elements["013_BI_Apply"].e.disable()
 
 
 # UI_INDEX : 3
@@ -269,9 +269,9 @@ def _get_block_info_texts(ui_elements: Dict[str, ElementBase]) -> List[str]:
         "006_BI_B/M",
         "007_BI_S/B",
         "008_BI_Delay",
-        "009_BI_Measures",
-        "010_BI_Beats",
-        "011_BI_Splits",
+        "010_BI_Measures",
+        "011_BI_Beats",
+        "012_BI_Splits",
     ]:
         info.append(ui_elements[k].get_text())
     return info
@@ -282,10 +282,6 @@ def _str_to_num(x: str):
         return int(x)
     except:
         return round(float(x), 4)
-
-
-def _num_to_str(x: int | float):
-    return str(x)
 
 
 def _enable_apply_button(info: List[int | float], new_info: List[int | float]) -> bool:
@@ -321,29 +317,41 @@ class BlockInformationText(ElementBase):
     ):
         if event.type == pygame_gui.UI_TEXT_ENTRY_CHANGED:
             new_info = _get_block_info_texts(ui_elements)
-
+            if (
+                state.delay_unit == DelayUnit.beats
+                and len(new_info[BLOCK_DL_IDX])
+                and len(new_info[BLOCK_BPM_IDX])
+            ):
+                new_info[BLOCK_DL_IDX] = num_to_str(
+                    beats_to_ms(
+                        float(new_info[BLOCK_BPM_IDX]), float(new_info[BLOCK_DL_IDX])
+                    )
+                )
             step_data, block_info = state.get_step_info()
-            y_to_ln = state.y_to_ln
             info = block_info[step_data[state.coor_cur[1]][STEP_DATA_BI_IDX]]
-            info = [_num_to_str(x) for x in info]
+            info = [num_to_str(x) for x in info]
             if _enable_apply_button(info, new_info):
-                ui_elements["012_BI_Apply"].enable()
+                ui_elements["013_BI_Apply"].enable()
                 state.APPLY_ENABLED = True
             else:
-                ui_elements["012_BI_Apply"].disable()
+                ui_elements["013_BI_Apply"].disable()
                 state.APPLY_ENABLED = False
-            self.e.redraw()
+            # self.e.redraw()
         else:
             pygame.event.post(
                 pygame.event.Event(
                     pygame_gui.UI_BUTTON_PRESSED,
                     {
                         "user_type": pygame_gui.UI_BUTTON_PRESSED,
-                        "ui_element": ui_elements["012_BI_Apply"].e,
+                        "ui_element": ui_elements["013_BI_Apply"].e,
                         # "ui_object_id": button.most_specific_combined_id,
                     },
                 )
             )
+
+    def set_text(self, s: str):
+        self.e.set_text(s)
+        self.e.redraw()
 
 
 # UI_INDEX : 5
@@ -440,7 +448,7 @@ class DelayTexbox(BlockInformationText):
                 manager=manager,
             )
         )
-        self.e.set_allowed_characters("numbers")
+        self.e.set_allowed_characters([f"{i}" for i in range(10)] + ["."])
 
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
@@ -456,6 +464,43 @@ class DelayTexbox(BlockInformationText):
 
 
 # UI_INDEX : 9
+class DelayUnitButton(ElementBase):
+    def __init__(self, manager: pygame_gui.UIManager):
+        super().__init__(
+            pygame_gui.elements.UIButton(
+                relative_rect=pygame.Rect(
+                    (BI_x2, BLOCK_INFO_AREA_Y + BI_y3),
+                    (60, 20),
+                ),
+                object_id="BI_delay_unit",
+                text="ms",
+                manager=manager,
+            )
+        )
+
+    def condition(self, state: State, event: pygame.Event):
+        return super().condition(state, event)
+
+    def action(
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
+    ):
+        if state.delay_unit == DelayUnit.ms:
+            self.e.set_text("beats")
+            state.update_y_info()
+            state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
+            state.delay_unit = DelayUnit.beats
+        else:
+            self.e.set_text("ms")
+            state.update_y_info()
+            state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
+            state.delay_unit = DelayUnit.ms
+
+
+# UI_INDEX : 10
 class MeasuresTexbox(BlockInformationText):
     def __init__(self, manager: pygame_gui.UIManager):
         super().__init__(
@@ -482,7 +527,7 @@ class MeasuresTexbox(BlockInformationText):
         return super().action(history_manager, state, event, ui_elements)
 
 
-# UI_INDEX : 10
+# UI_INDEX : 11
 class BeatsTexbox(BlockInformationText):
     def __init__(self, manager: pygame_gui.UIManager):
         super().__init__(
@@ -509,7 +554,7 @@ class BeatsTexbox(BlockInformationText):
         return super().action(history_manager, state, event, ui_elements)
 
 
-# UI_INDEX : 11
+# UI_INDEX : 12
 class SplitsTexbox(BlockInformationText):
     def __init__(self, manager: pygame_gui.UIManager):
         super().__init__(
@@ -536,7 +581,7 @@ class SplitsTexbox(BlockInformationText):
         return super().action(history_manager, state, event, ui_elements)
 
 
-# UI_INDEX : 12
+# UI_INDEX : 13
 class ApplyButton(ElementBase):
     def __init__(self, manager: pygame_gui.UIManager):
         super().__init__(
@@ -567,6 +612,10 @@ class ApplyButton(ElementBase):
         ui_elements: Dict[str, ElementBase],
     ):
         new_info = [_str_to_num(x) for x in _get_block_info_texts(ui_elements)]
+        if state.delay_unit == DelayUnit.beats:
+            new_info[BLOCK_DL_IDX] = beats_to_ms(
+                new_info[BLOCK_BPM_IDX], new_info[BLOCK_DL_IDX]
+            )
         step_data, block_info = state.get_step_info()
         coor_undo = (state.coor_cur, state.coor_base)
         ln = state.coor_cur[1]
@@ -587,7 +636,7 @@ class ApplyButton(ElementBase):
             min(len(step_data) - 1, state.coor_base[1]),
         )
         coor_redo = (state.coor_cur, state.coor_base)
-        if state.focus_idx == 12:
+        if state.focus_idx == 13:
             state.focus_idx = -1
 
         state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
@@ -603,7 +652,7 @@ class ApplyButton(ElementBase):
         )
 
 
-# UI_INDEX : 13
+# UI_INDEX : 14
 class BlockAddAboveButton(ElementBase):
     def __init__(self, manager: pygame_gui.UIManager):
         super().__init__(
@@ -645,7 +694,7 @@ class BlockAddAboveButton(ElementBase):
         history_manager.append(BlockAddAboveDelta(coor_undo, coor_redo, block_idx))
 
 
-# UI_INDEX : 14
+# UI_INDEX : 15
 class BlockAddBelowButton(ElementBase):
     def __init__(self, manager: pygame_gui.UIManager):
         super().__init__(
@@ -687,7 +736,7 @@ class BlockAddBelowButton(ElementBase):
         history_manager.append(BlockAddBelowDelta(coor_undo, coor_redo, block_idx))
 
 
-# UI_INDEX : 15
+# UI_INDEX : 16
 class BlockSplitButton(ElementBase):
     def __init__(self, manager: pygame_gui.UIManager):
         super().__init__(
@@ -725,7 +774,7 @@ class BlockSplitButton(ElementBase):
         history_manager.append(BlockSplitDelta(coor_undo, coor_redo, block_idx, ln))
 
 
-# UI_INDEX : 16
+# UI_INDEX : 17
 class BlockDeleteButton(ElementBase):
     def __init__(self, manager: pygame_gui.UIManager):
         super().__init__(
@@ -791,7 +840,7 @@ class BlockDeleteButton(ElementBase):
         )
 
 
-# UI_INDEX : 17
+# UI_INDEX : 18
 class ScrollUpButton(ElementBase):
     def __init__(
         self, manager: pygame_gui.UIManager, loc: Tuple[int, int], size: Tuple[int, int]
@@ -821,7 +870,7 @@ class ScrollUpButton(ElementBase):
         self.e.rebuild()
 
 
-# UI_INDEX : 18
+# UI_INDEX : 19
 class ScrollDownButton(ElementBase):
     def __init__(
         self, manager: pygame_gui.UIManager, loc: Tuple[int, int], size: Tuple[int, int]
@@ -864,26 +913,27 @@ class UIElementManager:
             "006_BI_B/M": BeatPerMeasureTextbox(manager),
             "007_BI_S/B": SplitPerBeatTextbox(manager),
             "008_BI_Delay": DelayTexbox(manager),
-            "009_BI_Measures": MeasuresTexbox(manager),
-            "010_BI_Beats": BeatsTexbox(manager),
-            "011_BI_Splits": SplitsTexbox(manager),
-            "012_BI_Apply": ApplyButton(manager),
-            "013_BlockAddAbove": BlockAddAboveButton(manager),
-            "014_BlockAddBelow": BlockAddBelowButton(manager),
-            "015_BlockSplit": BlockSplitButton(manager),
-            "016_BlockDelete": BlockDeleteButton(manager),
-            "017_ScrollUp": ScrollUpButton(manager, (0, 0), (SCROLL_BAR_WIDTH, 30)),
-            "018_ScrollDown": ScrollDownButton(manager, (0, 0), (SCROLL_BAR_WIDTH, 30)),
+            "009_BI_DelayUnit": DelayUnitButton(manager),
+            "010_BI_Measures": MeasuresTexbox(manager),
+            "011_BI_Beats": BeatsTexbox(manager),
+            "012_BI_Splits": SplitsTexbox(manager),
+            "013_BI_Apply": ApplyButton(manager),
+            "014_BlockAddAbove": BlockAddAboveButton(manager),
+            "015_BlockAddBelow": BlockAddBelowButton(manager),
+            "016_BlockSplit": BlockSplitButton(manager),
+            "017_BlockDelete": BlockDeleteButton(manager),
+            "018_ScrollUp": ScrollUpButton(manager, (0, 0), (SCROLL_BAR_WIDTH, 30)),
+            "019_ScrollDown": ScrollDownButton(manager, (0, 0), (SCROLL_BAR_WIDTH, 30)),
         }
 
     def get_ui_elements(self):
         return self.ui_elements
 
     def relocate_scroll_button(self, state: State):
-        scroll_x = self.ui_elements["017_ScrollUp"].e.get_abs_rect().left
+        scroll_x = self.ui_elements["018_ScrollUp"].e.get_abs_rect().left
         if scroll_x != state.scrollbar_x_start:
-            self.ui_elements["017_ScrollUp"].set_location((state.scrollbar_x_start, 0))
-            self.ui_elements["018_ScrollDown"].set_location(
+            self.ui_elements["018_ScrollUp"].set_location((state.scrollbar_x_start, 0))
+            self.ui_elements["019_ScrollDown"].set_location(
                 (state.scrollbar_x_start, state.screen_height)
             )
 
@@ -916,24 +966,14 @@ class UIElementManager:
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
         info = block_info[block_idx]
         [bpm, bm, sb, delay, measures, beats, splits] = info
-
-        self.ui_elements["005_BI_BPM"].e.set_text(str(bpm))
-        self.ui_elements["005_BI_BPM"].e.redraw()
-
-        self.ui_elements["006_BI_B/M"].e.set_text(str(bm))
-        self.ui_elements["006_BI_B/M"].e.redraw()
-
-        self.ui_elements["007_BI_S/B"].e.set_text(str(sb))
-        self.ui_elements["007_BI_S/B"].e.redraw()
-
-        self.ui_elements["008_BI_Delay"].e.set_text(str(delay))
-        self.ui_elements["008_BI_Delay"].e.redraw()
-
-        self.ui_elements["009_BI_Measures"].e.set_text(str(measures))
-        self.ui_elements["009_BI_Measures"].e.redraw()
-
-        self.ui_elements["010_BI_Beats"].e.set_text(str(beats))
-        self.ui_elements["010_BI_Beats"].e.redraw()
-
-        self.ui_elements["011_BI_Splits"].e.set_text(str(splits))
-        self.ui_elements["011_BI_Splits"].e.redraw()
+        self.ui_elements["005_BI_BPM"].set_text(num_to_str(bpm))
+        self.ui_elements["006_BI_B/M"].set_text(str(bm))
+        self.ui_elements["007_BI_S/B"].set_text(str(sb))
+        self.ui_elements["008_BI_Delay"].set_text(
+            num_to_str(delay)
+            if state.delay_unit == DelayUnit.ms
+            else num_to_str(ms_to_beats(bpm, delay))
+        )
+        self.ui_elements["010_BI_Measures"].set_text(str(measures))
+        self.ui_elements["011_BI_Beats"].set_text(str(beats))
+        self.ui_elements["012_BI_Splits"].set_text(str(splits))
