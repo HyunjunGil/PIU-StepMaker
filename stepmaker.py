@@ -623,7 +623,6 @@ class StepMaker:
 
     def draw_focus_rect(self):
         state, screen = self.state, self.screen
-
         focus_idx = state.focus_idx
         if focus_idx == -1:
             return

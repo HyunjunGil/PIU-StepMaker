@@ -854,10 +854,10 @@ class UIElementManager:
 
     def check_textbox_clicked(self, state: State, event: pygame.Event):
         for i, (k, element) in enumerate(self.ui_elements.items()):
-            if type(
-                element.e
-            ) == pygame_gui.elements.UITextEntryLine and element.e.get_abs_rect().collidepoint(
-                event.pos
+            if (
+                type(element.e) == pygame_gui.elements.UITextEntryLine
+                and element.e.get_abs_rect().collidepoint(event.pos)
+                and event.type == pygame.MOUSEBUTTONDOWN
             ):
                 state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = False, False
                 state.focus_idx = i
