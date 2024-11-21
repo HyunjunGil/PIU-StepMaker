@@ -103,6 +103,9 @@ class PlayButton(ElementBase):
         event: pygame.Event,
         ui_elements: Dict[str, ElementBase],
     ):
+        if state.music_len == 0:
+            print("MUSIC NOT LOADED")
+            return
         if state.MUSIC_PLAYING:
             state.MUSIC_PLAYING = False
             pygame.mixer.music.stop()
@@ -876,11 +879,13 @@ class UIElementManager:
     def get_ui_elements(self):
         return self.ui_elements
 
-    def relocate_scroll_button(self, state):
-        self.ui_elements["017_ScrollUp"].set_location((state.scrollbar_x_start, 0))
-        self.ui_elements["018_ScrollDown"].set_location(
-            (state.scrollbar_x_start, state.screen_height)
-        )
+    def relocate_scroll_button(self, state: State):
+        scroll_x = self.ui_elements["017_ScrollUp"].e.get_abs_rect().left
+        if scroll_x != state.scrollbar_x_start:
+            self.ui_elements["017_ScrollUp"].set_location((state.scrollbar_x_start, 0))
+            self.ui_elements["018_ScrollDown"].set_location(
+                (state.scrollbar_x_start, state.screen_height)
+            )
 
     def draw(self, state: State, screen: pygame.Surface):
         self.manager.draw_ui(screen)

@@ -107,6 +107,8 @@ class StepMaker:
                 element = self._get_focused_ui_element(state.focus_idx)
                 element.focus()
 
+        self.ui_manager.relocate_scroll_button(self.state)
+
         play_button = self.ui_manager.ui_elements["000_Play"].e
         if state.MUSIC_PLAYING and play_button.text != "Stop":
             play_button.set_text("Stop")

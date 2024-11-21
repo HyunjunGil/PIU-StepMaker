@@ -147,7 +147,9 @@ class DownKey(KeyBase):
                 line = step_data[ln]
                 block = block_info[line[STEP_DATA_BI_IDX]]
                 ln -= line[STEP_DATA_BT_IDX] * block[2] + line[STEP_DATA_SP_IDX]
+
                 ln += block[1] * block[2]
+                ln = min(ln, len(step_data) - 1)
                 state.coor_cur = (state.coor_cur[0], ln)
             else:
                 state.coor_cur = (state.coor_cur[0], ln + 1)
@@ -207,7 +209,7 @@ class RightKey(KeyBase):
         pressed_keys = pygame.key.get_pressed()
         if x != cols - 1:
             if pressed_keys[pygame.K_LALT] or pressed_keys[pygame.K_RALT]:
-                x = cols
+                x = cols - 1
             else:
                 x += 1
             state.coor_cur = (x, state.coor_cur[1])
@@ -562,6 +564,9 @@ class MusicKey(KeyBase):
     def action(
         self, history_manager: HistoryManager, state: State, event: pygame.Event
     ) -> None:
+        if state.music_len == 0:
+            print("MUSIC NOT LOADED")
+            return
         if state.MUSIC_PLAYING:
             state.MUSIC_PLAYING = False
             pygame.mixer.music.stop()
