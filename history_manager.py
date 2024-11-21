@@ -142,12 +142,12 @@ class BlockDeleteDelta(StateDelta):
         self,
         coor_undo: Tuple[Tuple[int, int], Tuple[int, int]],
         coor_redo: Tuple[Tuple[int, int], Tuple[int, int]],
-        deleted_step_data: List[List[int]],
+        deleted_step_info: List[Tuple[int, int, int]],
         deleted_block_info: List[float | int],
         block_idx: int,
     ):
         super().__init__(coor_undo, coor_redo, DeltaType.BLOCK_DELETE)
-        self.deleted_step_data = deleted_step_data
+        self.deleted_step_info = deleted_step_info
         self.deleted_block_info = deleted_block_info
         self.block_idx = block_idx
 
@@ -156,14 +156,28 @@ class BlockDeleteDelta(StateDelta):
         ln_from, _ = state.get_block_range_by_block_idx(self.block_idx)
         for ln in range(ln_from, len(step_data)):
             step_data[ln][STEP_DATA_BI_IDX] += 1
-        state.step_data = (
-            step_data[:ln_from] + self.deleted_step_data + step_data[ln_from:]
-        )
+        cols = state.get_cols()
+        bi, block = self.block_idx, self.deleted_block_info
+        deleted_step_data = [
+            [
+                bi,
+                i // (block[1] * block[2]),
+                (i % (block[1] * block[2])) // block[2],
+                i % block[2],
+                1,
+            ]
+            + [0 for _ in range(cols)]
+            for i in range((block[4] * block[1] + block[5]) * block[2] + block[6])
+        ]
+
+        state.step_data = step_data[:ln_from] + deleted_step_data + step_data[ln_from:]
+        for info in self.deleted_step_info:
+            ln, col, c = info
+            state.step_data[ln][col] = c
         block_info.insert(self.block_idx, self.deleted_block_info)
 
         ln_from, ln_to = state.get_block_range_by_block_idx(self.block_idx)
-        update_validity(state.step_data, ln_from - 1, ln_from + 1)
-        update_validity(state.step_data, ln_to - 1, ln_to + 1)
+        update_validity(state.step_data, ln_from - 1, ln_to + 1)
 
         super().undo(state)
 

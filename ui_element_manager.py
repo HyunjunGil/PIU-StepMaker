@@ -722,7 +722,11 @@ class BlockDeleteButton(ElementBase):
         ln = state.coor_cur[1]
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
         ln_from, ln_to = state.get_block_range_by_block_idx(block_idx)
-        deleted_step_data = copy.deepcopy(step_data[ln_from:ln_to])
+        deleted_step_info: List[Tuple[int, int, int]] = []
+        for ln in range(ln_from, ln_to):
+            for col in range(STEP_DATA_OFFSET, len(step_data[0])):
+                if step_data[ln][col] != 0:
+                    deleted_step_info.append((ln, col, step_data[ln][col]))
         deleted_block_info = copy.deepcopy(block_info[block_idx])
         state.step_data, state.block_info = delete_block(
             step_data, block_info, block_idx
@@ -746,7 +750,7 @@ class BlockDeleteButton(ElementBase):
 
         history_manager.append(
             BlockDeleteDelta(
-                coor_undo, coor_redo, deleted_step_data, deleted_block_info, block_idx
+                coor_undo, coor_redo, deleted_step_info, deleted_block_info, block_idx
             )
         )
 
