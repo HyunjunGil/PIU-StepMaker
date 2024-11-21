@@ -1,5 +1,8 @@
 import pygame, pygame_gui, copy, time
 
+
+from tkinter.filedialog import askopenfilename
+from file_manager import *
 from abc import *
 from typing import List, Tuple, Dict
 
@@ -19,6 +22,7 @@ from constants import *
 from block_logic import *
 
 from file_manager import save_ucs_file, load_ucs_file
+from scroll_manager import ScrollManager
 
 
 class ElementBase:
@@ -162,8 +166,35 @@ class LoadButton(ElementBase):
         event: pygame.Event,
         ui_elements: Dict[str, ElementBase],
     ):
-        load_ucs_file(state.ucs_file_path, state)
+        file_path = askopenfilename(
+            title="Select an UCS file", filetypes=[("Ucs Files", "*.ucs")]
+        )
+        if not file_path:
+            return
+        elif not file_path.endswith("ucs"):
+            print("Invalid File. Selected File must be .ucs file")
+            return
+
+        ucs_file_path = file_path
+        mp3_file_path = ucs_file_path[:-3] + "mp3"
+        if not os.path.exists(mp3_file_path):
+            print("MP3 file is not exists")
+            return
+        state.initialize()
+        load_ucs_file(ucs_file_path, state)
+        load_music_file(mp3_file_path, state)
+        state.ucs_file_path = ucs_file_path
+        state.ucs_save_path = state.ucs_cache_path = ucs_file_path[:-4] + "+cache.ucs"
+
         history_manager.initialize(state)
+
+        ui_elements["017_ScrollUp"].set_location((state.scrollbar_x_start, 0))
+        ui_elements["018_ScrollDown"].set_location(
+            (state.scrollbar_x_start, state.screen_height)
+        )
+        ScrollManager.update_scrollbar_info(state)
+        state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
+        ui_elements["012_BI_Apply"].e.disable()
 
 
 # UI_INDEX : 3

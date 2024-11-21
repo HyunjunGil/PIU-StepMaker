@@ -67,13 +67,22 @@ MIN_SCROLL_BAR_HEIGHT = 100
 # Option Width
 OPTION_WIDTH = 300
 
-# Step Data Index for block information : block_idx, bpm, beat/measure, split/beat, delay
+# block information index in state.step_data  : block_idx, bpm, beat/measure, split/beat, delay
 STEP_DATA_BI_IDX = 0  # index for block index
 STEP_DATA_MS_IDX = 1  # index for measure index
 STEP_DATA_BT_IDX = 2  # index for beat index
 STEP_DATA_SP_IDX = 3  # index for split index
 STEP_DATA_VD_IDX = 4  # index for validity index
 STEP_DATA_OFFSET = 5  # length of total metadata index
+
+# block information index in state.block_info
+BLOCK_BPM_IDX = 0
+BLOCK_BM_IDX = 1
+BLOCK_SB_IDX = 2
+BLOCK_DL_IDX = 3
+BLOCK_MS_IDX = 4
+BLOCK_BT_IDX = 5
+BLOCK_SP_IDX = 6
 
 
 # File Buttons Options

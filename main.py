@@ -17,7 +17,7 @@ stepmaker = StepMaker(
     pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
 )
 
-stepmaker.load_initial_file("sample.ucs", "sample.mp3")
+# stepmaker.load_initial_file("sample.ucs", "sample.mp3")
 
 running = True
 

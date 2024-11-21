@@ -1,5 +1,6 @@
 import pygame, pygame_gui, numpy as np, time, pandas as pd
 
+from tkinter import Tk
 from typing import List, Tuple, Dict
 from constants import *
 from state import State
@@ -8,7 +9,7 @@ from ui_element_manager import UIElementManager, ElementBase
 from mouse_manager import MouseManager
 from keyboard_manager import KeyboardManager
 from history_manager import HistoryManager
-from file_manager import *
+
 from utils import binary_search
 
 
@@ -21,6 +22,8 @@ class StepMaker:
         self.keyboard_manager = KeyboardManager()
         self.state = State()
         self.history_manager = HistoryManager()
+        self.history_manager.initialize(self.state)
+        self.ui_manager.relocate_scroll_button(self.state)
 
         # Images
         # Image Load
@@ -57,16 +60,6 @@ class StepMaker:
         for k, element in ui_elements.items():
             if k.startswith(focus_idx_str):
                 return element
-
-    def load_initial_file(self, ucs_path: str, music_path: str):
-        load_ucs_file(ucs_path, self.state)
-        load_music_file(music_path, self.state)
-        ScrollManager.update_scrollbar_info(self.state)
-        self.ui_manager.relocate_scroll_button(self.state)
-        self.ui_manager.update_block_information_textbox(self.state)
-        self.ui_manager.ui_elements["012_BI_Apply"].e.disable()
-
-        self.history_manager.initialize(self.state)
 
     def resize_screen(self, event: pygame.Event):
         w, h = event.size

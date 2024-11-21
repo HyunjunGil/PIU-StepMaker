@@ -1,5 +1,19 @@
 from typing import List, Tuple
-from constants import STEP_DATA_OFFSET, STEP_DATA_VD_IDX
+from constants import (
+    STEP_DATA_OFFSET,
+    STEP_DATA_VD_IDX,
+    BLOCK_BM_IDX,
+    BLOCK_MS_IDX,
+    BLOCK_BT_IDX,
+    BLOCK_SP_IDX,
+    BLOCK_SB_IDX,
+)
+
+
+def get_block_size(block: List[float | int]) -> int:
+    return (block[BLOCK_MS_IDX] * block[BLOCK_BM_IDX] + block[BLOCK_BT_IDX]) * block[
+        BLOCK_SB_IDX
+    ] + block[BLOCK_SP_IDX]
 
 
 def binary_search(arr: List[int], v: int):

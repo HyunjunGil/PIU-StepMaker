@@ -3,6 +3,7 @@ import pygame, copy, time
 from typing import List, Tuple
 from state import State
 from history_manager import HistoryManager, StepChartChangeDelta
+from file_manager import save_ucs_file
 from utils import get_step_diff, update_validity, clear_step, binary_search
 from constants import *
 
@@ -571,6 +572,43 @@ class MusicKey(KeyBase):
             pygame.mixer.music.play(loops=0, start=state.music_start_offset / 1000)
 
 
+class SaveKey(KeyBase):
+    def __init__(self):
+        super().__init__()
+
+    def condition(self, state: State, event: pygame.Event) -> bool:
+        pressed_keys = pygame.key.get_pressed()
+        return (
+            event.type == pygame.KEYDOWN
+            and (pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL])
+            and event.key == pygame.K_s
+        )
+
+    def action(
+        self, history_manager: HistoryManager, state: State, event: pygame.Event
+    ) -> None:
+        save_ucs_file(state)
+
+
+class LoadKey(KeyBase):
+    def __init__(self):
+        super().__init__()
+
+    def condition(self, state: State, event: pygame.Event) -> bool:
+        pressed_keys = pygame.key.get_pressed()
+        return (
+            event.type == pygame.KEYDOWN
+            and (pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL])
+            and event.key == pygame.K_l
+        )
+
+    def action(
+        self, history_manager: HistoryManager, state: State, event: pygame.Event
+    ) -> None:
+        state.focus_idx = 2  # Focus to Load button
+        state.EMIT_BUTTON_PRESS = True
+
+
 class KeyboardManager:
 
     def __init__(self):
@@ -603,6 +641,9 @@ class KeyboardManager:
             FindKey(),
             # Music Play/Stop
             MusicKey(),
+            # Save
+            SaveKey(),
+            LoadKey(),
         ]
 
     def process_event(

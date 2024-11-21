@@ -133,6 +133,8 @@ def save_ucs_file(
     # step_data: List[List[int]],
     # block_info: List[List[int | float]],
 ):
+    # if not os.path.exists(state.ucs_save_path):
+    #     os.makedirs(state.ucs_save_path)
     path, format, mode = state.ucs_save_path, state.format, state.mode
     step_data, block_info = state.get_step_info()
     rows, cols = len(step_data), len(step_data[0]) - STEP_DATA_OFFSET
@@ -145,12 +147,15 @@ def save_ucs_file(
             row = step_data[ln]
             bi = row[STEP_DATA_BI_IDX]
             if block_idx != bi:
+                block = block_info[bi]
+                bpm = block[BLOCK_BPM_IDX]
+                bpm = bpm if int(bpm) != bpm else int(bpm)
                 f.writelines(
                     [
-                        f":BPM={row[1]}\n",
-                        f":Delay={row[4]}\n",
-                        f":Beat={row[2]}\n",
-                        f":Split={row[3]}\n",
+                        f":BPM={bpm}\n",
+                        f":Delay={block[BLOCK_DL_IDX]}\n",
+                        f":Beat={block[BLOCK_BM_IDX]}\n",
+                        f":Split={block[BLOCK_SB_IDX]}\n",
                     ]
                 )
                 block_idx = bi

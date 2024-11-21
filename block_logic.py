@@ -30,25 +30,9 @@ def modify_block(
 ) -> Tuple[List[List[int]], List[List[int | float]]]:
     cols = len(step_data[0]) - STEP_DATA_OFFSET
     info = block_info[block_idx]
-    bpm, bm, sb, delay, mcnt, bcnt, scnt = (
-        info[0],
-        info[1],
-        info[2],
-        info[3],
-        info[4],
-        info[5],
-        info[6],
-    )
+    [bpm, bm, sb, delay, mcnt, bcnt, scnt] = info
 
-    new_bpm, new_bm, new_sb, new_delay, new_mcnt, new_bcnt, new_scnt = (
-        new_info[0],
-        new_info[1],
-        new_info[2],
-        new_info[3],
-        new_info[4],
-        new_info[5],
-        new_info[6],
-    )
+    [new_bpm, new_bm, new_sb, new_delay, new_mcnt, new_bcnt, new_scnt] = new_info
 
     new_block_step_data: List[List[int]] = []
 
