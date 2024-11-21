@@ -1,4 +1,4 @@
-import pygame, pygame_gui, copy
+import pygame, pygame_gui, copy, time
 
 from abc import *
 from typing import List, Tuple, Dict
@@ -99,8 +99,14 @@ class PlayButton(ElementBase):
         event: pygame.Event,
         ui_elements: Dict[str, ElementBase],
     ):
-        print("PLAY!")
-        pass
+        if state.MUSIC_PLAYING:
+            state.MUSIC_PLAYING = False
+            pygame.mixer.music.stop()
+        else:
+            state.music_start_time = int(time.time() * 1000)
+            state.music_start_offset = state.scr_to_time[state.scr_y]
+            state.MUSIC_PLAYING = True
+            pygame.mixer.music.play(loops=0, start=state.music_start_offset / 1000)
 
 
 # UI_INDEX : 1

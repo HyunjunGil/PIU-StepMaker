@@ -108,6 +108,12 @@ class StepMaker:
                 element = self._get_focused_ui_element(state.focus_idx)
                 element.focus()
 
+        play_button = self.ui_manager.ui_elements["000_Play"].e
+        if state.MUSIC_PLAYING and play_button.text != "Stop":
+            play_button.set_text("Stop")
+        elif not state.MUSIC_PLAYING and play_button.text != "Play":
+            play_button.set_text("Play")
+
     def process_mouse_event(self, event: pygame.Event):
         MouseManager.process_event(self.state, event)
         self.ui_manager.check_textbox_clicked(self.state, event)
@@ -147,6 +153,7 @@ class StepMaker:
         t = int(time.time() * 1000)
         if state.music_start_offset + t - state.music_start_time > state.music_len:
             state.MUSIC_PLAYING = False
+            self.ui_manager.ui_elements["000_Play"].e.set_text("Play")
             return
         state.scr_y = binary_search(
             state.scr_to_time[: state.max_y],
