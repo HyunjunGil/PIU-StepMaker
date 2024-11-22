@@ -452,7 +452,7 @@ class StepMaker:
                 )
                 text = font.render("{}:{}".format(bi + 1, mi + 1), True, BLACK)
                 text_rect = text.get_rect()
-                text_rect.topright = (state.measure_x_start, y - state.scr_y)
+                text_rect.topright = (state.scrollbar_x_start, y - state.scr_y)
 
                 self.screen.blit(text, text_rect)
 
@@ -466,7 +466,7 @@ class StepMaker:
                 )
                 text = font.render("{}:{}".format(bi + 1, mi + 1), True, BLACK)
                 text_rect = text.get_rect()
-                text_rect.topright = (state.measure_x_start, y - state.scr_y)
+                text_rect.topright = (state.scrollbar_x_start, y - state.scr_y)
 
                 self.screen.blit(text, text_rect)
 

@@ -236,14 +236,14 @@ class TabKey(KeyBase):
         if pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]:
             state.focus_idx_prev = state.focus_idx
             state.focus_idx = (
-                state.focus_idx + 18
-            ) % 19  # 19 = Total number of UI elements
+                state.focus_idx + 19
+            ) % 20  # 20 = Total number of UI elements
             if state.focus_idx == 13 and not state.APPLY_ENABLED:
                 state.focus_idx -= 1
         else:
             state.focus_idx = (
                 state.focus_idx + 1
-            ) % 19  # 19 = Total number of UI elements
+            ) % 20  # 20 = Total number of UI elements
             if state.focus_idx == 13 and not state.APPLY_ENABLED:
                 state.focus_idx += 1
 
