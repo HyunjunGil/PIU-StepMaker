@@ -17,8 +17,7 @@ class StepMaker:
     def __init__(self, screen: pygame.Surface):
 
         self.screen = screen
-        manager = pygame_gui.UIManager(screen.size)
-        self.ui_manager = UIElementManager(manager)
+        self.ui_manager = UIElementManager()
         self.keyboard_manager = KeyboardManager()
         self.state = State()
         self.history_manager = HistoryManager()
@@ -56,15 +55,6 @@ class StepMaker:
                 ]
             )
 
-    def _get_focused_ui_element(self, idx: int) -> ElementBase:
-        ui_elements = self.ui_manager.get_ui_elements()
-        assert idx != -1, "Focus idx shoud not be -1"
-        focus_idx_str = str(idx)
-        focus_idx_str = "0" * (3 - len(focus_idx_str)) + focus_idx_str
-        for k, element in ui_elements.items():
-            if k.startswith(focus_idx_str):
-                return element
-
     def resize_screen(self, event: pygame.Event):
         w, h = event.size
         self.state.screen_width = w
@@ -79,12 +69,12 @@ class StepMaker:
 
         if state.UPDATE_BLOCK_INFORMATION_TEXTBOX:
             self.ui_manager.update_block_information_textbox(state)
-            self.ui_manager.ui_elements["013_BI_Apply"].disable()
+            self.ui_manager.ui_elements[BI_APPLY_BUTTON].disable()
             state.APPLY_ENABLED = False
             state.UPDATE_BLOCK_INFORMATION_TEXTBOX = False
 
         if state.EMIT_BUTTON_PRESS:
-            element = self._get_focused_ui_element(state.focus_idx)
+            element = self.ui_manager.get_ui_element_by_idx(state.focus_idx)
             pygame.event.post(
                 pygame.event.Event(
                     pygame_gui.UI_BUTTON_PRESSED,
@@ -99,17 +89,17 @@ class StepMaker:
 
         if state.focus_idx != state.focus_idx_prev:
             if state.focus_idx_prev != -1:
-                element = self._get_focused_ui_element(state.focus_idx_prev)
+                element = self.ui_manager.get_ui_element_by_idx(state.focus_idx_prev)
                 element.unfocus()
             state.focus_idx_prev = state.focus_idx
 
             if state.focus_idx != -1:
-                element = self._get_focused_ui_element(state.focus_idx)
+                element = self.ui_manager.get_ui_element_by_idx(state.focus_idx)
                 element.focus()
 
         self.ui_manager.relocate_scroll_button(self.state)
 
-        play_button = self.ui_manager.ui_elements["000_Play"].e
+        play_button = self.ui_manager.ui_elements[FILE_PLAY_BUTTON].e
         if state.MUSIC_PLAYING and play_button.text != "Stop":
             play_button.set_text("Stop")
         elif not state.MUSIC_PLAYING and play_button.text != "Play":
@@ -155,7 +145,7 @@ class StepMaker:
         t = int(time.time() * 1000)
         if state.music_start_offset + t - state.music_start_time > state.music_len:
             state.MUSIC_PLAYING = False
-            self.ui_manager.ui_elements["000_Play"].e.set_text("Play")
+            self.ui_manager.ui_elements[FILE_PLAY_BUTTON].e.set_text("Play")
             return
         state.scr_y = binary_search(
             state.scr_to_time[: state.max_y],
@@ -178,8 +168,6 @@ class StepMaker:
         self.screen.fill(WHITE)
 
         self.draw_background()
-
-        self.draw_frame()
 
         self.draw_scrollbar()
 
@@ -267,120 +255,120 @@ class StepMaker:
         pygame.draw.rect(self.screen, rect_color, rect)
         self.screen.blit(text_surface, text_rect)
 
-    def draw_frame(self):
-        # Draw lattice
-        state = self.state
+    # def draw_frame(self):
+    #     # Draw lattice
+    #     state = self.state
 
-        # Control Area
-        pygame.draw.rect(
-            self.screen, BLACK, (0, 0, OPTION_WIDTH, state.screen_height), 3
-        )
-        pygame.draw.rect(
-            self.screen,
-            BLACK,
-            (0, BASIC_ACTION_AREA_HEIGHT, OPTION_WIDTH, BLOCK_INFO_AREA_HEIGHT),
-            3,
-        )
-        pygame.draw.rect(
-            self.screen,
-            BLACK,
-            (
-                (
-                    0,
-                    BLOCK_OPER_AREA_Y - 3,
-                    OPTION_WIDTH,
-                    BLOCK_OPER_AREA_HEIGHT,
-                ),
-            ),
-            3,
-        )
-        # Draw "Block Information" Section
-        offset = BLOCK_INFO_GAP
-        x0 = BLOCK_INFO_GAP
-        x1 = x0 + 120
-        y0 = BLOCK_INFO_AREA_Y
-        st, sw, sh = 12, 60, 20
-        self._add_text(
-            "Block Information",
-            BLOCK_INFO_GAP,
-            BLOCK_INFO_AREA_Y + BLOCK_INFO_GAP,
-            30,
-            0,
-            BLACK,
-        )
-        offset += 30
-        self._add_rectangle_with_text(
-            "BPM",
-            st,
-            (BI_x0, BLOCK_INFO_AREA_Y + BI_y0, sw, sh),
-            LIGHT_GRAY,
-        )
-        self._add_rectangle_with_text(
-            "Measures",
-            st,
-            (BI_x2, BLOCK_INFO_AREA_Y + BI_y0, sw, sh),
-            LIGHT_GRAY,
-        )
-        offset += sh + BLOCK_INFO_GAP
-        self._add_rectangle_with_text(
-            "B/M",
-            st,
-            (BI_x0, BLOCK_INFO_AREA_Y + BI_y1, sw, sh),
-            LIGHT_GRAY,
-        )
-        self._add_rectangle_with_text(
-            "Beats",
-            st,
-            (BI_x2, BLOCK_INFO_AREA_Y + BI_y1, sw, sh),
-            LIGHT_GRAY,
-        )
-        offset += sh + BLOCK_INFO_GAP
-        self._add_rectangle_with_text(
-            "S/B",
-            st,
-            (BI_x0, BLOCK_INFO_AREA_Y + BI_y2, sw, sh),
-            LIGHT_GRAY,
-        )
-        self._add_rectangle_with_text(
-            "Splits",
-            st,
-            (BI_x2, BLOCK_INFO_AREA_Y + BI_y2, sw, sh),
-            LIGHT_GRAY,
-        )
-        offset += sh + BLOCK_INFO_GAP
-        self._add_rectangle_with_text(
-            "Delay",
-            st,
-            (BI_x0, BLOCK_INFO_AREA_Y + BI_y3, sw, sh),
-            LIGHT_GRAY,
-        )
+    #     # Control Area
+    #     pygame.draw.rect(
+    #         self.screen, BLACK, (0, 0, OPTION_WIDTH, state.screen_height), 3
+    #     )
+    #     pygame.draw.rect(
+    #         self.screen,
+    #         BLACK,
+    #         (0, BASIC_ACTION_AREA_HEIGHT, OPTION_WIDTH, BLOCK_INFO_AREA_HEIGHT),
+    #         3,
+    #     )
+    #     pygame.draw.rect(
+    #         self.screen,
+    #         BLACK,
+    #         (
+    #             (
+    #                 0,
+    #                 BLOCK_OPER_AREA_Y - 3,
+    #                 OPTION_WIDTH,
+    #                 BLOCK_OPER_AREA_HEIGHT,
+    #             ),
+    #         ),
+    #         3,
+    #     )
+    #     # Draw "Block Information" Section
+    #     offset = BLOCK_INFO_GAP
+    #     x0 = BLOCK_INFO_GAP
+    #     x1 = x0 + 120
+    #     y0 = BLOCK_INFO_AREA_Y
+    #     st, sw, sh = 12, 60, 20
+    #     self._add_text(
+    #         "Block Information",
+    #         BLOCK_INFO_GAP,
+    #         BLOCK_INFO_AREA_Y + BLOCK_INFO_GAP,
+    #         30,
+    #         0,
+    #         BLACK,
+    #     )
+    #     offset += 30
+    #     self._add_rectangle_with_text(
+    #         "BPM",
+    #         st,
+    #         (BI_x0, BLOCK_INFO_AREA_Y + BI_y0, sw, sh),
+    #         LIGHT_GRAY,
+    #     )
+    #     self._add_rectangle_with_text(
+    #         "Measures",
+    #         st,
+    #         (BI_x2, BLOCK_INFO_AREA_Y + BI_y0, sw, sh),
+    #         LIGHT_GRAY,
+    #     )
+    #     offset += sh + BLOCK_INFO_GAP
+    #     self._add_rectangle_with_text(
+    #         "B/M",
+    #         st,
+    #         (BI_x0, BLOCK_INFO_AREA_Y + BI_y1, sw, sh),
+    #         LIGHT_GRAY,
+    #     )
+    #     self._add_rectangle_with_text(
+    #         "Beats",
+    #         st,
+    #         (BI_x2, BLOCK_INFO_AREA_Y + BI_y1, sw, sh),
+    #         LIGHT_GRAY,
+    #     )
+    #     offset += sh + BLOCK_INFO_GAP
+    #     self._add_rectangle_with_text(
+    #         "S/B",
+    #         st,
+    #         (BI_x0, BLOCK_INFO_AREA_Y + BI_y2, sw, sh),
+    #         LIGHT_GRAY,
+    #     )
+    #     self._add_rectangle_with_text(
+    #         "Splits",
+    #         st,
+    #         (BI_x2, BLOCK_INFO_AREA_Y + BI_y2, sw, sh),
+    #         LIGHT_GRAY,
+    #     )
+    #     offset += sh + BLOCK_INFO_GAP
+    #     self._add_rectangle_with_text(
+    #         "Delay",
+    #         st,
+    #         (BI_x0, BLOCK_INFO_AREA_Y + BI_y3, sw, sh),
+    #         LIGHT_GRAY,
+    #     )
 
-        # Draw "Block Operation" Section
-        self._add_text(
-            "Block Operation",
-            10,
-            BLOCK_OPER_AREA_Y + 10,
-            30,
-            0,
-            BLACK,
-        )
+    #     # Draw "Block Operation" Section
+    #     self._add_text(
+    #         "Block Operation",
+    #         10,
+    #         BLOCK_OPER_AREA_Y + 10,
+    #         30,
+    #         0,
+    #         BLACK,
+    #     )
 
-        # Measure Descriptor Area
-        pygame.draw.line(
-            self.screen,
-            LIGHT_GRAY,
-            (state.measure_x_start, 0),
-            (state.measure_x_start, state.screen_height),
-            2,
-        )
+    #     # Measure Descriptor Area
+    #     pygame.draw.line(
+    #         self.screen,
+    #         LIGHT_GRAY,
+    #         (state.measure_x_start, 0),
+    #         (state.measure_x_start, state.screen_height),
+    #         2,
+    #     )
 
-        # Scrollbar Area
-        pygame.draw.rect(
-            self.screen,
-            LIGHT_GRAY,
-            (state.scrollbar_x_start, 0, SCROLL_BAR_WIDTH, state.screen_height),
-            3,
-        )
+    #     # Scrollbar Area
+    #     pygame.draw.rect(
+    #         self.screen,
+    #         LIGHT_GRAY,
+    #         (state.scrollbar_x_start, 0, SCROLL_BAR_WIDTH, state.screen_height),
+    #         3,
+    #     )
 
     def draw_step_chart(self):
         state = self.state
@@ -558,7 +546,7 @@ class StepMaker:
             (
                 state.scrollbar_x_start,
                 state.scrollbar_y,
-                SCROLL_BAR_WIDTH,
+                SCROLLBAR_BUTTON_WIDTH,
                 state.scrollbar_h,
             ),
         )
@@ -623,7 +611,7 @@ class StepMaker:
         focus_idx = state.focus_idx
         if focus_idx == -1:
             return
-        element = self._get_focused_ui_element(state.focus_idx)
+        element = self.ui_manager.get_ui_element_by_idx(state.focus_idx)
         x, y = element.e.get_abs_rect().topleft
         w, h = element.e.get_abs_rect().size
         pygame.draw.rect(screen, DARK_GRAY, (x, y, w, h), 3)

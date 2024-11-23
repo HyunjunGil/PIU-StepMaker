@@ -1,0 +1,168 @@
+{
+  "@button_base": {
+    "misc": {
+      "shape": "rounded_rectangle",
+      "border_width": "1",
+      "shadow_width": "0"
+    }
+  },
+  "@panel_odd": {
+    "misc": {
+      "shape": "rounded_rectangle",
+      "border_width": "1",
+      "shadow_width": "0"
+    },
+    "colours": {
+      "dark_bg": "#E0E0E0"
+    }
+  },
+  "@panel_even": {
+    "misc": {
+      "shape": "rounded_rectangle",
+      "border_width": "1",
+      "shadow_width": "0"
+    },
+    "colours": {
+      "dark_bg": "#E0E0E0"
+    }
+  },
+  "@label_base": {
+    "misc": {
+      "shape": "rounded_rectangle",
+      "border_width": "0",
+      "shadow_width": "0",
+      "text_horiz_alignment": "center"
+    },
+    "font": {
+      "name": "Verdana",
+      "size": 12
+    },
+    "colours": {
+      "dark_bg": "#21282D"
+    }
+  },
+  "@label_measures": {
+    "misc": {
+      "shape": "rounded_rectangle",
+      "border_width": "0",
+      "shadow_width": "0",
+      "text_horiz_alignment": "center"
+    },
+    "font": {
+      "name": "Verdana",
+      "size": 10
+    },
+    "colours": {
+      "dark_bg": "#21282D"
+    }
+  },
+
+  "@textbox_base": {
+    "misc": {
+      "shape": "rounded_rectangle",
+      "border_width": "0",
+      "shadow_width": "0",
+      "text_horiz_alignment": "center"
+    },
+    "font": {
+      "name": "Verdana",
+      "size": 12
+    }
+  },
+  "@textbox_measures": {
+    "misc": {
+      "shape": "rounded_rectangle",
+      "border_width": "0",
+      "shadow_width": "0",
+      "text_horiz_alignment": "center"
+    },
+    "font": {
+      "name": "Verdana",
+      "size": 10
+    }
+  },
+  "@textentryline_base": {
+    "misc": {
+      "shape": "rounded_rectangle",
+      "border_width": "0",
+      "shadow_width": "0",
+      "text_horiz_alignment": "center"
+    },
+    "font": {
+      "name": "Verdana",
+      "size": 12
+    },
+    "colours": {
+      "dark_bg": "#FFFFFF",
+      "normal_text": "#000000",
+      "text_cursor": "#000000"
+    }
+  },
+  "@delay_unit_button": {
+    "misc": {
+      "shape": "rounded_rectangle",
+      "border_width": "0",
+      "shadow_width": "0"
+    }
+  },
+  "@header_odd": {
+    "misc": {
+      "shape": "rounded_rectangle",
+      "border_width": "0",
+      "shadow_width": "0",
+      "text_horiz_alignment": "center"
+    },
+    "font": {
+      "name": "Verdana",
+      "size": 18
+    },
+    "colours": {
+      "dark_bg": "#E0E0E0",
+      "normal_text": "#000000"
+    }
+  },
+  "@header_even": {
+    "misc": {
+      "shape": "rounded_rectangle",
+      "border_width": "0",
+      "shadow_width": "0",
+      "text_horiz_alignment": "center"
+    },
+    "font": {
+      "name": "Verdana",
+      "size": 18
+    },
+    "colours": {
+      "dark_bg": "#E0E0E0",
+      "normal_text": "#000000"
+    }
+  },
+  "@textbox_time": {
+    "misc": {
+      "shape": "rounded_rectangle",
+      "border_width": "0",
+      "shadow_width": "0",
+      "text_horiz_alignment": "center"
+    },
+    "font": {
+      "name": "Verdana",
+      "size": 15
+    },
+    "colours": {
+      "dark_bg": "#21282D"
+    }
+  },
+  "@textbox_log": {
+    "misc": {
+      "shape": "rounded_rectangle",
+      "border_width": "1",
+      "shadow_width": "0",
+      "text_horiz_alignment": "left",
+      "text_vert_alignment": "bottom"
+    },
+    "font": {
+      "name": "Verdana",
+      "size": 12
+    }
+  }
+}

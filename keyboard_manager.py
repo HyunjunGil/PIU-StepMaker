@@ -236,15 +236,13 @@ class TabKey(KeyBase):
         if pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]:
             state.focus_idx_prev = state.focus_idx
             state.focus_idx = (
-                state.focus_idx + 19
-            ) % 20  # 20 = Total number of UI elements
-            if state.focus_idx == 13 and not state.APPLY_ENABLED:
+                state.focus_idx + TOTAL_UI_ELEMENTS - 1
+            ) % TOTAL_UI_ELEMENTS
+            if state.focus_idx == BI_APPLY_BUTTON and not state.APPLY_ENABLED:
                 state.focus_idx -= 1
         else:
-            state.focus_idx = (
-                state.focus_idx + 1
-            ) % 20  # 20 = Total number of UI elements
-            if state.focus_idx == 13 and not state.APPLY_ENABLED:
+            state.focus_idx = (state.focus_idx + 1) % TOTAL_UI_ELEMENTS
+            if state.focus_idx == BI_APPLY_BUTTON and not state.APPLY_ENABLED:
                 state.focus_idx += 1
 
 
@@ -286,13 +284,13 @@ class AreaKey(KeyBase):
         state.focus_idx_prev = state.focus_idx
         if event.key == pygame.K_1:
             # Update focus to Play button
-            state.focus_idx = 0
+            state.focus_idx = FILE_BUTTON
         elif event.key == pygame.K_2:
             # Update focus to BPM textbox in Block Information area
-            state.focus_idx = 5
+            state.focus_idx = BI_BPM_TEXTBOX
         elif event.key == pygame.K_3:
             # Update focus to "Add ^" button in Block Operation area
-            state.focus_idx = 13
+            state.focus_idx = BO_BLOCK_ADD_A_BUTTON
         elif event.key == pygame.K_4:
             # Update selection square at top square in current scr_y
             state.coor_base = (0, state.y_to_ln[state.scr_y])
@@ -635,7 +633,7 @@ class LoadKey(KeyBase):
     def action(
         self, history_manager: HistoryManager, state: State, event: pygame.Event
     ) -> None:
-        state.focus_idx = 2  # Focus to Load button
+        state.focus_idx = FILE_LOAD_BUTTON  # Focus to Load button
         state.EMIT_BUTTON_PRESS = True
 
 

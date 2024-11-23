@@ -1,939 +1,40 @@
-import pygame, pygame_gui, copy, time
+import pygame, pygame_gui
+
+from typing import List, Tuple, Dict, Union
+from pygame import Rect
+from pygame_gui.elements import UIButton, UITextEntryLine, UIPanel, UITextBox, UILabel
+
+type UIElement = Union[UIButton, UITextEntryLine, UIPanel, UITextBox, UILabel]
 
 
-from tkinter.filedialog import askopenfilename
-from file_manager import *
-from abc import *
-from typing import List, Tuple, Dict
-
-from pygame_gui.elements.ui_button import UIButton
-from pygame_gui.elements.ui_text_entry_line import UITextEntryLine
 from state import State
-from history_manager import (
-    HistoryManager,
-    BlockModifyDelta,
-    BlockAddAboveDelta,
-    BlockAddBelowDelta,
-    BlockSplitDelta,
-    BlockDeleteDelta,
-)
-from utils import update_validity, ms_to_beats, beats_to_ms, num_to_str
 from constants import *
-from block_logic import *
-
-from file_manager import save_ucs_file, load_ucs_file
-from scroll_manager import ScrollManager
-
-
-class ElementBase:
-
-    def __init__(
-        self,
-        element: pygame_gui.elements.UIButton | pygame_gui.elements.UITextEntryLine,
-    ):
-        self.e = element
-
-    def is_enable(self):
-        return self.e.is_enabled
-
-    def enable(self):
-        self.e.enable()
-
-    def disable(self):
-        self.e.disable()
-
-    def focus(self):
-        if type(self.e) == pygame_gui.elements.UITextEntryLine:
-            self.e.focus()
-
-    def unfocus(self):
-        if type(self.e) == pygame_gui.elements.UITextEntryLine:
-            self.e.unfocus()
-
-    def get_text(self):
-        return self.e.get_text()
-
-    def condition(self, state: State, event: pygame.Event):
-        if type(self.e) == pygame_gui.elements.UIButton:
-            return (
-                event.type == pygame_gui.UI_BUTTON_PRESSED
-                and event.ui_element == self.e
-            )
-        elif type(self.e) == pygame_gui.elements.UITextEntryLine:
-            return (
-                event.type == pygame_gui.UI_TEXT_ENTRY_FINISHED
-                and event.ui_element == self.e
-            )
-        else:
-            raise Exception("Invalid type of self.e : ${}".format(type(self.e)))
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, "ElementBase"],
-    ):
-        raise Exception("Action for ElementBase is not implemented")
-
-
-# TODO : Seperate files for each buttons
-
-
-# UI_INDEX : 0
-class PlayButton(ElementBase):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UIButton(
-                relative_rect=pygame.Rect(
-                    (BASIC_ACTION_WIDTH * 0, BASIC_ACTION_AREA_Y), BASIC_ACTION_SIZE
-                ),
-                text="Play",
-                manager=manager,
-            ),
-        )
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        if state.music_len == 0:
-            print("MUSIC NOT LOADED")
-            return
-        if state.MUSIC_PLAYING:
-            state.MUSIC_PLAYING = False
-            pygame.mixer.music.stop()
-        else:
-            state.music_start_time = int(time.time() * 1000)
-            state.music_start_offset = state.scr_to_time[state.scr_y]
-            state.MUSIC_PLAYING = True
-            pygame.mixer.music.play(loops=0, start=state.music_start_offset / 1000)
-
-
-# UI_INDEX : 1
-class SaveButton(ElementBase):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UIButton(
-                relative_rect=pygame.Rect(
-                    (BASIC_ACTION_WIDTH * 1, BASIC_ACTION_AREA_Y), BASIC_ACTION_SIZE
-                ),
-                text="Save",
-                manager=manager,
-            )
-        )
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        save_ucs_file(state)
-
-
-# UI_INDEX : 2
-class LoadButton(ElementBase):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UIButton(
-                relative_rect=pygame.Rect(
-                    (
-                        BASIC_ACTION_WIDTH * 2,
-                        BASIC_ACTION_AREA_Y,
-                    ),
-                    BASIC_ACTION_SIZE,
-                ),
-                text="Load",
-                manager=manager,
-            )
-        )
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        file_path = askopenfilename(
-            title="Select an UCS file", filetypes=[("Ucs Files", "*.ucs")]
-        )
-        if not file_path:
-            return
-        elif not file_path.endswith("ucs"):
-            print("Invalid File. Selected File must be .ucs file")
-            return
-
-        ucs_file_path = file_path
-        mp3_file_path = ucs_file_path[:-3] + "mp3"
-        if not os.path.exists(mp3_file_path):
-            print("MP3 file is not exists")
-            return
-        step_size_idx = state.step_size_idx
-        state.initialize()
-        state.step_size_idx = step_size_idx
-        load_ucs_file(ucs_file_path, state)
-        load_music_file(mp3_file_path, state)
-        state.ucs_file_path = ucs_file_path
-        state.ucs_save_path = state.ucs_cache_path = ucs_file_path[:-4] + "+cache.ucs"
-
-        history_manager.initialize(state)
-
-        ui_elements["018_ScrollUp"].set_location((state.scrollbar_x_start, 0))
-        ui_elements["019_ScrollDown"].set_location(
-            (state.scrollbar_x_start, state.screen_height)
-        )
-        ScrollManager.update_scrollbar_info(state)
-        state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
-        ui_elements["013_BI_Apply"].e.disable()
-
-
-# UI_INDEX : 3
-class UndoButton(ElementBase):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UIButton(
-                relative_rect=pygame.Rect(
-                    (
-                        BASIC_ACTION_WIDTH * 3,
-                        BASIC_ACTION_AREA_Y,
-                    ),
-                    BASIC_ACTION_SIZE,
-                ),
-                text="Undo",
-                manager=manager,
-            )
-        )
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        history_manager.undo(state)
-
-
-# UI_INDEX : 4
-class RedoButton(ElementBase):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UIButton(
-                relative_rect=pygame.Rect(
-                    (
-                        BASIC_ACTION_WIDTH * 4,
-                        BASIC_ACTION_AREA_Y,
-                    ),
-                    BASIC_ACTION_SIZE,
-                ),
-                text="Redo",
-                manager=manager,
-            )
-        )
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        history_manager.redo(state)
-
-
-def _get_block_info_texts(ui_elements: Dict[str, ElementBase]) -> List[str]:
-    info = []
-    for k in [
-        "005_BI_BPM",
-        "006_BI_B/M",
-        "007_BI_S/B",
-        "008_BI_Delay",
-        "010_BI_Measures",
-        "011_BI_Beats",
-        "012_BI_Splits",
-    ]:
-        info.append(ui_elements[k].get_text())
-    return info
-
-
-def _str_to_num(x: str):
-    try:
-        return int(x)
-    except:
-        return round(float(x), 4)
-
-
-def _enable_apply_button(info: List[int | float], new_info: List[int | float]) -> bool:
-    assert len(info) == len(
-        new_info
-    ), "len(info) != len(new_info) in _enable_apply_button"
-    for v, nv in zip(info, new_info):
-        if nv == "":
-            return False
-        elif v != nv:
-            return True
-    return False
-
-
-# Block Information Text Box
-class BlockInformationText(ElementBase):
-    def __init__(self, element: UITextEntryLine):
-        super().__init__(element)
-
-    def condition(self, state: State, event: pygame.Event):
-        return (
-            event.type
-            in [pygame_gui.UI_TEXT_ENTRY_FINISHED, pygame_gui.UI_TEXT_ENTRY_CHANGED]
-            and event.ui_element == self.e
-        )
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        if event.type == pygame_gui.UI_TEXT_ENTRY_CHANGED:
-            new_info = _get_block_info_texts(ui_elements)
-            if (
-                state.delay_unit == DelayUnit.beats
-                and len(new_info[BLOCK_DL_IDX])
-                and len(new_info[BLOCK_BPM_IDX])
-            ):
-                new_info[BLOCK_DL_IDX] = num_to_str(
-                    beats_to_ms(
-                        float(new_info[BLOCK_BPM_IDX]), float(new_info[BLOCK_DL_IDX])
-                    )
-                )
-            step_data, block_info = state.get_step_info()
-            info = block_info[step_data[state.coor_cur[1]][STEP_DATA_BI_IDX]]
-            info = [num_to_str(x) for x in info]
-            if _enable_apply_button(info, new_info):
-                ui_elements["013_BI_Apply"].enable()
-                state.APPLY_ENABLED = True
-            else:
-                ui_elements["013_BI_Apply"].disable()
-                state.APPLY_ENABLED = False
-            # self.e.redraw()
-        else:
-            pygame.event.post(
-                pygame.event.Event(
-                    pygame_gui.UI_BUTTON_PRESSED,
-                    {
-                        "user_type": pygame_gui.UI_BUTTON_PRESSED,
-                        "ui_element": ui_elements["013_BI_Apply"].e,
-                        # "ui_object_id": button.most_specific_combined_id,
-                    },
-                )
-            )
-
-    def set_text(self, s: str):
-        self.e.set_text(s)
-        self.e.redraw()
-
-
-# UI_INDEX : 5
-class BPMTexbox(BlockInformationText):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UITextEntryLine(
-                relative_rect=pygame.Rect(
-                    (BI_x1, BLOCK_INFO_AREA_Y + BI_y0),
-                    (BI_w1, BI_h),
-                ),
-                object_id="BI_bpm",
-                manager=manager,
-            )
-        )
-        self.e.set_allowed_characters([f"{i}" for i in range(10)] + ["."])
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        return super().action(history_manager, state, event, ui_elements)
-
-
-# UI_INDEX : 6
-class BeatPerMeasureTextbox(BlockInformationText):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UITextEntryLine(
-                relative_rect=pygame.Rect(
-                    (BI_x1, BLOCK_INFO_AREA_Y + BI_y1), (BI_w1, BI_h)
-                ),
-                object_id="BI_bm",
-                manager=manager,
-            )
-        )
-        self.e.set_allowed_characters("numbers")
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        return super().action(history_manager, state, event, ui_elements)
-
-
-# UI_INDEX : 7
-class SplitPerBeatTextbox(BlockInformationText):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UITextEntryLine(
-                relative_rect=pygame.Rect(
-                    (BI_x1, BLOCK_INFO_AREA_Y + BI_y2), (BI_w1, BI_h)
-                ),
-                object_id="BI_sb",
-                manager=manager,
-            )
-        )
-        self.e.set_allowed_characters("numbers")
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        return super().action(history_manager, state, event, ui_elements)
-
-
-# UI_INDEX : 8
-class DelayTexbox(BlockInformationText):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UITextEntryLine(
-                relative_rect=pygame.Rect(
-                    (BI_x1, BLOCK_INFO_AREA_Y + BI_y3), (BI_w1, BI_h)
-                ),
-                object_id="BI_delay",
-                manager=manager,
-            )
-        )
-        self.e.set_allowed_characters([f"{i}" for i in range(10)] + ["."])
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        return super().action(history_manager, state, event, ui_elements)
-
-
-# UI_INDEX : 9
-class DelayUnitButton(ElementBase):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UIButton(
-                relative_rect=pygame.Rect(
-                    (BI_x2, BLOCK_INFO_AREA_Y + BI_y3),
-                    (60, 20),
-                ),
-                object_id="BI_delay_unit",
-                text="ms",
-                manager=manager,
-            )
-        )
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        if state.delay_unit == DelayUnit.ms:
-            self.e.set_text("beats")
-            state.update_y_info()
-            state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
-            state.delay_unit = DelayUnit.beats
-        else:
-            self.e.set_text("ms")
-            state.update_y_info()
-            state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
-            state.delay_unit = DelayUnit.ms
-
-
-# UI_INDEX : 10
-class MeasuresTexbox(BlockInformationText):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UITextEntryLine(
-                relative_rect=pygame.Rect(
-                    (BI_x3, BLOCK_INFO_AREA_Y + BI_y0), (BI_w3, BI_h)
-                ),
-                object_id="BI_mesures",
-                manager=manager,
-            )
-        )
-        self.e.set_allowed_characters("numbers")
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        return super().action(history_manager, state, event, ui_elements)
-
-
-# UI_INDEX : 11
-class BeatsTexbox(BlockInformationText):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UITextEntryLine(
-                relative_rect=pygame.Rect(
-                    (BI_x3, BLOCK_INFO_AREA_Y + BI_y1), (BI_w3, BI_h)
-                ),
-                object_id="BI_beats",
-                manager=manager,
-            )
-        )
-        self.e.set_allowed_characters("numbers")
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        return super().action(history_manager, state, event, ui_elements)
-
-
-# UI_INDEX : 12
-class SplitsTexbox(BlockInformationText):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UITextEntryLine(
-                relative_rect=pygame.Rect(
-                    (BI_x3, BLOCK_INFO_AREA_Y + BI_y2), (BI_w3, BI_h)
-                ),
-                object_id="BI_splits",
-                manager=manager,
-            )
-        )
-        self.e.set_allowed_characters("numbers")
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        return super().action(history_manager, state, event, ui_elements)
-
-
-# UI_INDEX : 13
-class ApplyButton(ElementBase):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UIButton(
-                relative_rect=pygame.Rect(
-                    (
-                        OPTION_WIDTH - BLOCK_BUTTON_SIZE[0] - BLOCK_INFO_GAP,
-                        BLOCK_INFO_AREA_Y
-                        + BLOCK_INFO_AREA_HEIGHT
-                        - BLOCK_BUTTON_SIZE[1]
-                        - BLOCK_INFO_GAP,
-                    ),
-                    BLOCK_BUTTON_SIZE,
-                ),
-                text="Apply",
-                manager=manager,
-            )
-        )
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        new_info = [_str_to_num(x) for x in _get_block_info_texts(ui_elements)]
-        if state.delay_unit == DelayUnit.beats:
-            new_info[BLOCK_DL_IDX] = beats_to_ms(
-                new_info[BLOCK_BPM_IDX], new_info[BLOCK_DL_IDX]
-            )
-        step_data, block_info = state.get_step_info()
-        coor_undo = (state.coor_cur, state.coor_base)
-        ln = state.coor_cur[1]
-        block_idx = step_data[ln][STEP_DATA_BI_IDX]
-        ln_from, ln_to = state.get_block_range_by_block_idx(block_idx)
-        prev_block_step_data = copy.deepcopy(step_data[ln_from:ln_to])
-        prev_block_info = block_info[block_idx]
-
-        step_data, block_info = modify_block(step_data, block_info, new_info, block_idx)
-        update_validity(step_data, ln_from, ln_to)
-        state.step_data = step_data
-        state.block_info = block_info
-        state.update_y_info()
-
-        state.coor_cur = (state.coor_cur[0], min(len(step_data) - 1, state.coor_cur[1]))
-        state.coor_base = (
-            state.coor_base[0],
-            min(len(step_data) - 1, state.coor_base[1]),
-        )
-        coor_redo = (state.coor_cur, state.coor_base)
-        if state.focus_idx == 13:
-            state.focus_idx = -1
-
-        state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
-        history_manager.append(
-            BlockModifyDelta(
-                coor_undo,
-                coor_redo,
-                prev_block_step_data,
-                prev_block_info,
-                new_info,
-                block_idx,
-            )
-        )
-
-
-# UI_INDEX : 14
-class BlockAddAboveButton(ElementBase):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UIButton(
-                relative_rect=pygame.Rect((BO_x0, BO_y0), BLOCK_OPER_BUTTON_SIZE),
-                text="Add ^",
-                manager=manager,
-            )
-        )
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        step_data, block_info = state.get_step_info()
-
-        ln = state.coor_cur[1]
-        block_idx = step_data[ln][STEP_DATA_BI_IDX]
-
-        coor_undo = (state.coor_cur, state.coor_base)
-
-        state.step_data, state.block_info = add_block_up(
-            step_data, block_info, block_idx
-        )
-        state.update_y_info()
-        ln_from, ln_to = state.get_block_range_by_block_idx(block_idx)
-        update_validity(state.step_data, ln_from, ln_to)
-
-        coor_redo = (state.coor_cur, state.coor_base)
-
-        state.focus_idx = 13
-
-        history_manager.append(BlockAddAboveDelta(coor_undo, coor_redo, block_idx))
-
-
-# UI_INDEX : 15
-class BlockAddBelowButton(ElementBase):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UIButton(
-                relative_rect=pygame.Rect((BO_x1, BO_y0), BLOCK_OPER_BUTTON_SIZE),
-                text="Add v",
-                manager=manager,
-            )
-        )
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        step_data, block_info = state.get_step_info()
-
-        ln = state.coor_cur[1]
-        block_idx = step_data[ln][STEP_DATA_BI_IDX]
-
-        coor_undo = (state.coor_cur, state.coor_base)
-
-        state.step_data, state.block_info = add_block_down(
-            step_data, block_info, block_idx
-        )
-        state.update_y_info()
-        ln_from, ln_to = state.get_block_range_by_block_idx(block_idx)
-        update_validity(state.step_data, ln_from, ln_to)
-
-        coor_redo = (state.coor_cur, state.coor_base)
-
-        state.focus_idx = 14
-
-        history_manager.append(BlockAddBelowDelta(coor_undo, coor_redo, block_idx))
-
-
-# UI_INDEX : 16
-class BlockSplitButton(ElementBase):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UIButton(
-                relative_rect=pygame.Rect((BO_x2, BO_y0), BLOCK_OPER_BUTTON_SIZE),
-                text="Split",
-                manager=manager,
-            )
-        )
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        step_data, block_info = state.get_step_info()
-        coor_undo = (state.coor_cur, state.coor_base)
-        ln = state.coor_cur[1]
-        block_idx = step_data[ln][STEP_DATA_BI_IDX]
-        state.step_data, state.block_info = split_block(
-            step_data, block_info, block_idx, ln
-        )
-        state.update_y_info()
-
-        coor_redo = (state.coor_cur, state.coor_base)
-
-        state.focus_idx = 15
-        state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
-
-        history_manager.append(BlockSplitDelta(coor_undo, coor_redo, block_idx, ln))
-
-
-# UI_INDEX : 17
-class BlockDeleteButton(ElementBase):
-    def __init__(self, manager: pygame_gui.UIManager):
-        super().__init__(
-            pygame_gui.elements.UIButton(
-                relative_rect=pygame.Rect((BO_x3, BO_y0), BLOCK_OPER_BUTTON_SIZE),
-                text="Delete",
-                manager=manager,
-            )
-        )
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        step_data, block_info = state.get_step_info()
-
-        # Check that there is only one block
-        if len(block_info) == 1:
-            print("Cannot delete last block")
-            return
-
-        coor_undo = (state.coor_cur, state.coor_base)
-
-        ln = state.coor_cur[1]
-        block_idx = step_data[ln][STEP_DATA_BI_IDX]
-        ln_from, ln_to = state.get_block_range_by_block_idx(block_idx)
-        deleted_step_info: List[Tuple[int, int, int]] = []
-        for ln in range(ln_from, ln_to):
-            for col in range(STEP_DATA_OFFSET, len(step_data[0])):
-                if step_data[ln][col] != 0:
-                    deleted_step_info.append((ln, col, step_data[ln][col]))
-        deleted_block_info = copy.deepcopy(block_info[block_idx])
-        state.step_data, state.block_info = delete_block(
-            step_data, block_info, block_idx
-        )
-        update_validity(state.step_data, ln_from - 1, ln_from + 1)
-        state.update_y_info()
-
-        state.coor_cur = (
-            state.coor_cur[0],
-            min(len(state.step_data) - 1, state.coor_cur[1]),
-        )
-        state.coor_base = (
-            state.coor_base[0],
-            min(len(state.step_data) - 1, state.coor_base[1]),
-        )
-
-        coor_redo = (state.coor_cur, state.coor_base)
-
-        state.focus_idx = 16
-        state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
-
-        history_manager.append(
-            BlockDeleteDelta(
-                coor_undo, coor_redo, deleted_step_info, deleted_block_info, block_idx
-            )
-        )
-
-
-# UI_INDEX : 18
-class ScrollUpButton(ElementBase):
-    def __init__(
-        self, manager: pygame_gui.UIManager, loc: Tuple[int, int], size: Tuple[int, int]
-    ):
-        super().__init__(
-            pygame_gui.elements.UIButton(
-                relative_rect=pygame.Rect(loc, size),
-                text="^",
-                manager=manager,
-            )
-        )
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        state.scr_y = max(state.scr_y - SCROLL_SPEED, 0)
-
-    def set_location(self, loc: Tuple[int, int]):
-        self.e.get_abs_rect().topleft = loc
-        self.e.rebuild()
-
-
-# UI_INDEX : 19
-class ScrollDownButton(ElementBase):
-    def __init__(
-        self, manager: pygame_gui.UIManager, loc: Tuple[int, int], size: Tuple[int, int]
-    ):
-        super().__init__(
-            pygame_gui.elements.UIButton(
-                relative_rect=pygame.Rect(loc, size),
-                text="v",
-                manager=manager,
-            )
-        )
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        state.scr_y = min(state.scr_y + SCROLL_SPEED, state.max_y)
-
-    def set_location(self, loc: Tuple[int, int]):
-        self.e.get_abs_rect().bottomleft = loc
-        self.e.rebuild()
+from history_manager import HistoryManager
+from ui_elements import *
 
 
 class UIElementManager:
-    def __init__(self, manager: pygame_gui.UIManager):
-        self.manager = manager
-        self.ui_elements: Dict[str, ElementBase] = {
-            "000_Play": PlayButton(manager),
-            "001_Save": SaveButton(manager),
-            "002_Load": LoadButton(manager),
-            "003_Undo": UndoButton(manager),
-            "004_Redo": RedoButton(manager),
-            "005_BI_BPM": BPMTexbox(manager),
-            "006_BI_B/M": BeatPerMeasureTextbox(manager),
-            "007_BI_S/B": SplitPerBeatTextbox(manager),
-            "008_BI_Delay": DelayTexbox(manager),
-            "009_BI_DelayUnit": DelayUnitButton(manager),
-            "010_BI_Measures": MeasuresTexbox(manager),
-            "011_BI_Beats": BeatsTexbox(manager),
-            "012_BI_Splits": SplitsTexbox(manager),
-            "013_BI_Apply": ApplyButton(manager),
-            "014_BlockAddAbove": BlockAddAboveButton(manager),
-            "015_BlockAddBelow": BlockAddBelowButton(manager),
-            "016_BlockSplit": BlockSplitButton(manager),
-            "017_BlockDelete": BlockDeleteButton(manager),
-            "018_ScrollUp": ScrollUpButton(manager, (0, 0), (SCROLL_BAR_WIDTH, 30)),
-            "019_ScrollDown": ScrollDownButton(manager, (0, 0), (SCROLL_BAR_WIDTH, 30)),
-        }
+    def __init__(self):
+        self.initialize()
 
     def get_ui_elements(self):
         return self.ui_elements
 
+    def get_ui_element_by_idx(self, idx: int):
+        if idx != -1:
+            return self.ui_elements[idx]
+        else:
+            return None
+
     def relocate_scroll_button(self, state: State):
-        scroll_x = self.ui_elements["018_ScrollUp"].e.get_abs_rect().left
-        if scroll_x != state.scrollbar_x_start:
-            self.ui_elements["018_ScrollUp"].set_location((state.scrollbar_x_start, 0))
-            self.ui_elements["019_ScrollDown"].set_location(
+        scrollbar_x, scrollbar_y = (
+            self.ui_elements[SCROLLBAR_DOWN_BUTTON].e.get_abs_rect().bottomleft
+        )
+        if scrollbar_x != state.scrollbar_x_start or scrollbar_y != state.screen_height:
+            self.ui_elements[SCROLLBAR_UP_BUTTON].set_location(
+                (state.scrollbar_x_start, 0)
+            )
+            self.ui_elements[SCROLLBAR_DOWN_BUTTON].set_location(
                 (state.scrollbar_x_start, state.screen_height)
             )
 
@@ -943,13 +44,13 @@ class UIElementManager:
     def process_event(
         self, history_manager: HistoryManager, state: State, event: pygame.Event
     ):
-        for k, element in self.ui_elements.items():
+        for element in self.ui_elements:
             if element.condition(state, event):
                 element.action(history_manager, state, event, self.ui_elements)
                 break
 
     def check_textbox_clicked(self, state: State, event: pygame.Event):
-        for i, (k, element) in enumerate(self.ui_elements.items()):
+        for i, element in enumerate(self.ui_elements):
             if (
                 type(element.e) == pygame_gui.elements.UITextEntryLine
                 and element.e.get_abs_rect().collidepoint(event.pos)
@@ -966,14 +67,500 @@ class UIElementManager:
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
         info = block_info[block_idx]
         [bpm, bm, sb, delay, measures, beats, splits] = info
-        self.ui_elements["005_BI_BPM"].set_text(num_to_str(bpm))
-        self.ui_elements["006_BI_B/M"].set_text(str(bm))
-        self.ui_elements["007_BI_S/B"].set_text(str(sb))
-        self.ui_elements["008_BI_Delay"].set_text(
+        self.ui_elements[BI_BPM_TEXTBOX].set_text(num_to_str(bpm))
+        self.ui_elements[BI_BM_TEXTBOX].set_text(str(bm))
+        self.ui_elements[BI_BS_TEXTBOX].set_text(str(sb))
+        self.ui_elements[BI_DL_TEXBOX].set_text(
             num_to_str(delay)
             if state.delay_unit == DelayUnit.ms
             else num_to_str(ms_to_beats(bpm, delay))
         )
-        self.ui_elements["010_BI_Measures"].set_text(str(measures))
-        self.ui_elements["011_BI_Beats"].set_text(str(beats))
-        self.ui_elements["012_BI_Splits"].set_text(str(splits))
+        self.ui_elements[BI_MS_TEXTBOX].set_text(str(measures))
+        self.ui_elements[BI_BT_TEXTBOX].set_text(str(beats))
+        self.ui_elements[BI_SP_TEXTBOX].set_text(str(splits))
+
+    def initialize(self):
+
+        manager = pygame_gui.UIManager((800, 700), "theme.json")
+
+        PANEL_1_HEIGHT = 30
+        PANEL_2_HEIGHT = 200
+        PANEL_3_HEIGHT = 80
+        PANEL_4_HEIGHT = 140
+        PANEL_5_HEIGHT = 200
+        SUB_PANEL_WIDTH = 80
+        SUB_PANEL_HEIGHT = 120
+        SUB_PANEL_BUTTON_HEIGHT = SUB_PANEL_HEIGHT // 4
+
+        PANEL_1_BUTTON_WIDTH = 50
+        F_x0 = PANEL_1_BUTTON_WIDTH * 0
+        F_x1 = PANEL_1_BUTTON_WIDTH * 1
+        F_x2 = PANEL_1_BUTTON_WIDTH * 2
+        F_x3 = PANEL_1_BUTTON_WIDTH * 3
+
+        panel_1 = UIPanel(
+            relative_rect=pygame.Rect(0, 0, 300, 30), object_id="@panel_odd"
+        )
+        file_dropdown_panel = UIPanel(
+            relative_rect=Rect(F_x0, PANEL_1_HEIGHT, SUB_PANEL_WIDTH, SUB_PANEL_HEIGHT),
+            object_id="@button_base",
+            manager=manager,
+            visible=False,
+        )
+        # file_dropdown_panel.change_layer(100)
+        file_toolbar_button = UIButton(
+            relative_rect=Rect(0, 0, 50, PANEL_1_HEIGHT),
+            text="File",
+            object_id="@button_base",
+            manager=manager,
+            container=panel_1,
+        )
+
+        file_load_button = UIButton(
+            relative_rect=Rect(
+                F_x0,
+                SUB_PANEL_BUTTON_HEIGHT * 0,
+                SUB_PANEL_WIDTH,
+                SUB_PANEL_BUTTON_HEIGHT,
+            ),
+            text="Load",
+            object_id="@button_base",
+            container=file_dropdown_panel,
+            manager=manager,
+        )
+        file_load_button.change_layer(100)
+        file_load_mp3_button = UIButton(
+            relative_rect=Rect(
+                F_x0,
+                SUB_PANEL_BUTTON_HEIGHT * 1,
+                SUB_PANEL_WIDTH,
+                SUB_PANEL_BUTTON_HEIGHT,
+            ),
+            text="Load MP3",
+            object_id="@button_base",
+            container=file_dropdown_panel,
+            manager=manager,
+        )
+        file_load_mp3_button.change_layer(100)
+        file_save_button = UIButton(
+            relative_rect=Rect(
+                F_x0,
+                SUB_PANEL_BUTTON_HEIGHT * 2,
+                SUB_PANEL_WIDTH,
+                SUB_PANEL_BUTTON_HEIGHT,
+            ),
+            text="Save",
+            object_id="@button_base",
+            container=file_dropdown_panel,
+            manager=manager,
+        )
+        file_save_button.change_layer(100)
+        file_save_as_button = UIButton(
+            relative_rect=Rect(
+                F_x0,
+                SUB_PANEL_BUTTON_HEIGHT * 3,
+                SUB_PANEL_WIDTH,
+                SUB_PANEL_BUTTON_HEIGHT,
+            ),
+            text="Save as",
+            object_id="@button_base",
+            container=file_dropdown_panel,
+            manager=manager,
+        )
+        file_save_as_button.change_layer(100)
+
+        playspeed_button = UIButton(
+            relative_rect=Rect(F_x1, 0, 50, 30),
+            text="1.0x",
+            object_id="@button_base",
+            manager=manager,
+            container=panel_1,
+        )
+        playspeed_button.change_layer(100)
+
+        play_button = UIButton(
+            relative_rect=Rect(F_x2, 0, 50, 30),
+            text="Play",
+            object_id="@button_base",
+            manager=manager,
+            container=panel_1,
+        )
+        play_button.change_layer(100)
+
+        play_time_text = UILabel(
+            relative_rect=Rect(F_x3, 0, 150, 30),
+            text="00:00:000",
+            object_id="@textbox_time",
+            manager=manager,
+            container=panel_1,
+        )
+
+        # Block Information
+        panel_2 = UIPanel(
+            relative_rect=Rect(0, PANEL_1_HEIGHT, OPTION_WIDTH, PANEL_2_HEIGHT),
+            object_id="@panel_even",
+            manager=manager,
+        )
+
+        BLOCK_INFO_GAP = 10
+        BI_x0 = BLOCK_INFO_GAP
+        BI_w0 = 60
+        BI_x1 = BI_x0 + BI_w0 + BLOCK_INFO_GAP // 2
+        BI_w1 = 80
+        BI_x2 = BI_x1 + BI_w1 + BLOCK_INFO_GAP // 2
+        BI_w2 = 60
+        BI_x3 = BI_x2 + BI_w2 + BLOCK_INFO_GAP // 2
+        BI_w3 = 40 + BLOCK_INFO_GAP
+
+        BI_h = 25
+        BI_y0 = BLOCK_INFO_GAP + 30
+        BI_y1 = BI_y0 + BI_h + BLOCK_INFO_GAP
+        BI_y2 = BI_y1 + BI_h + BLOCK_INFO_GAP
+        BI_y3 = BI_y2 + BI_h + BLOCK_INFO_GAP
+
+        # Text
+        block_main_text = UILabel(
+            relative_rect=Rect(0, 0, 300, 40),
+            text="Block Information",
+            object_id="@header_even",
+            manager=manager,
+            container=panel_2,
+        )
+
+        # block_main_text.disable()
+        block_bpm_text = UILabel(
+            relative_rect=Rect(BI_x0, BI_y0, BI_w0, BI_h),
+            text="BPM",
+            object_id="@label_base",
+            manager=manager,
+            container=panel_2,
+        )
+        block_bm_text = UILabel(
+            relative_rect=Rect(BI_x0, BI_y1, BI_w0, BI_h),
+            text="B/M",
+            object_id="@label_base",
+            manager=manager,
+            container=panel_2,
+        )
+        block_sb_text = UILabel(
+            relative_rect=Rect(BI_x0, BI_y2, BI_w0, BI_h),
+            text="S/B",
+            object_id="@label_base",
+            manager=manager,
+            container=panel_2,
+        )
+        block_delay_text = UILabel(
+            relative_rect=Rect(BI_x0, BI_y3, BI_w0, BI_h),
+            text="Delay",
+            object_id="@label_base",
+            manager=manager,
+            container=panel_2,
+        )
+        block_measures_text = UILabel(
+            relative_rect=Rect(BI_x2, BI_y0, BI_w0, BI_h),
+            text="Measures",
+            object_id="@label_measures",
+            manager=manager,
+            container=panel_2,
+        )
+        block_beats_text = UILabel(
+            relative_rect=Rect(BI_x2, BI_y1, BI_w0, BI_h),
+            text="Beats",
+            object_id="@label_base",
+            manager=manager,
+            container=panel_2,
+        )
+        block_splits_text = UILabel(
+            relative_rect=Rect(BI_x2, BI_y2, BI_w0, BI_h),
+            text="Splits",
+            object_id="@label_base",
+            manager=manager,
+            container=panel_2,
+        )
+
+        # Block Information TextEntryLine
+        block_bpm_line = UITextEntryLine(
+            relative_rect=Rect(BI_x1, BI_y0, BI_w1, BI_h),
+            object_id="@textentryline_base",
+            manager=manager,
+            container=panel_2,
+        )
+        block_bm_line = UITextEntryLine(
+            relative_rect=Rect(BI_x1, BI_y1, BI_w1, BI_h),
+            object_id="@textentryline_base",
+            manager=manager,
+            container=panel_2,
+        )
+        block_sb_line = UITextEntryLine(
+            relative_rect=Rect(BI_x1, BI_y2, BI_w1, BI_h),
+            object_id="@textentryline_base",
+            manager=manager,
+            container=panel_2,
+        )
+        block_delay_line = UITextEntryLine(
+            relative_rect=Rect(BI_x1, BI_y3, BI_w1, BI_h),
+            object_id="@textentryline_base",
+            manager=manager,
+            container=panel_2,
+        )
+        block_measures_line = UITextEntryLine(
+            relative_rect=Rect(BI_x3, BI_y0, BI_w3, BI_h),
+            object_id="@textentryline_base",
+            manager=manager,
+            container=panel_2,
+        )
+        block_beats_line = UITextEntryLine(
+            relative_rect=Rect(BI_x3, BI_y1, BI_w3, BI_h),
+            object_id="@textentryline_base",
+            manager=manager,
+            container=panel_2,
+        )
+        block_splits_line = UITextEntryLine(
+            relative_rect=Rect(BI_x3, BI_y2, BI_w3, BI_h),
+            object_id="@textentryline_base",
+            manager=manager,
+            container=panel_2,
+        )
+
+        block_delay_unit_button = UIButton(
+            relative_rect=Rect(BI_x2, BI_y3, 40, BI_h),
+            text="beats",
+            object_id="@delay_unit_button",
+            manager=manager,
+            container=panel_2,
+        )
+
+        block_apply_button = UIButton(
+            relative_rect=Rect(BI_x3, BI_y3, BI_w3, BI_h),
+            text="Apply",
+            object_id="@delay_unit_button",
+            manager=manager,
+            container=panel_2,
+        )
+
+        # Block Operation
+        panel_3 = UIPanel(
+            relative_rect=Rect(
+                0, PANEL_1_HEIGHT + PANEL_2_HEIGHT, OPTION_WIDTH, PANEL_3_HEIGHT
+            ),
+            object_id="@panel_odd",
+            manager=manager,
+        )
+
+        block_operation_header_text = UITextBox(
+            relative_rect=Rect(0, 0, OPTION_WIDTH, 40),
+            html_text="Block Operation",
+            object_id="@header_odd",
+            manager=manager,
+            container=panel_3,
+        )
+
+        BLOCK_OPER_BUTTON_WIDTH = 75
+        BLOCK_OPER_BUTTON_HEIGHT = 30
+        BLOCK_OPER_BUTTON_WIDTH, BLOCK_OPER_BUTTON_HEIGHT = (
+            BLOCK_OPER_BUTTON_WIDTH,
+            BLOCK_OPER_BUTTON_HEIGHT,
+        )
+
+        BO_x0 = 0
+        BO_x1 = BO_x0 + BLOCK_OPER_BUTTON_WIDTH
+        BO_x2 = BO_x1 + BLOCK_OPER_BUTTON_WIDTH
+        BO_x3 = BO_x2 + BLOCK_OPER_BUTTON_WIDTH
+        BO_y0 = 40
+
+        block_add_above_button = UIButton(
+            relative_rect=Rect(
+                BO_x0, BO_y0, BLOCK_OPER_BUTTON_WIDTH, BLOCK_OPER_BUTTON_HEIGHT
+            ),
+            text="Add ^",
+            object_id="@button_base",
+            container=panel_3,
+        )
+        block_add_below_button = UIButton(
+            relative_rect=Rect(
+                BO_x1, BO_y0, BLOCK_OPER_BUTTON_WIDTH, BLOCK_OPER_BUTTON_HEIGHT
+            ),
+            text="Add v",
+            object_id="@button_base",
+            container=panel_3,
+        )
+        block_split_button = UIButton(
+            relative_rect=Rect(
+                BO_x2, BO_y0, BLOCK_OPER_BUTTON_WIDTH, BLOCK_OPER_BUTTON_HEIGHT
+            ),
+            text="Split",
+            object_id="@button_base",
+            container=panel_3,
+        )
+        block_delete_button = UIButton(
+            relative_rect=Rect(
+                BO_x3, BO_y0, BLOCK_OPER_BUTTON_WIDTH, BLOCK_OPER_BUTTON_HEIGHT
+            ),
+            text="Delete",
+            object_id="@button_base",
+            container=panel_3,
+        )
+
+        # Mode
+        panel_4 = UIPanel(
+            relative_rect=Rect(
+                0,
+                PANEL_1_HEIGHT + PANEL_2_HEIGHT + PANEL_3_HEIGHT,
+                OPTION_WIDTH,
+                PANEL_4_HEIGHT,
+            ),
+            object_id="@panel_even",
+            manager=manager,
+        )
+
+        mode_header_text = UITextBox(
+            relative_rect=Rect(0, 0, OPTION_WIDTH, 40),
+            html_text="Mode",
+            object_id="@header_even",
+            manager=manager,
+            container=panel_4,
+        )
+
+        MODE_LINE_HEIGHT = 30
+        MODE_GAP = 10
+        MO_x0 = MODE_GAP
+        MO_w0 = 240
+        MO_x1 = BI_x0 + MO_w0
+        MO_w1 = 40
+
+        MO_y0 = 40
+        MO_y1 = MO_y0 + MODE_LINE_HEIGHT
+        MO_y2 = MO_y1 + MODE_LINE_HEIGHT
+        MO_y3 = MO_y2 + MODE_LINE_HEIGHT
+
+        mode_1_text = UITextBox(
+            relative_rect=Rect(MO_x0, MO_y0, MO_w0, MODE_LINE_HEIGHT),
+            html_text="Auto line pass",
+            object_id="@textbox_base",
+            manager=manager,
+            container=panel_4,
+        )
+        mode_2_text = UITextBox(
+            relative_rect=Rect(MO_x0, MO_y1, MO_w0, MODE_LINE_HEIGHT),
+            html_text="Fix selected line to receptor",
+            object_id="@textbox_base",
+            manager=manager,
+            container=panel_4,
+        )
+        mode_3_text = UITextBox(
+            relative_rect=Rect(MO_x0, MO_y2, MO_w0, MODE_LINE_HEIGHT),
+            html_text="Show Logs",
+            object_id="@textbox_base",
+            manager=manager,
+            container=panel_4,
+        )
+
+        mode_1_button = UIButton(
+            relative_rect=Rect(MO_x1, MO_y0, MO_w1, MODE_LINE_HEIGHT),
+            text="ON",
+            object_id="@button_base",
+            manager=manager,
+            container=panel_4,
+        )
+        mode_2_button = UIButton(
+            relative_rect=Rect(MO_x1, MO_y1, MO_w1, MODE_LINE_HEIGHT),
+            text="ON",
+            object_id="@button_base",
+            manager=manager,
+            container=panel_4,
+        )
+        mode_3_button = UIButton(
+            relative_rect=Rect(MO_x1, MO_y2, MO_w1, MODE_LINE_HEIGHT),
+            text="ON",
+            object_id="@button_base",
+            manager=manager,
+            container=panel_4,
+        )
+
+        offset = 400
+        panel_5 = UIPanel(
+            relative_rect=Rect(
+                0,
+                PANEL_1_HEIGHT + PANEL_2_HEIGHT + PANEL_3_HEIGHT + PANEL_4_HEIGHT,
+                OPTION_WIDTH,
+                PANEL_5_HEIGHT,
+            ),
+            object_id="@panel_odd",
+            manager=manager,
+        )
+
+        logger_header = UITextBox(
+            relative_rect=Rect(0, 0, OPTION_WIDTH, 40),
+            html_text="Log",
+            object_id="@header_odd",
+            manager=manager,
+            container=panel_5,
+        )
+
+        logger_textbox = UITextBox(
+            relative_rect=Rect(0, 40, OPTION_WIDTH, 110),
+            html_text="[{}] Welcome to UCS Editor".format(time.strftime("%H:%M:%S")),
+            object_id="@textbox_log",
+            manager=manager,
+            container=panel_5,
+        )
+
+        logger_clear_button = UIButton(
+            relative_rect=Rect(125, 160, 50, 30),
+            text="Clear",
+            object_id="@button_base",
+            manager=manager,
+            container=panel_5,
+        )
+
+        SCROLLBAR_BUTTON_WIDTH = 20
+        SCROLLBAR_BUTTON_HEIGHT = 30
+        scrollbar_up_button = UIButton(
+            relative_rect=Rect(0, 0, SCROLLBAR_BUTTON_WIDTH, SCROLLBAR_BUTTON_HEIGHT),
+            text="^",
+            object_id="@button_base",
+            manager=manager,
+            container=panel_5,
+        )
+        scrollbar_down_button = UIButton(
+            relative_rect=Rect(0, 0, SCROLLBAR_BUTTON_WIDTH, SCROLLBAR_BUTTON_HEIGHT),
+            text="v",
+            object_id="@button_base",
+            manager=manager,
+            container=panel_5,
+        )
+
+        self.manager = manager
+        self.ui_elements: List[ElementBase] = [
+            # Panel 1 : File & Play Area
+            FileButton(file_toolbar_button),
+            LoadButton(file_load_button),
+            LoadMP3Button(file_load_mp3_button),
+            SaveButton(file_save_button),
+            SaveAsButton(file_save_as_button),
+            PlaySpeedButton(playspeed_button),
+            PlayButton(play_button),
+            # Panel 2 : Block Information Area
+            BPMTexbox(block_bpm_line),
+            BeatPerMeasureTextbox(block_bm_line),
+            SplitPerBeatTextbox(block_sb_line),
+            DelayTexbox(block_delay_line),
+            DelayUnitButton(block_delay_unit_button),
+            MeasuresTexbox(block_measures_line),
+            BeatsTexbox(block_beats_line),
+            SplitsTexbox(block_splits_line),
+            ApplyButton(block_apply_button),
+            # Panel 3 : Block Operation Area
+            BlockAddAboveButton(block_add_above_button),
+            BlockAddBelowButton(block_add_below_button),
+            BlockSplitButton(block_split_button),
+            BlockDeleteButton(block_delete_button),
+            # Panel 4 : Mode Area
+            AutoLinePassButton(mode_1_button),
+            FixLineToReceptor(mode_2_button),
+            # Panel 5 : Logger Area
+            LogClearButton(logger_clear_button),
+            # Panel 6 : Scrollbar Area
+            ScrollUpButton(scrollbar_up_button),
+            ScrollDownButton(scrollbar_down_button),
+        ]

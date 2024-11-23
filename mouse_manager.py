@@ -54,7 +54,7 @@ class MouseManager:
         elif (
             state.scrollbar_x_start
             <= mouse_x
-            < state.scrollbar_x_start + SCROLL_BAR_WIDTH
+            < state.scrollbar_x_start + SCROLLBAR_BUTTON_WIDTH
         ) and (state.scrollbar_y <= mouse_y < state.scrollbar_y + state.scrollbar_h):
             state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = False, True
             state.focus_idx = -1
