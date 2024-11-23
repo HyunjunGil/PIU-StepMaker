@@ -75,6 +75,11 @@ class State:
     def get_y_info(self):
         return self.y_to_ln, self.ln_to_y
 
+    def log(self, s: str, quite=True):
+        if not quite:
+            print(s)
+        self.logs.append(s)
+
     def update_x_info(self):
         step_size, cols = self.get_step_size(), self.get_cols()
         self.measure_x_start = self.step_x_start + step_size * cols
@@ -229,5 +234,8 @@ class State:
         self.music_len: int = 0  # in ms
         self.music_start_time: int = 0  # in ms
         self.music_start_offset: int = 0  # in ms
+
+        # Log
+        self.logs: List[str] = []
 
         self.update_y_info()

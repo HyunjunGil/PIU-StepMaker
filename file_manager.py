@@ -127,18 +127,15 @@ def load_ucs_file(
 
 def save_ucs_file(
     state: State,
-    # path: str,
-    # format: int,
-    # mode: str,
-    # step_data: List[List[int]],
-    # block_info: List[List[int | float]],
 ):
-    # if not os.path.exists(state.ucs_save_path):
-    #     os.makedirs(state.ucs_save_path)
+
+    if state.ucs_save_path == "":
+        print("Save path not initialized")
+        return
     path, format, mode = state.ucs_save_path, state.format, state.mode
     step_data, block_info = state.get_step_info()
     rows, cols = len(step_data), len(step_data[0]) - STEP_DATA_OFFSET
-    with open("result.ucs", "w") as f:
+    with open(path, "w") as f:
         f.write(":Format=1\n")
         f.write(":Mode=" + "Single\n" if mode == "Single" else "Double\n")
 

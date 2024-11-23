@@ -559,6 +559,7 @@ class UIElementManager:
             AutoLinePassButton(mode_1_button),
             FixLineToReceptor(mode_2_button),
             # Panel 5 : Logger Area
+            LogTextbox(logger_textbox),
             LogClearButton(logger_clear_button),
             # Panel 6 : Scrollbar Area
             ScrollUpButton(scrollbar_up_button),

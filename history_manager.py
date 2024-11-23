@@ -82,6 +82,11 @@ class StepChartChangeDelta(StateDelta):
         state.coor_cur, state.coor_base = self.coor_undo
         state.sync_scr_y()
 
+        if ln_from == ln_to - 1:
+            state.log(f"(Undo) Undo Ln{ln_from}", quite=False)
+        else:
+            state.log(f"(Undo) Undo Ln{ln_from}~{ln_to}", quite=False)
+
     def redo(self, state: State):
         step_data = state.step_data
         for diff in self.step_diff:
@@ -96,6 +101,10 @@ class StepChartChangeDelta(StateDelta):
 
         state.coor_cur, state.coor_base = self.coor_redo
         state.sync_scr_y()
+        if ln_from == ln_to - 1:
+            state.log(f"(Redo) Redo Ln{ln_from}", quite=False)
+        else:
+            state.log(f"(Redo) Redo Ln{ln_from}~{ln_to}", quite=False)
 
 
 class BlockModifyDelta(StateDelta):
@@ -124,6 +133,7 @@ class BlockModifyDelta(StateDelta):
         update_validity(state.step_data, ln_from - 1, ln_from + 1)
         update_validity(state.step_data, ln_to - 1, ln_to + 1)
         state.block_info[self.block_idx] = self.prev_block_info
+        state.log(f"(Undo) Recover Block #{self.block_idx + 1}", quite=False)
         super().undo(state)
 
     def redo(self, state: State):
@@ -134,6 +144,7 @@ class BlockModifyDelta(StateDelta):
         ln_from, ln_to = state.get_block_range_by_block_idx(self.block_idx)
         update_validity(state.step_data, ln_from - 1, ln_from + 1)
         update_validity(state.step_data, ln_to - 1, ln_to + 1)
+        state.log(f"(Redo) Modify Block #{self.block_idx + 1}", quite=False)
         super().redo(state)
 
 
@@ -179,6 +190,7 @@ class BlockDeleteDelta(StateDelta):
         ln_from, ln_to = state.get_block_range_by_block_idx(self.block_idx)
         update_validity(state.step_data, ln_from - 1, ln_to + 1)
 
+        state.log(f"(Undo) Restore Block #{self.block_idx + 1}", quite=False)
         super().undo(state)
 
     def redo(self, state: State):
@@ -188,6 +200,8 @@ class BlockDeleteDelta(StateDelta):
             state.step_data, state.block_info, self.block_idx
         )
         update_validity(state.step_data, ln_from - 1, ln_from + 1)
+
+        state.log(f"(Redo) Delete Block #{self.block_idx + 1}", quite=False)
         super().redo(state)
 
 
@@ -212,6 +226,7 @@ class BlockAddAboveDelta(StateDelta):
         update_validity(state.step_data, ln_from - 1, ln_from + 1)
         state.block_info.pop(self.block_idx)
 
+        state.log(f"(Undo) Delete Block #{self.block_idx}", quite=False)
         super().undo(state)
 
     def redo(self, state: State):
@@ -225,6 +240,7 @@ class BlockAddAboveDelta(StateDelta):
         update_validity(state.step_data, ln_from - 1, ln_from + 1)
         update_validity(state.step_data, ln_to - 1, ln_to + 1)
 
+        state.log(f"(Redo) Add Block #{self.block_idx + 1}", quite=False)
         super().redo(state)
 
 
@@ -249,6 +265,7 @@ class BlockAddBelowDelta(StateDelta):
         update_validity(state.step_data, ln_from - 1, ln_from + 1)
         state.block_info.pop(self.block_idx + 1)
 
+        state.log(f"(Undo) Delete Block #{self.block_idx + 2}", quite=False)
         super().undo(state)
 
     def redo(self, state: State):
@@ -262,6 +279,7 @@ class BlockAddBelowDelta(StateDelta):
         update_validity(state.step_data, ln_from - 1, ln_from + 1)
         update_validity(state.step_data, ln_to - 1, ln_to + 1)
 
+        state.log(f"(Redo) Add Block #{self.block_idx + 2}", quite=False)
         super().redo(state)
 
 
@@ -305,6 +323,10 @@ class BlockSplitDelta(StateDelta):
             tot_ln % sb,
         ]
 
+        state.log(
+            f"(Undo) Merge Block #{self.block_idx + 1} & #{self.block_idx + 2}",
+            quite=False,
+        )
         super().undo(state)
 
     def redo(self, state: State):
@@ -312,6 +334,7 @@ class BlockSplitDelta(StateDelta):
             state.step_data, state.block_info, self.block_idx, self.ln
         )
 
+        state.log(f"(Redo) Split Block #{self.block_idx + 1}", quite=False)
         super().redo(state)
 
 

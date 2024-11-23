@@ -64,15 +64,8 @@ class StepMaker:
         self.ui_manager.relocate_scroll_button(self.state)
         ScrollManager.update_scrollbar_info(self.state)
 
-    def update_ui_elements(self):
+    def emit_event(self):
         state = self.state
-
-        if state.UPDATE_BLOCK_INFORMATION_TEXTBOX:
-            self.ui_manager.update_block_information_textbox(state)
-            self.ui_manager.ui_elements[BI_APPLY_BUTTON].disable()
-            state.APPLY_ENABLED = False
-            state.UPDATE_BLOCK_INFORMATION_TEXTBOX = False
-
         if state.EMIT_BUTTON_PRESS:
             element = self.ui_manager.get_ui_element_by_idx(state.focus_idx)
             pygame.event.post(
@@ -87,6 +80,17 @@ class StepMaker:
             )
             state.EMIT_BUTTON_PRESS = False
 
+    def update_ui_elements(self):
+        state = self.state
+
+        # Update Block Information Textboxes
+        if state.UPDATE_BLOCK_INFORMATION_TEXTBOX:
+            self.ui_manager.update_block_information_textbox(state)
+            self.ui_manager.ui_elements[BI_APPLY_BUTTON].disable()
+            state.APPLY_ENABLED = False
+            state.UPDATE_BLOCK_INFORMATION_TEXTBOX = False
+
+        # Update Focused Rectangle Location
         if state.focus_idx != state.focus_idx_prev:
             if state.focus_idx_prev != -1:
                 element = self.ui_manager.get_ui_element_by_idx(state.focus_idx_prev)
@@ -97,7 +101,25 @@ class StepMaker:
                 element = self.ui_manager.get_ui_element_by_idx(state.focus_idx)
                 element.focus()
 
+        # sub_panel = self.ui_manager.get_ui_element_by_idx(
+        #     FILE_LOAD_BUTTON
+        # ).e.ui_container
+        # if state.focus_idx == -1 and sub_panel.visible:
+        #     print("HIDE")
+        #     sub_panel.hide()
+
+        # Update Scrollbar Button Location
         self.ui_manager.relocate_scroll_button(self.state)
+
+        # Update Logger
+        if state.logs:
+            t = time.strftime("%H:%M:%S")
+            logger = self.ui_manager.ui_elements[LOG_TEXTBOX].e
+            new_text = logger.html_text + f"\n[{t}] " + "\n".join(state.logs)
+            logger.set_text(new_text)
+            state.logs.clear()
+            if logger.scroll_bar:
+                logger.scroll_bar.set_scroll_from_start_percentage(1.0)
 
         play_button = self.ui_manager.ui_elements[FILE_PLAY_BUTTON].e
         if state.MUSIC_PLAYING and play_button.text != "Stop":
@@ -108,15 +130,14 @@ class StepMaker:
     def process_mouse_event(self, event: pygame.Event):
         MouseManager.process_event(self.state, event)
         self.ui_manager.check_textbox_clicked(self.state, event)
-        self.update_ui_elements()
 
     def process_keyboard_event(self, event: pygame.Event):
         self.keyboard_manager.process_event(self.history_manager, self.state, event)
-        self.update_ui_elements()
+        self.emit_event()
 
     def process_ui_element_event(self, event: pygame.Event):
         self.ui_manager.process_event(self.history_manager, self.state, event)
-        self.update_ui_elements()
+        self.emit_event()
 
     def process_ui_manager_event(self, event: pygame.Event):
         self.ui_manager.manager.process_events(event)

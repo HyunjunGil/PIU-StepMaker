@@ -1,7 +1,7 @@
 import pygame, pygame_gui, copy, time
 
 
-from tkinter.filedialog import askopenfilename
+from tkinter.filedialog import askopenfilename, asksaveasfilename
 from file_manager import *
 from abc import *
 from typing import List, Tuple, Dict, Union
@@ -67,10 +67,10 @@ class ElementBase:
                 and event.ui_element == self.e
             )
         else:
-            raise Exception("Invalid type of self.e : ${}".format(type(self.e)))
+            return False
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -89,14 +89,20 @@ class FileButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
-        return super().action(history_manager, state, event, ui_elements)
+        sub_panel = ui_elements[FILE_LOAD_BUTTON].e.ui_container
+        if sub_panel.visible:
+            sub_panel.hide()
+        else:
+            sub_panel.show()
+            state.focus_idx = FILE_LOAD_BUTTON
+        pass
 
 
 class LoadButton(ElementBase):
@@ -106,34 +112,35 @@ class LoadButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         file_path = askopenfilename(
             title="Select an UCS file", filetypes=[("Ucs Files", "*.ucs")]
         )
         if not file_path:
+            state.log("UCS file is not selected")
             return
-        elif not file_path.endswith("ucs"):
-            print("Invalid File. Selected File must be .ucs file")
-            return
-
         ucs_file_path = file_path
         mp3_file_path = ucs_file_path[:-3] + "mp3"
-        if not os.path.exists(mp3_file_path):
-            print("MP3 file is not exists")
-            return
+        ucs_name = file_path.split("/")[-1]
+        mp3_name = mp3_file_path.split("/")[-1]
         step_size_idx = state.step_size_idx
         state.initialize()
         state.step_size_idx = step_size_idx
         load_ucs_file(ucs_file_path, state)
-        load_music_file(mp3_file_path, state)
-        state.ucs_file_path = ucs_file_path
-        state.ucs_save_path = state.ucs_cache_path = ucs_file_path[:-4] + "+cache.ucs"
+        if not os.path.exists(mp3_file_path):
+            state.log("(Warning) MP3 file is not loaded")
+        else:
+            load_music_file(mp3_file_path, state)
+            state.log(f"MP3 file {mp3_name} is loaded")
+
+        state.ucs_file_path = state.ucs_save_path = ucs_file_path
+        state.ucs_cache_path = ucs_file_path[:-4] + ".cache.ucs"
 
         history_manager.initialize(state)
 
@@ -144,6 +151,10 @@ class LoadButton(ElementBase):
         ScrollManager.update_scrollbar_info(state)
         state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
         ui_elements[BI_APPLY_BUTTON].e.disable()
+        state.log(f"UCS file {ucs_name} is loaded")
+
+        # Hide sub-panel
+        state.focus_idx = -1
 
 
 class LoadMP3Button(ElementBase):
@@ -153,14 +164,27 @@ class LoadMP3Button(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
-        return super().action(history_manager, state, event, ui_elements)
+        file_path = askopenfilename(
+            title="Select an mp3 file", filetypes=[("mp3 Files", "*.mp3")]
+        )
+        if not file_path:
+            return
+        mp3_file_path = file_path
+        file_name = mp3_file_path.split("/")[-1]
+        if not os.path.exists(mp3_file_path):
+            state.log("MP3 file is not selected")
+            return
+        load_music_file(mp3_file_path, state)
+        state.log("MP3 file {f} is loaded")
+        # Hide sub-panel
+        state.focus_idx = -1
 
 
 class SaveButton(ElementBase):
@@ -170,14 +194,25 @@ class SaveButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
+        if state.ucs_file_path == "" and state.ucs_save_path == "":
+            SaveAsButton.action(history_manager, state, event, ui_elements)
+
+        # Do nothing ucs_save_path is still not updated(ex. quit without select)
+        if not state.ucs_save_path:
+            return
         save_ucs_file(state)
+
+        state.log(f"Saved to {state.ucs_save_path}")
+
+        # Hide sub-panel
+        state.focus_idx = -1
 
 
 class SaveAsButton(ElementBase):
@@ -187,14 +222,24 @@ class SaveAsButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
-        return super().action(history_manager, state, event, ui_elements)
+        save_path = asksaveasfilename(
+            title="Save file as",
+            filetypes=[("UCS files", "*.ucs")],
+            defaultextension=".ucs",
+        )
+        if save_path is None:
+            return
+        state.ucs_save_path = save_path
+        SaveButton.action(history_manager, state, event, ui_elements)
+        # Hide sub-panel
+        state.focus_idx = -1
 
 
 class PlaySpeedButton(ElementBase):
@@ -206,12 +251,12 @@ class PlaySpeedButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         return super().action(history_manager, state, event, ui_elements)
 
@@ -224,12 +269,12 @@ class PlayButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         if state.music_len == 0:
             print("MUSIC NOT LOADED")
@@ -242,42 +287,6 @@ class PlayButton(ElementBase):
             state.music_start_offset = state.scr_to_time[state.scr_y]
             state.MUSIC_PLAYING = True
             pygame.mixer.music.play(loops=0, start=state.music_start_offset / 1000)
-
-
-# UI_INDEX : 3
-class UndoButton(ElementBase):
-    def __init__(self, element: UIElement):
-        super().__init__(element)
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        history_manager.undo(state)
-
-
-# UI_INDEX : 4
-class RedoButton(ElementBase):
-    def __init__(self, element: UIElement):
-        super().__init__(element)
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        history_manager.redo(state)
 
 
 def _get_block_info_texts(ui_elements: Dict[str, ElementBase]) -> List[str]:
@@ -326,12 +335,12 @@ class BlockInformationText(ElementBase):
             and event.ui_element == self.e
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         if event.type == pygame_gui.UI_TEXT_ENTRY_CHANGED:
             new_info = _get_block_info_texts(ui_elements)
@@ -354,7 +363,6 @@ class BlockInformationText(ElementBase):
             else:
                 ui_elements[BI_APPLY_BUTTON].disable()
                 state.APPLY_ENABLED = False
-            # self.e.redraw()
         else:
             pygame.event.post(
                 pygame.event.Event(
@@ -362,7 +370,6 @@ class BlockInformationText(ElementBase):
                     {
                         "user_type": pygame_gui.UI_BUTTON_PRESSED,
                         "ui_element": ui_elements[BI_APPLY_BUTTON].e,
-                        # "ui_object_id": button.most_specific_combined_id,
                     },
                 )
             )
@@ -381,12 +388,12 @@ class BPMTexbox(BlockInformationText):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         return super().action(history_manager, state, event, ui_elements)
 
@@ -400,12 +407,12 @@ class BeatPerMeasureTextbox(BlockInformationText):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         return super().action(history_manager, state, event, ui_elements)
 
@@ -419,12 +426,12 @@ class SplitPerBeatTextbox(BlockInformationText):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         return super().action(history_manager, state, event, ui_elements)
 
@@ -438,12 +445,12 @@ class DelayTexbox(BlockInformationText):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         return super().action(history_manager, state, event, ui_elements)
 
@@ -456,20 +463,20 @@ class DelayUnitButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         if state.delay_unit == DelayUnit.ms:
-            self.e.set_text("beats")
+            ui_elements[BI_DL_UNIT_BUTTON].e.set_text("beats")
             state.update_y_info()
             state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
             state.delay_unit = DelayUnit.beats
         else:
-            self.e.set_text("ms")
+            ui_elements[BI_DL_UNIT_BUTTON].e.set_text("ms")
             state.update_y_info()
             state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
             state.delay_unit = DelayUnit.ms
@@ -484,12 +491,12 @@ class MeasuresTexbox(BlockInformationText):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         return super().action(history_manager, state, event, ui_elements)
 
@@ -503,12 +510,12 @@ class BeatsTexbox(BlockInformationText):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         return super().action(history_manager, state, event, ui_elements)
 
@@ -522,12 +529,12 @@ class SplitsTexbox(BlockInformationText):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         return super().action(history_manager, state, event, ui_elements)
 
@@ -540,12 +547,12 @@ class ApplyButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         new_info = [_str_to_num(x) for x in _get_block_info_texts(ui_elements)]
         if state.delay_unit == DelayUnit.beats:
@@ -575,6 +582,7 @@ class ApplyButton(ElementBase):
         if state.focus_idx == BI_APPLY_BUTTON:
             state.focus_idx = -1
 
+        state.log(f"Block #{block_idx} is modified")
         state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
         history_manager.append(
             BlockModifyDelta(
@@ -596,12 +604,12 @@ class BlockAddAboveButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         step_data, block_info = state.get_step_info()
 
@@ -619,8 +627,8 @@ class BlockAddAboveButton(ElementBase):
 
         coor_redo = (state.coor_cur, state.coor_base)
 
+        state.log(f"(Add ^) Block #{block_idx} is added")
         state.focus_idx = BO_BLOCK_ADD_A_BUTTON
-
         history_manager.append(BlockAddAboveDelta(coor_undo, coor_redo, block_idx))
 
 
@@ -632,12 +640,12 @@ class BlockAddBelowButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         step_data, block_info = state.get_step_info()
 
@@ -655,8 +663,8 @@ class BlockAddBelowButton(ElementBase):
 
         coor_redo = (state.coor_cur, state.coor_base)
 
+        state.log(f"(Add v) Block #{block_idx + 1} is added")
         state.focus_idx = BO_BLOCK_ADD_B_BUTTON
-
         history_manager.append(BlockAddBelowDelta(coor_undo, coor_redo, block_idx))
 
 
@@ -668,12 +676,12 @@ class BlockSplitButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         step_data, block_info = state.get_step_info()
         coor_undo = (state.coor_cur, state.coor_base)
@@ -686,9 +694,9 @@ class BlockSplitButton(ElementBase):
 
         coor_redo = (state.coor_cur, state.coor_base)
 
+        state.log(f"(Split) Block #{block_idx} is splited")
         state.focus_idx = BO_BLOCK_SPLIT_BUTTON
         state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
-
         history_manager.append(BlockSplitDelta(coor_undo, coor_redo, block_idx, ln))
 
 
@@ -700,12 +708,12 @@ class BlockDeleteButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         step_data, block_info = state.get_step_info()
 
@@ -742,9 +750,9 @@ class BlockDeleteButton(ElementBase):
 
         coor_redo = (state.coor_cur, state.coor_base)
 
+        state.log(f"(Delete) Block #{block_idx} is deleted")
         state.focus_idx = BO_BLOCK_DELETE_BUTTON
         state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
-
         history_manager.append(
             BlockDeleteDelta(
                 coor_undo, coor_redo, deleted_step_info, deleted_block_info, block_idx
@@ -761,14 +769,14 @@ class AutoLinePassButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
-        return super().action(history_manager, state, event, ui_elements)
+        print("Auto line pass mode!")
 
 
 class FixLineToReceptor(ElementBase):
@@ -780,14 +788,34 @@ class FixLineToReceptor(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
+    ):
+        print("Fix lien to receptor!!!")
+
+
+class LogTextbox(ElementBase):
+    def __init__(
+        self, element: UIButton | UITextEntryLine | UIPanel | UITextBox | UILabel
+    ):
+        super().__init__(element)
+        self.e.disable()
+
+    def condition(self, state: State, event: pygame.Event):
+        return super().condition(state, event)
+
+    @staticmethod
+    def action(
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
         ui_elements: Dict[str, ElementBase],
     ):
-        return super().action(history_manager, state, event, ui_elements)
+        pass
 
 
 class LogClearButton(ElementBase):
@@ -799,14 +827,15 @@ class LogClearButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
-        return super().action(history_manager, state, event, ui_elements)
+        t = time.strftime("%H:%M:%S")
+        ui_elements[LOG_TEXTBOX].e.set_text(f"[{t}] Clear logs")
 
 
 # UI_INDEX : 18
@@ -817,12 +846,12 @@ class ScrollUpButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         state.scr_y = max(state.scr_y - SCROLL_SPEED, 0)
 
@@ -839,12 +868,12 @@ class ScrollDownButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
+        ui_elements: List[ElementBase],
     ):
         state.scr_y = min(state.scr_y + SCROLL_SPEED, state.max_y)
 

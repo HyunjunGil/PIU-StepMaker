@@ -53,4 +53,6 @@ while running:
     stepmaker.update_scr_y()
     stepmaker.ui_manager.manager.update(time_delta)
 
+    stepmaker.update_ui_elements()
+
     stepmaker.draw()
