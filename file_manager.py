@@ -1,16 +1,21 @@
-import os
+import os, io
 
 from typing import List, Tuple
 from constants import *
 from state import State
 from utils import update_validity
+from pydub import AudioSegment
 
 
-def load_music_file(path: str, state: State):
+def load_music_file(state: State, path: str):
     if not os.path.exists(path):
         raise FileNotFoundError(f"No such file: {path}")
-    pygame.mixer.music.load(path)
-    state.music_len = int(pygame.mixer.Sound(path).get_length() * 1000)
+
+    state.music = AudioSegment.from_file(path)
+    state.music_len = int(state.music.duration_seconds * 1000)
+
+    # state.music_len = int(pygame.mixer.Sound(path).get_length() * 1000)
+    # pygame.mixer.music.load(path)
 
 
 def load_ucs_file(
@@ -118,6 +123,7 @@ def load_ucs_file(
     state.block_info = block_info
     state.step_data = step_data
     state.update_y_info()
+    state.update_scr_to_time()
 
     step_data, block_info = state.get_step_info()
 

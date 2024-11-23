@@ -31,11 +31,13 @@ class StateDelta:
     def undo(self, state: State):
 
         state.update_y_info()
+        state.update_scr_to_time()
         state.coor_cur, state.coor_base = self.coor_undo
         state.sync_scr_y()
 
     def redo(self, state: State):
         state.update_y_info()
+        state.update_scr_to_time()
         state.coor_cur, state.coor_base = self.coor_redo
         state.sync_scr_y()
 

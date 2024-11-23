@@ -1,3 +1,4 @@
+import pandas as pd
 from typing import List, Tuple
 from constants import (
     STEP_DATA_OFFSET,
@@ -161,3 +162,7 @@ def clear_step(
         if ln_max < ln_to:
             res = res + _clear_step(step_data, ln_to - 1, col)[0]
     return res
+
+
+def ms_to_str(ms: int):
+    return pd.Timestamp(ms, unit="ms").strftime("%M:%S.%f")[:-3]

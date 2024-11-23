@@ -1,3 +1,4 @@
+from pydub import AudioSegment
 from typing import List, Tuple, Dict
 from utils import get_block_size
 from constants import *
@@ -114,6 +115,10 @@ class State:
 
         self.max_y = y
 
+    def update_scr_to_time(self):
+        step_data, block_info = self.get_step_info()
+        step_size = self.get_step_size()
+        music_speed = MUSIC_SPEED_MAP[self.music_speed_idx]
         t, ms_per_pixel = 0, 0.0
         block_idx, measure, bpm, beat, split = -1, 0, 0, 0, 0
 
@@ -133,7 +138,7 @@ class State:
                     max((step_size * 2) // split, MIN_SPLIT_SIZE), step_size
                 )
                 beat_height = line_height * split
-                ms_per_pixel = 60_000.0 / bpm / beat_height
+                ms_per_pixel = 60_000.0 / (music_speed * bpm) / beat_height
             t += ms_per_pixel
 
     def clear_step(self, ln: int, col: int):
@@ -231,7 +236,9 @@ class State:
 
         # Music
         self.scr_to_time: List[int] = [0 for _ in range(100000)]
+        self.music: any = None
         self.music_len: int = 0  # in ms
+        self.music_speed_idx: int = 3
         self.music_start_time: int = 0  # in ms
         self.music_start_offset: int = 0  # in ms
 
@@ -239,3 +246,4 @@ class State:
         self.logs: List[str] = []
 
         self.update_y_info()
+        self.update_scr_to_time()

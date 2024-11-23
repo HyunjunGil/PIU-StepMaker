@@ -1,6 +1,8 @@
-import pygame, pygame_gui, copy, time
+import pygame, pygame_gui, copy, time, io, numpy as np
 
 
+from pydub import AudioSegment
+from pydub.playback import _play_with_simpleaudio
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 from file_manager import *
 from abc import *
@@ -136,7 +138,7 @@ class LoadButton(ElementBase):
         if not os.path.exists(mp3_file_path):
             state.log("(Warning) MP3 file is not loaded")
         else:
-            load_music_file(mp3_file_path, state)
+            load_music_file(state, mp3_file_path)
             state.log(f"MP3 file {mp3_name} is loaded")
 
         state.ucs_file_path = state.ucs_save_path = ucs_file_path
@@ -181,7 +183,7 @@ class LoadMP3Button(ElementBase):
         if not os.path.exists(mp3_file_path):
             state.log("MP3 file is not selected")
             return
-        load_music_file(mp3_file_path, state)
+        load_music_file(state, mp3_file_path)
         state.log("MP3 file {f} is loaded")
         # Hide sub-panel
         state.focus_idx = -1
@@ -234,7 +236,8 @@ class SaveAsButton(ElementBase):
             filetypes=[("UCS files", "*.ucs")],
             defaultextension=".ucs",
         )
-        if save_path is None:
+        print(save_path)
+        if save_path == "":
             return
         state.ucs_save_path = save_path
         SaveButton.action(history_manager, state, event, ui_elements)
@@ -258,7 +261,20 @@ class PlaySpeedButton(ElementBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
-        return super().action(history_manager, state, event, ui_elements)
+        if state.music is None:
+            state.log("(Warning) Music is not loaded")
+
+        restart = False
+        if state.MUSIC_PLAYING:
+            PlayButton.action(history_manager, state, event, ui_elements)
+            restart = True
+
+        state.music_speed_idx = (state.music_speed_idx + 1) % len(MUSIC_SPEED_MAP)
+        music_speed = MUSIC_SPEED_MAP[state.music_speed_idx]
+        ui_elements[FILE_PLAYSPEED_BUTTON].e.set_text(f"{music_speed}x")
+        state.update_scr_to_time()
+        if restart:
+            PlayButton.action(history_manager, state, event, ui_elements)
 
 
 # UI_INDEX : 0
@@ -277,16 +293,51 @@ class PlayButton(ElementBase):
         ui_elements: List[ElementBase],
     ):
         if state.music_len == 0:
-            print("MUSIC NOT LOADED")
+            state.log("Play Failed : Music is not loaded")
             return
+
         if state.MUSIC_PLAYING:
+            pygame.mixer.stop()
             state.MUSIC_PLAYING = False
-            pygame.mixer.music.stop()
         else:
+            music_speed = MUSIC_SPEED_MAP[state.music_speed_idx]
+
+            new_frame_rate = int(state.music.frame_rate * music_speed)
+            audio = state.music._spawn(
+                state.music.raw_data, overrides={"frame_rate": new_frame_rate}
+            ).set_frame_rate(PYGAME_SAMPLE_RATE)
+            raw_data = np.array(audio.get_array_of_samples())
+
             state.music_start_time = int(time.time() * 1000)
-            state.music_start_offset = state.scr_to_time[state.scr_y]
+            state.music_start_offset = int(state.scr_to_time[state.scr_y])
+            # a = time.time()
+            start_idx = int(
+                len(raw_data) * (state.music_start_offset / state.music_len)
+            )
+            sound = pygame.mixer.Sound(buffer=raw_data[start_idx:].tobytes())
+            # print("Elapsed : {:.4f}s".format(time.time() - a))
+            sound.play()
             state.MUSIC_PLAYING = True
-            pygame.mixer.music.play(loops=0, start=state.music_start_offset / 1000)
+
+
+class PlayTimeTextbox(ElementBase):
+    def __init__(
+        self, element: UIButton | UITextEntryLine | UIPanel | UITextBox | UILabel
+    ):
+        super().__init__(element)
+        self.e.disable()
+
+    def condition(self, state: State, event: pygame.Event):
+        return super().condition(state, event)
+
+    @staticmethod
+    def action(
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: Dict[str, ElementBase],
+    ):
+        pass
 
 
 def _get_block_info_texts(ui_elements: Dict[str, ElementBase]) -> List[str]:
@@ -335,8 +386,8 @@ class BlockInformationText(ElementBase):
             and event.ui_element == self.e
         )
 
-    @staticmethod
     def action(
+        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -388,8 +439,8 @@ class BPMTexbox(BlockInformationText):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
-    @staticmethod
     def action(
+        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -407,8 +458,8 @@ class BeatPerMeasureTextbox(BlockInformationText):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
-    @staticmethod
     def action(
+        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -426,8 +477,8 @@ class SplitPerBeatTextbox(BlockInformationText):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
-    @staticmethod
     def action(
+        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -445,8 +496,8 @@ class DelayTexbox(BlockInformationText):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
-    @staticmethod
     def action(
+        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -463,8 +514,8 @@ class DelayUnitButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
-    @staticmethod
     def action(
+        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -472,12 +523,10 @@ class DelayUnitButton(ElementBase):
     ):
         if state.delay_unit == DelayUnit.ms:
             ui_elements[BI_DL_UNIT_BUTTON].e.set_text("beats")
-            state.update_y_info()
             state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
             state.delay_unit = DelayUnit.beats
         else:
             ui_elements[BI_DL_UNIT_BUTTON].e.set_text("ms")
-            state.update_y_info()
             state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
             state.delay_unit = DelayUnit.ms
 
@@ -491,8 +540,8 @@ class MeasuresTexbox(BlockInformationText):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
-    @staticmethod
     def action(
+        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -510,8 +559,8 @@ class BeatsTexbox(BlockInformationText):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
-    @staticmethod
     def action(
+        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -529,8 +578,8 @@ class SplitsTexbox(BlockInformationText):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
-    @staticmethod
     def action(
+        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -547,8 +596,8 @@ class ApplyButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
-    @staticmethod
     def action(
+        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -572,6 +621,7 @@ class ApplyButton(ElementBase):
         state.step_data = step_data
         state.block_info = block_info
         state.update_y_info()
+        state.update_scr_to_time()
 
         state.coor_cur = (state.coor_cur[0], min(len(step_data) - 1, state.coor_cur[1]))
         state.coor_base = (
@@ -622,6 +672,7 @@ class BlockAddAboveButton(ElementBase):
             step_data, block_info, block_idx
         )
         state.update_y_info()
+        state.update_scr_to_time()
         ln_from, ln_to = state.get_block_range_by_block_idx(block_idx)
         update_validity(state.step_data, ln_from, ln_to)
 
@@ -658,6 +709,7 @@ class BlockAddBelowButton(ElementBase):
             step_data, block_info, block_idx
         )
         state.update_y_info()
+        state.update_scr_to_time()
         ln_from, ln_to = state.get_block_range_by_block_idx(block_idx)
         update_validity(state.step_data, ln_from, ln_to)
 
@@ -691,6 +743,7 @@ class BlockSplitButton(ElementBase):
             step_data, block_info, block_idx, ln
         )
         state.update_y_info()
+        state.update_scr_to_time()
 
         coor_redo = (state.coor_cur, state.coor_base)
 
@@ -738,6 +791,7 @@ class BlockDeleteButton(ElementBase):
         )
         update_validity(state.step_data, ln_from - 1, ln_from + 1)
         state.update_y_info()
+        state.update_scr_to_time()
 
         state.coor_cur = (
             state.coor_cur[0],

@@ -540,6 +540,7 @@ class UIElementManager:
             SaveAsButton(file_save_as_button),
             PlaySpeedButton(playspeed_button),
             PlayButton(play_button),
+            PlayTimeTextbox(play_time_text),
             # Panel 2 : Block Information Area
             BPMTexbox(block_bpm_line),
             BeatPerMeasureTextbox(block_bm_line),

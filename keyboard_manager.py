@@ -1,5 +1,6 @@
 import pygame, copy, time
 
+from ui_elements import PlayButton, SaveButton
 from typing import List, Tuple
 from state import State
 from history_manager import HistoryManager, StepChartChangeDelta
@@ -587,17 +588,7 @@ class MusicKey(KeyBase):
     def action(
         self, history_manager: HistoryManager, state: State, event: pygame.Event
     ) -> None:
-        if state.music_len == 0:
-            print("MUSIC NOT LOADED")
-            return
-        if state.MUSIC_PLAYING:
-            state.MUSIC_PLAYING = False
-            pygame.mixer.music.stop()
-        else:
-            state.music_start_time = int(time.time() * 1000)
-            state.music_start_offset = state.scr_to_time[state.scr_y]
-            state.MUSIC_PLAYING = True
-            pygame.mixer.music.play(loops=0, start=state.music_start_offset / 1000)
+        PlayButton.action(history_manager, state, event, [])
 
 
 class SaveKey(KeyBase):
@@ -615,7 +606,7 @@ class SaveKey(KeyBase):
     def action(
         self, history_manager: HistoryManager, state: State, event: pygame.Event
     ) -> None:
-        save_ucs_file(state)
+        SaveButton.action(history_manager, state, event, [])
 
 
 class LoadKey(KeyBase):
@@ -658,11 +649,13 @@ class StepSizeKey(KeyBase):
             state.step_size_idx += 1
             state.update_x_info()
             state.update_y_info()
+            state.update_scr_to_time()
         elif event.key == pygame.K_MINUS and state.step_size_idx != 0:
             print("Adjust to smaller")
             state.step_size_idx -= 1
             state.update_x_info()
             state.update_y_info()
+            state.update_scr_to_time()
 
 
 class KeyboardManager:

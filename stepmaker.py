@@ -6,11 +6,12 @@ from constants import *
 from state import State
 from scroll_manager import ScrollManager
 from ui_element_manager import UIElementManager, ElementBase
+from ui_elements import PlayButton
 from mouse_manager import MouseManager
 from keyboard_manager import KeyboardManager
 from history_manager import HistoryManager
 
-from utils import binary_search
+from utils import binary_search, ms_to_str
 
 
 class StepMaker:
@@ -122,6 +123,12 @@ class StepMaker:
                 logger.scroll_bar.set_scroll_from_start_percentage(1.0)
 
         play_button = self.ui_manager.ui_elements[FILE_PLAY_BUTTON].e
+
+        # Update time text
+        self.ui_manager.ui_elements[FILE_PLAYTIME_TEXT].e.set_text(
+            ms_to_str(state.scr_to_time[state.scr_y])
+        )
+
         if state.MUSIC_PLAYING and play_button.text != "Stop":
             play_button.set_text("Stop")
         elif not state.MUSIC_PLAYING and play_button.text != "Play":
@@ -164,10 +171,15 @@ class StepMaker:
     def adjust_scr_y_to_music(self):
         state = self.state
         t = int(time.time() * 1000)
-        if state.music_start_offset + t - state.music_start_time > state.music_len:
-            state.MUSIC_PLAYING = False
+        if (
+            state.music_start_offset
+            + (t - state.music_start_time) * MUSIC_SPEED_MAP[state.music_speed_idx]
+            > state.music_len
+            or state.scr_y >= state.max_y - 1
+        ):
+            PlayButton.action(self.history_manager, self.state, None, [])
             self.ui_manager.ui_elements[FILE_PLAY_BUTTON].e.set_text("Play")
-            return
+
         state.scr_y = binary_search(
             state.scr_to_time[: state.max_y],
             state.music_start_offset + int(time.time() * 1000) - state.music_start_time,
