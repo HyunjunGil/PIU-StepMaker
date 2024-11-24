@@ -24,23 +24,23 @@ CODE_TO_STEP = [".", "X", "M", "H", "W"]
 
 # Keybinding for Step
 KEY_SINGLE = {
-    "z": 0,
-    "q": 1,
-    "s": 2,
-    "e": 3,
-    "c": 4,
+    pygame.K_z: 0,
+    pygame.K_q: 1,
+    pygame.K_s: 2,
+    pygame.K_e: 3,
+    pygame.K_c: 4,
 }
 KEY_DOUBLE = {
-    "z": 0,
-    "q": 1,
-    "s": 2,
-    "e": 3,
-    "c": 4,
-    "v": 5,
-    "r": 6,
-    "g": 7,
-    "y": 8,
-    "n": 9,
+    pygame.K_z: 0,
+    pygame.K_q: 1,
+    pygame.K_s: 2,
+    pygame.K_e: 3,
+    pygame.K_c: 4,
+    pygame.K_v: 5,
+    pygame.K_r: 6,
+    pygame.K_g: 7,
+    pygame.K_y: 8,
+    pygame.K_n: 9,
 }
 
 COL_TO_KEY = ["z", "q", "s", "e", "c", "v", "r", "g", "y", "n"]
@@ -103,6 +103,9 @@ LIGHT_GREEN = (144, 238, 144)
 LIGHT_BLUE = (221, 254, 243)
 LIGHT_YELLOW = (255, 255, 222)
 LIGHT_RED = (255, 99, 103)
+BUTTON_OFF_COLOR = (76, 80, 82)
+BUTTON_HOVER_COLOR = (200, 238, 200)
+BUTTON_ON_COLOR = LIGHT_GREEN
 
 # Size config
 CELL_SIZE = 48
@@ -142,3 +145,8 @@ BLOCK_SP_IDX = 6
 
 SCROLLBAR_BUTTON_HEIGHT = 30
 SCROLLBAR_BUTTON_WIDTH = 20
+
+
+# Mode
+AUTO_LINE_PASS_MODE = 1
+FIX_LINE_TO_RECEPTOR_MODE = 2

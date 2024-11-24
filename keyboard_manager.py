@@ -34,10 +34,13 @@ class StepChartKey(KeyBase):
 
     def condition(self, state: State, event: pygame.Event) -> bool:
         pressed_keys = pygame.key.get_pressed()
-        key_name = pygame.key.name(event.key)
-        return not (pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL]) and (
-            (state.mode == "Single" and key_name in KEY_SINGLE)
-            or (state.mode == "Double" and key_name in KEY_DOUBLE)
+        return (
+            event.type == pygame.KEYDOWN
+            and not (pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL])
+            and (
+                (state.mode == "Single" and event.key in KEY_SINGLE)
+                or (state.mode == "Double" and event.key in KEY_DOUBLE)
+            )
         )
 
     def action(
@@ -49,7 +52,7 @@ class StepChartKey(KeyBase):
     ) -> None:
         step_data, block_info = state.get_step_info()
         coor_undo = (state.coor_cur, state.coor_base)
-        col = STEP_DATA_OFFSET + KEY_DOUBLE[pygame.key.name(event.key)]
+        col = STEP_DATA_OFFSET + KEY_DOUBLE[event.key]
         ln_from, ln_to = (
             min(state.coor_cur[1], state.coor_base[1]),
             max(state.coor_cur[1], state.coor_base[1]) + 1,
@@ -130,7 +133,9 @@ class UpKey(KeyBase):
             if block_idx != block_idx_prev:
                 state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
 
-        if not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
+        if state.edit_mode in [AUTO_LINE_PASS_MODE, FIX_LINE_TO_RECEPTOR_MODE]:
+            state.coor_base = (state.coor_base[0], state.coor_cur[1])
+        elif not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
             state.coor_base = state.coor_cur
         state.sync_scr_y()
 
@@ -175,7 +180,9 @@ class DownKey(KeyBase):
             if block_idx != block_idx_prev:
                 state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
 
-        if not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
+        if state.edit_mode in [AUTO_LINE_PASS_MODE, FIX_LINE_TO_RECEPTOR_MODE]:
+            state.coor_base = (state.coor_base[0], state.coor_cur[1])
+        elif not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
             state.coor_base = state.coor_cur
 
         state.sync_scr_y()
@@ -200,7 +207,8 @@ class LeftKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-
+        if state.edit_mode in [AUTO_LINE_PASS_MODE, FIX_LINE_TO_RECEPTOR_MODE]:
+            return
         x = state.coor_cur[0]
         pressed_keys = pygame.key.get_pressed()
         if x != 0:
@@ -228,7 +236,8 @@ class RightKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-
+        if state.edit_mode in [AUTO_LINE_PASS_MODE, FIX_LINE_TO_RECEPTOR_MODE]:
+            return
         x = state.coor_cur[0]
         cols = state.get_cols()
         pressed_keys = pygame.key.get_pressed()
@@ -305,9 +314,10 @@ class AreaKey(KeyBase):
     def condition(self, state: State, event: pygame.Event) -> bool:
         pressed_keys = pygame.key.get_pressed()
         return (
-            pressed_keys[pygame.K_LCTRL]
-            and event.type == pygame.KEYDOWN
-            and event.key in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4]
+            event.type == pygame.KEYDOWN
+            and pressed_keys[pygame.K_LCTRL]
+            and event.key
+            in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5]
         )
 
     def action(
@@ -328,10 +338,11 @@ class AreaKey(KeyBase):
             # Update focus to "Add ^" button in Block Operation area
             state.focus_idx = BO_BLOCK_ADD_A_BUTTON
         elif event.key == pygame.K_4:
-            # Update selection square at top square in current scr_y
-            state.coor_base = (0, state.y_to_ln[state.scr_y])
-            state.coor_cur = (state.get_cols() - 1, state.y_to_ln[state.scr_y])
-            state.sync_scr_y()
+            # Update focus to "Add ^" button in Block Operation area
+            state.focus_idx = AUTO_LINE_PASS_BUTTON
+        elif event.key == pygame.K_5:
+            # Update focus to "Add ^" button in Block Operation area
+            state.focus_idx = LOG_CLEAR_BUTTON
 
 
 class EnterKey(KeyBase):
@@ -362,10 +373,9 @@ class BackspaceKey(KeyBase):
         return (
             event.type == pygame.KEYDOWN
             and event.key == pygame.K_BACKSPACE
-            and state.focus_idx == -1
+            and not (BI_BPM_TEXTBOX <= state.focus_idx < BI_APPLY_BUTTON)
         )
 
-    # TODO : Implement action for ctrl + BACKSPACE
     def action(
         self,
         history_manager: HistoryManager,
@@ -537,8 +547,13 @@ class PasteKey(KeyBase):
         update_validity(step_data, ln_from - 1, ln_to + 1)
 
         # Update coor_cur, y_base and coor_cur
-        state.coor_cur = (col_from, ln_to - 1)
-        state.coor_base = (col_to, ln_from)
+        if state.edit_mode == 1:
+            ln_next = min(ln_to, len(step_data) - 1)
+            state.coor_cur = (col_from, ln_next)
+            state.coor_base = (col_to, ln_next)
+        else:
+            state.coor_cur = (col_from, ln_to - 1)
+            state.coor_base = (col_to, ln_from)
 
         coor_redo = (state.coor_cur, state.coor_base)
         state.sync_scr_y()
@@ -626,10 +641,10 @@ class FindKey(KeyBase):
         step_data, block_info = state.get_step_info()
         ln, tot_ln = state.coor_cur[1], len(step_data)
 
-        d, ln_condition = (
-            (-1, lambda x: x >= 0)
+        d = (
+            -1
             if (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT])
-            else (1, lambda x: x < tot_ln)
+            else 1
         )
         if step_data[ln][STEP_DATA_VD_IDX] != 0:
             ln = 0
@@ -736,6 +751,39 @@ class StepSizeKey(KeyBase):
             state.update_scr_to_time()
 
 
+class StepKeyUp(KeyBase):
+    def __init__(self):
+        super().__init__()
+
+    def condition(self, state: State, event: pygame.Event) -> bool:
+        pressed_keys = pygame.key.get_pressed()
+        target_keys = list(
+            (KEY_SINGLE if state.mode == "Single" else KEY_DOUBLE).keys()
+        )
+        all_step_key_released = (
+            sum(list(map(lambda x: pressed_keys[x], target_keys))) == 0
+        )
+        return (
+            event.type == pygame.KEYUP
+            and not (pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL])
+            and event.key in target_keys
+            and all_step_key_released
+        )
+
+    def action(
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
+    ) -> None:
+        if state.edit_mode == AUTO_LINE_PASS_MODE:
+            ln = state.coor_cur[1]
+            ln_next = min(ln + 1, len(state.step_data) - 1)
+            state.coor_base = (0, ln_next)
+            state.coor_cur = (state.get_cols() - 1, ln_next)
+
+
 class KeyboardManager:
 
     def __init__(self):
@@ -773,6 +821,8 @@ class KeyboardManager:
             LoadKey(),
             # Step Size Adjust
             StepSizeKey(),
+            # Step Key Up
+            StepKeyUp(),
         ]
 
     def process_event(

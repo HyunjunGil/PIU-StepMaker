@@ -176,7 +176,7 @@ class State:
         self.APPLY_ENABLED = False
         self.SCREEN_SIZE_CHANGED = False
         self.MUSIC_PLAYING = False
-        self.TYPING = False
+        self.SHOW_LOG = True
 
         # Save Information
         self.ucs_file_path: str = ""
@@ -253,6 +253,11 @@ class State:
 
         # Log
         self.logs: List[str] = []
+
+        # Mode
+        # 1 : Auto Line Pass
+        # 2 : Fix line to receptor
+        self.edit_mode = 0
 
         self.update_y_info()
         self.update_scr_to_time()

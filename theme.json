@@ -164,5 +164,17 @@
       "name": "Verdana",
       "size": 12
     }
+  },
+  "@button_onoff": {
+    "misc": {
+      "shape": "rounded_rectangle",
+      "border_width": "1",
+      "shadow_width": "0"
+    },
+    "colours": {
+      "normal_bg": "#4C5052",
+      "hovered_bg": "#C8F0C8",
+      "selected_bg": "#193754"
+    }
   }
 }

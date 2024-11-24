@@ -40,7 +40,7 @@ while running:
             pygame.MOUSEMOTION,
         ]:
             stepmaker.process_mouse_event(event)
-        elif event.type == pygame.KEYDOWN:
+        elif event.type in [pygame.KEYUP, pygame.KEYDOWN]:
             stepmaker.process_keyboard_event(event)
         elif event.type in [
             pygame_gui.UI_BUTTON_PRESSED,

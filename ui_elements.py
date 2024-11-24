@@ -236,7 +236,6 @@ class SaveAsButton(ElementBase):
             filetypes=[("UCS files", "*.ucs")],
             defaultextension=".ucs",
         )
-        print(save_path)
         if save_path == "":
             return
         state.ucs_save_path = save_path
@@ -817,7 +816,7 @@ class BlockDeleteButton(ElementBase):
         )
 
 
-class AutoLinePassButton(ElementBase):
+class OnOffButton(ElementBase):
     def __init__(
         self, element: UIButton | UITextEntryLine | UIPanel | UITextBox | UILabel
     ):
@@ -826,18 +825,60 @@ class AutoLinePassButton(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
-    @staticmethod
+    def on(self):
+        self.e.colours["normal_bg"] = pygame.Color(BUTTON_ON_COLOR)
+        self.e.set_text("On")
+        self.e.rebuild()
+
+    def off(self):
+        self.e.colours["normal_bg"] = pygame.Color(BUTTON_OFF_COLOR)
+        self.e.set_text("Off")
+        self.e.rebuild()
+
     def action(
+        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
+        raise Exception("OnOffButton.action is not implemented")
+
+
+class AutoLinePassButton(OnOffButton):
+    def __init__(
+        self, element: UIButton | UITextEntryLine | UIPanel | UITextBox | UILabel
+    ):
+        super().__init__(element)
+
+    def condition(self, state: State, event: pygame.Event):
+        return super().condition(state, event)
+
+    def action(
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
+    ):
+        if state.edit_mode == 2:
+            ui_elements[FIX_LINE_BUTTON].off()
+
+        if state.edit_mode != 1:
+            ui_elements[AUTO_LINE_PASS_BUTTON].on()
+            state.edit_mode = AUTO_LINE_PASS_MODE
+        else:
+            state.edit_mode = 0
+            ui_elements[AUTO_LINE_PASS_BUTTON].off()
+
+        state.coor_base = (0, state.coor_cur[1])
+        state.coor_cur = (state.get_cols() - 1, state.coor_cur[1])
+
         print("Auto line pass mode!")
-        state.focus_idx = AUTO_LINE_PASS_BUTTON
+        # state.focus_idx = AUTO_LINE_PASS_BUTTON
 
 
-class FixLineToReceptor(ElementBase):
+class FixLineToReceptor(OnOffButton):
     def __init__(
         self, element: UIButton | UITextEntryLine | UIPanel | UITextBox | UILabel
     ):
@@ -846,15 +887,25 @@ class FixLineToReceptor(ElementBase):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
-    @staticmethod
     def action(
+        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
-        print("Fix line to receptor!!!")
-        state.focus_idx = FIX_LINE_BUTTON
+        if state.edit_mode == 1:
+            ui_elements[AUTO_LINE_PASS_BUTTON].off()
+
+        if state.edit_mode != 2:
+            ui_elements[FIX_LINE_BUTTON].on()
+            state.edit_mode = FIX_LINE_TO_RECEPTOR_MODE
+        else:
+            state.edit_mode = 0
+            ui_elements[AUTO_LINE_PASS_BUTTON].off()
+
+        print("Fix line to!!!")
+        # state.focus_idx = FIX_LINE_BUTTON
 
 
 class LogTextbox(ElementBase):

@@ -497,22 +497,22 @@ class UIElementManager:
 
         mode_1_button = UIButton(
             relative_rect=Rect(MO_x1, MO_y0, MO_w1, MODE_LINE_HEIGHT),
-            text="ON",
-            object_id="@button_base",
+            text="Off",
+            object_id="@button_onoff",
             manager=manager,
             container=panel_4,
         )
         mode_2_button = UIButton(
             relative_rect=Rect(MO_x1, MO_y1, MO_w1, MODE_LINE_HEIGHT),
-            text="ON",
-            object_id="@button_base",
+            text="Off",
+            object_id="@button_onoff",
             manager=manager,
             container=panel_4,
         )
         mode_3_button = UIButton(
             relative_rect=Rect(MO_x1, MO_y2, MO_w1, MODE_LINE_HEIGHT),
-            text="ON",
-            object_id="@button_base",
+            text="Off",
+            object_id="@button_onoff",
             manager=manager,
             container=panel_4,
         )
