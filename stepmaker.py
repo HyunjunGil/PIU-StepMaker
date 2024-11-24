@@ -57,12 +57,21 @@ class StepMaker:
             )
 
     def resize_screen(self, event: pygame.Event):
+        state = self.state
         w, h = event.size
+        w = max(
+            state.get_step_size() * state.get_cols()
+            + OPTION_WIDTH
+            + MEASURE_DESCRIPTOR_WIDTH
+            + SCROLLBAR_BUTTON_WIDTH,
+            w,
+        )
+        h = max(MIN_SCREEN_HEIGHT, h)
         self.state.screen_width = w
         self.state.screen_height = h
         self.screen = pygame.display.set_mode((w, h), pygame.RESIZABLE)
         self.ui_manager.manager.set_window_resolution((w, h))
-        self.ui_manager.relocate_scroll_button(self.state)
+        # self.ui_manager.relocate_scroll_button(self.state)
         ScrollManager.update_scrollbar_info(self.state)
 
     def emit_event(self):
@@ -83,6 +92,8 @@ class StepMaker:
 
     def update_ui_elements(self):
         state = self.state
+
+        self.ui_manager.relocate_elements(self.state)
 
         # Update Block Information Textboxes
         if state.UPDATE_BLOCK_INFORMATION_TEXTBOX:

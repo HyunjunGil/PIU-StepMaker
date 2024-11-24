@@ -26,6 +26,34 @@ class UIElementManager:
         else:
             return None
 
+    def relocate_elements(self, state: State):
+        screen_height = state.screen_height
+        scrollbar_x, scrollbar_y = (
+            self.ui_elements[SCROLLBAR_DOWN_BUTTON].e.get_abs_rect().bottomleft
+        )
+        if scrollbar_x != state.scrollbar_x_start or scrollbar_y != state.screen_height:
+            self.ui_elements[SCROLLBAR_UP_BUTTON].set_location(
+                (state.scrollbar_x_start, 0)
+            )
+            self.ui_elements[SCROLLBAR_DOWN_BUTTON].set_location(
+                (state.scrollbar_x_start, state.screen_height)
+            )
+
+        PANEL_5_START = 450
+        w, h = self.panel_5.get_relative_rect().size
+        if PANEL_5_START + h != screen_height:
+            new_height = screen_height - PANEL_5_START
+            # print(self.)
+            self.panel_5.set_dimensions((w, new_height))
+            # self.rebuild()
+            log_textbox = self.ui_elements[LOG_TEXTBOX].e
+            log_clear_button = self.ui_elements[LOG_CLEAR_BUTTON].e
+
+            log_textbox.set_dimensions(
+                (log_textbox.get_abs_rect().size[0], new_height - 90)
+            )
+            log_clear_button.set_relative_position((125, new_height - 40))
+
     def relocate_scroll_button(self, state: State):
         scrollbar_x, scrollbar_y = (
             self.ui_elements[SCROLLBAR_DOWN_BUTTON].e.get_abs_rect().bottomleft
@@ -93,13 +121,13 @@ class UIElementManager:
 
     def initialize(self):
 
-        manager = pygame_gui.UIManager((800, 700), "theme.json")
+        manager = pygame_gui.UIManager((SCREEN_WIDTH, SCREEN_HEIGHT), "theme.json")
 
         PANEL_1_HEIGHT = 30
         PANEL_2_HEIGHT = 200
         PANEL_3_HEIGHT = 80
         PANEL_4_HEIGHT = 140
-        PANEL_5_HEIGHT = 200
+        PANEL_5_HEIGHT = 250
         SUB_PANEL_WIDTH = 80
         SUB_PANEL_HEIGHT = 120
         SUB_PANEL_BUTTON_HEIGHT = SUB_PANEL_HEIGHT // 4
@@ -489,7 +517,6 @@ class UIElementManager:
             container=panel_4,
         )
 
-        offset = 400
         panel_5 = UIPanel(
             relative_rect=Rect(
                 0,
@@ -510,7 +537,7 @@ class UIElementManager:
         )
 
         logger_textbox = UITextBox(
-            relative_rect=Rect(0, 40, OPTION_WIDTH, 110),
+            relative_rect=Rect(0, 40, OPTION_WIDTH, 160),
             html_text="[{}] Welcome to UCS Editor".format(time.strftime("%H:%M:%S")),
             object_id="@textbox_log",
             manager=manager,
@@ -518,7 +545,7 @@ class UIElementManager:
         )
 
         logger_clear_button = UIButton(
-            relative_rect=Rect(125, 160, 50, 30),
+            relative_rect=Rect(125, 210, 50, 30),
             text="Clear",
             object_id="@button_base",
             manager=manager,
@@ -541,6 +568,7 @@ class UIElementManager:
         )
 
         self.manager = manager
+        self.panel_5 = panel_5
         self.ui_elements: List[ElementBase] = [
             # Panel 1 : File & Play Area
             FileButton(file_toolbar_button),
