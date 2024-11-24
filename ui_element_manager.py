@@ -44,7 +44,7 @@ class UIElementManager:
     def process_event(
         self, history_manager: HistoryManager, state: State, event: pygame.Event
     ):
-        for element in self.ui_elements:
+        for i, element in enumerate(self.ui_elements):
             if element.condition(state, event):
                 element.action(history_manager, state, event, self.ui_elements)
                 break
@@ -55,6 +55,18 @@ class UIElementManager:
                 type(element.e) == pygame_gui.elements.UITextEntryLine
                 and element.e.get_abs_rect().collidepoint(event.pos)
                 and event.type == pygame.MOUSEBUTTONDOWN
+            ):
+                state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = False, False
+                state.focus_idx = i
+                break
+
+    def check_ui_element_clicked(self, state: State, event: pygame.Event):
+        for i, element in enumerate(self.ui_elements):
+            if (
+                element.e.get_abs_rect().collidepoint(event.pos)
+                and event.type == pygame.MOUSEBUTTONDOWN
+                and element.e.is_enabled
+                and element.e.visible
             ):
                 state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = False, False
                 state.focus_idx = i
@@ -520,14 +532,12 @@ class UIElementManager:
             text="^",
             object_id="@button_base",
             manager=manager,
-            container=panel_5,
         )
         scrollbar_down_button = UIButton(
             relative_rect=Rect(0, 0, SCROLLBAR_BUTTON_WIDTH, SCROLLBAR_BUTTON_HEIGHT),
             text="v",
             object_id="@button_base",
             manager=manager,
-            container=panel_5,
         )
 
         self.manager = manager

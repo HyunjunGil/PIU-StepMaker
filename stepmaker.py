@@ -102,12 +102,14 @@ class StepMaker:
                 element = self.ui_manager.get_ui_element_by_idx(state.focus_idx)
                 element.focus()
 
-        # sub_panel = self.ui_manager.get_ui_element_by_idx(
-        #     FILE_LOAD_BUTTON
-        # ).e.ui_container
-        # if state.focus_idx == -1 and sub_panel.visible:
-        #     print("HIDE")
-        #     sub_panel.hide()
+        sub_panel = self.ui_manager.get_ui_element_by_idx(
+            FILE_LOAD_BUTTON
+        ).e.ui_container
+        if (
+            not (FILE_BUTTON <= state.focus_idx <= FILE_SAVE_AS_BUTTON)
+            and sub_panel.visible
+        ):
+            sub_panel.hide()
 
         # Update Scrollbar Button Location
         self.ui_manager.relocate_scroll_button(self.state)
@@ -136,10 +138,15 @@ class StepMaker:
 
     def process_mouse_event(self, event: pygame.Event):
         MouseManager.process_event(self.state, event)
-        self.ui_manager.check_textbox_clicked(self.state, event)
+        self.ui_manager.check_ui_element_clicked(self.state, event)
 
     def process_keyboard_event(self, event: pygame.Event):
-        self.keyboard_manager.process_event(self.history_manager, self.state, event)
+        self.keyboard_manager.process_event(
+            self.history_manager,
+            self.state,
+            event,
+            self.ui_manager.get_ui_elements(),
+        )
         self.emit_event()
 
     def process_ui_element_event(self, event: pygame.Event):
@@ -212,9 +219,9 @@ class StepMaker:
 
         self.draw_line_descriptor()
 
-        self.draw_focus_rect()
-
         self.ui_manager.draw(self.state, self.screen)
+
+        self.draw_focus_rect()
 
         pygame.display.flip()
 

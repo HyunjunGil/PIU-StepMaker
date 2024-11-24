@@ -103,7 +103,7 @@ class FileButton(ElementBase):
             sub_panel.hide()
         else:
             sub_panel.show()
-            state.focus_idx = FILE_LOAD_BUTTON
+            state.focus_idx = FILE_BUTTON
         pass
 
 
@@ -276,6 +276,8 @@ class PlaySpeedButton(ElementBase):
         if restart:
             PlayButton.action(history_manager, state, event, ui_elements)
 
+        state.focus_idx = FILE_PLAYSPEED_BUTTON
+
 
 # UI_INDEX : 0
 class PlayButton(ElementBase):
@@ -318,6 +320,8 @@ class PlayButton(ElementBase):
             # print("Elapsed : {:.4f}s".format(time.time() - a))
             sound.play()
             state.MUSIC_PLAYING = True
+
+        state.focus_idx = FILE_PLAY_BUTTON
 
 
 class PlayTimeTextbox(ElementBase):
@@ -629,8 +633,7 @@ class ApplyButton(ElementBase):
             min(len(step_data) - 1, state.coor_base[1]),
         )
         coor_redo = (state.coor_cur, state.coor_base)
-        if state.focus_idx == BI_APPLY_BUTTON:
-            state.focus_idx = -1
+        state.focus_idx = -1
 
         state.log(f"Block #{block_idx} is modified")
         state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
@@ -772,7 +775,7 @@ class BlockDeleteButton(ElementBase):
 
         # Check that there is only one block
         if len(block_info) == 1:
-            print("Cannot delete last block")
+            state.log("(Error) Cannot delete last block")
             return
 
         coor_undo = (state.coor_cur, state.coor_base)
@@ -831,6 +834,7 @@ class AutoLinePassButton(ElementBase):
         ui_elements: List[ElementBase],
     ):
         print("Auto line pass mode!")
+        state.focus_idx = AUTO_LINE_PASS_BUTTON
 
 
 class FixLineToReceptor(ElementBase):
@@ -849,7 +853,8 @@ class FixLineToReceptor(ElementBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
-        print("Fix lien to receptor!!!")
+        print("Fix line to receptor!!!")
+        state.focus_idx = FIX_LINE_BUTTON
 
 
 class LogTextbox(ElementBase):
@@ -890,6 +895,7 @@ class LogClearButton(ElementBase):
     ):
         t = time.strftime("%H:%M:%S")
         ui_elements[LOG_TEXTBOX].e.set_text(f"[{t}] Clear logs")
+        state.focus_idx = LOG_CLEAR_BUTTON
 
 
 # UI_INDEX : 18
@@ -908,6 +914,7 @@ class ScrollUpButton(ElementBase):
         ui_elements: List[ElementBase],
     ):
         state.scr_y = max(state.scr_y - SCROLL_SPEED, 0)
+        state.focus_idx = SCROLLBAR_UP_BUTTON
 
     def set_location(self, loc: Tuple[int, int]):
         self.e.get_abs_rect().topleft = loc
@@ -930,6 +937,7 @@ class ScrollDownButton(ElementBase):
         ui_elements: List[ElementBase],
     ):
         state.scr_y = min(state.scr_y + SCROLL_SPEED, state.max_y)
+        state.focus_idx = SCROLLBAR_DOWN_BUTTON
 
     def set_location(self, loc: Tuple[int, int]):
         self.e.get_abs_rect().bottomleft = loc

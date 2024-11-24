@@ -135,9 +135,6 @@ def save_ucs_file(
     state: State,
 ):
 
-    if state.ucs_save_path == "":
-        print("Save path not initialized")
-        return
     path, format, mode = state.ucs_save_path, state.format, state.mode
     step_data, block_info = state.get_step_info()
     rows, cols = len(step_data), len(step_data[0]) - STEP_DATA_OFFSET

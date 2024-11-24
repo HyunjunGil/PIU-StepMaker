@@ -1,6 +1,6 @@
 import pygame, copy, time
 
-from ui_elements import PlayButton, SaveButton
+from ui_elements import PlayButton, SaveButton, ElementBase
 from typing import List, Tuple
 from state import State
 from history_manager import HistoryManager, StepChartChangeDelta
@@ -18,7 +18,11 @@ class KeyBase:
         raise Exception("Condition for KeyBase is Not implemented")
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         raise Exception("Action for KeyBase is not implemented")
 
@@ -37,7 +41,11 @@ class StepChartKey(KeyBase):
         )
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         step_data, block_info = state.get_step_info()
         coor_undo = (state.coor_cur, state.coor_base)
@@ -98,7 +106,11 @@ class UpKey(KeyBase):
         return event.type == pygame.KEYDOWN and event.key == pygame.K_UP
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         step_data, block_info = state.get_step_info()
         ln = state.coor_cur[1]
@@ -136,7 +148,11 @@ class DownKey(KeyBase):
         return event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         step_data, block_info = state.get_step_info()
         block_idx_prev = None
@@ -178,7 +194,11 @@ class LeftKey(KeyBase):
         return event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
 
         x = state.coor_cur[0]
@@ -202,7 +222,11 @@ class RightKey(KeyBase):
         return event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
 
         x = state.coor_cur[0]
@@ -230,21 +254,25 @@ class TabKey(KeyBase):
         )
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         pressed_keys = pygame.key.get_pressed()
-        state.focus_idx_prev = state.focus_idx
+        fi = state.focus_idx_prev = state.focus_idx
+        sub_panel = ui_elements[FILE_LOAD_BUTTON].e.ui_container
         if pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]:
-            state.focus_idx_prev = state.focus_idx
-            state.focus_idx = (
-                state.focus_idx + TOTAL_UI_ELEMENTS - 1
-            ) % TOTAL_UI_ELEMENTS
-            if state.focus_idx == BI_APPLY_BUTTON and not state.APPLY_ENABLED:
-                state.focus_idx -= 1
+            d = TOTAL_UI_ELEMENTS - 1
         else:
-            state.focus_idx = (state.focus_idx + 1) % TOTAL_UI_ELEMENTS
-            if state.focus_idx == BI_APPLY_BUTTON and not state.APPLY_ENABLED:
-                state.focus_idx += 1
+            d = 1
+        while True:
+            fi = (fi + d) % TOTAL_UI_ELEMENTS
+            element = ui_elements[fi].e
+            if element.visible and element.is_enabled:
+                break
+        state.focus_idx = fi
 
 
 class EscKey(KeyBase):
@@ -259,7 +287,11 @@ class EscKey(KeyBase):
         )
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         state.focus_idx_prev = state.focus_idx
         state.focus_idx = -1
@@ -279,9 +311,12 @@ class AreaKey(KeyBase):
         )
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
-
         state.focus_idx_prev = state.focus_idx
         if event.key == pygame.K_1:
             # Update focus to Play button
@@ -295,7 +330,7 @@ class AreaKey(KeyBase):
         elif event.key == pygame.K_4:
             # Update selection square at top square in current scr_y
             state.coor_base = (0, state.y_to_ln[state.scr_y])
-            state.coor_cur = (state.get_cols(), state.y_to_ln[state.scr_y])
+            state.coor_cur = (state.get_cols() - 1, state.y_to_ln[state.scr_y])
             state.sync_scr_y()
 
 
@@ -310,7 +345,11 @@ class EnterKey(KeyBase):
         ]
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         state.EMIT_BUTTON_PRESS = True
 
@@ -328,7 +367,11 @@ class BackspaceKey(KeyBase):
 
     # TODO : Implement action for ctrl + BACKSPACE
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         step_data, block_info = state.get_step_info()
         ln_from, ln_to = (
@@ -369,7 +412,11 @@ class CopyKey(KeyBase):
         )
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         step_data, block_info = state.get_step_info()
         ln_from, ln_to = (
@@ -387,8 +434,6 @@ class CopyKey(KeyBase):
                     # ignore unselected lane
                     state.clipboard[ln - ln_from][col] = -1
 
-        print(state.clipboard)
-
 
 class CutKey(KeyBase):
 
@@ -404,7 +449,11 @@ class CutKey(KeyBase):
         )
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         step_data, block_info = state.get_step_info()
         ln_from, ln_to = (
@@ -440,10 +489,14 @@ class PasteKey(KeyBase):
         )
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         if state.clipboard is None:
-            print("Nothing in clipboard")
+            state.log("(Paste) Nothing in clipboard")
             return
 
         step_data, block_info = state.get_step_info()
@@ -517,7 +570,11 @@ class UndoKey(KeyBase):
         )
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         history_manager.undo(state)
 
@@ -536,7 +593,11 @@ class RedoKey(KeyBase):
         )
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         history_manager.redo(state)
 
@@ -555,7 +616,11 @@ class FindKey(KeyBase):
         )
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         pressed_keys = pygame.key.get_pressed()
         step_data, block_info = state.get_step_info()
@@ -586,7 +651,11 @@ class MusicKey(KeyBase):
         return event.type == pygame.KEYDOWN and event.key == pygame.K_F5
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         PlayButton.action(history_manager, state, event, [])
 
@@ -604,7 +673,11 @@ class SaveKey(KeyBase):
         )
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         SaveButton.action(history_manager, state, event, [])
 
@@ -622,7 +695,11 @@ class LoadKey(KeyBase):
         )
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
         state.focus_idx = FILE_LOAD_BUTTON  # Focus to Load button
         state.EMIT_BUTTON_PRESS = True
@@ -641,17 +718,18 @@ class StepSizeKey(KeyBase):
         )
 
     def action(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ) -> None:
-        print("hi", str(event))
         if event.key == pygame.K_EQUALS and state.step_size_idx != 2:
-            print("Adjust to larger")
             state.step_size_idx += 1
             state.update_x_info()
             state.update_y_info()
             state.update_scr_to_time()
         elif event.key == pygame.K_MINUS and state.step_size_idx != 0:
-            print("Adjust to smaller")
             state.step_size_idx -= 1
             state.update_x_info()
             state.update_y_info()
@@ -698,9 +776,13 @@ class KeyboardManager:
         ]
 
     def process_event(
-        self, history_manager: HistoryManager, state: State, event: pygame.Event
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
     ):
         for key in self.keys:
             if key.condition(state, event):
-                key.action(history_manager, state, event)
+                key.action(history_manager, state, event, ui_elements)
                 break
