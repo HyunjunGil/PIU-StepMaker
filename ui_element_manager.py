@@ -39,13 +39,11 @@ class UIElementManager:
                 (state.scrollbar_x_start, state.screen_height)
             )
 
-        PANEL_5_START = 450
+        PANEL_5_START = 420
         w, h = self.panel_5.get_relative_rect().size
         if PANEL_5_START + h != screen_height:
             new_height = screen_height - PANEL_5_START
-            # print(self.)
             self.panel_5.set_dimensions((w, new_height))
-            # self.rebuild()
             log_textbox = self.ui_elements[LOG_TEXTBOX].e
             log_clear_button = self.ui_elements[LOG_CLEAR_BUTTON].e
 
@@ -126,8 +124,8 @@ class UIElementManager:
         PANEL_1_HEIGHT = 30
         PANEL_2_HEIGHT = 200
         PANEL_3_HEIGHT = 80
-        PANEL_4_HEIGHT = 140
-        PANEL_5_HEIGHT = 250
+        PANEL_4_HEIGHT = 110
+        PANEL_5_HEIGHT = 280
         SUB_PANEL_WIDTH = 80
         SUB_PANEL_HEIGHT = 120
         SUB_PANEL_BUTTON_HEIGHT = SUB_PANEL_HEIGHT // 4
@@ -487,31 +485,17 @@ class UIElementManager:
             manager=manager,
             container=panel_4,
         )
-        mode_3_text = UITextBox(
-            relative_rect=Rect(MO_x0, MO_y2, MO_w0, MODE_LINE_HEIGHT),
-            html_text="Show Logs",
-            object_id="@textbox_base",
-            manager=manager,
-            container=panel_4,
-        )
 
         mode_1_button = UIButton(
             relative_rect=Rect(MO_x1, MO_y0, MO_w1, MODE_LINE_HEIGHT),
-            text="Off",
+            text="F1",
             object_id="@button_onoff",
             manager=manager,
             container=panel_4,
         )
         mode_2_button = UIButton(
             relative_rect=Rect(MO_x1, MO_y1, MO_w1, MODE_LINE_HEIGHT),
-            text="Off",
-            object_id="@button_onoff",
-            manager=manager,
-            container=panel_4,
-        )
-        mode_3_button = UIButton(
-            relative_rect=Rect(MO_x1, MO_y2, MO_w1, MODE_LINE_HEIGHT),
-            text="Off",
+            text="F2",
             object_id="@button_onoff",
             manager=manager,
             container=panel_4,
@@ -537,7 +521,7 @@ class UIElementManager:
         )
 
         logger_textbox = UITextBox(
-            relative_rect=Rect(0, 40, OPTION_WIDTH, 160),
+            relative_rect=Rect(0, 40, OPTION_WIDTH, 190),
             html_text="[{}] Welcome to UCS Editor".format(time.strftime("%H:%M:%S")),
             object_id="@textbox_log",
             manager=manager,
@@ -545,7 +529,7 @@ class UIElementManager:
         )
 
         logger_clear_button = UIButton(
-            relative_rect=Rect(125, 210, 50, 30),
+            relative_rect=Rect(125, 240, 50, 30),
             text="Clear",
             object_id="@button_base",
             manager=manager,
@@ -596,7 +580,7 @@ class UIElementManager:
             BlockDeleteButton(block_delete_button),
             # Panel 4 : Mode Area
             AutoLinePassButton(mode_1_button),
-            FixLineToReceptor(mode_2_button),
+            FixLineModeButton(mode_2_button),
             # Panel 5 : Logger Area
             LogTextbox(logger_textbox),
             LogClearButton(logger_clear_button),

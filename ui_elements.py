@@ -827,12 +827,12 @@ class OnOffButton(ElementBase):
 
     def on(self):
         self.e.colours["normal_bg"] = pygame.Color(BUTTON_ON_COLOR)
-        self.e.set_text("On")
+        # self.e.set_text("On")
         self.e.rebuild()
 
     def off(self):
         self.e.colours["normal_bg"] = pygame.Color(BUTTON_OFF_COLOR)
-        self.e.set_text("Off")
+        # self.e.set_text("Off")
         self.e.rebuild()
 
     def action(
@@ -854,31 +854,32 @@ class AutoLinePassButton(OnOffButton):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
-        if state.edit_mode == 2:
+        if state.edit_mode == FIX_LINE_TO_RECEPTOR_MODE:
             ui_elements[FIX_LINE_BUTTON].off()
 
-        if state.edit_mode != 1:
-            ui_elements[AUTO_LINE_PASS_BUTTON].on()
+        if state.edit_mode != AUTO_LINE_PASS_MODE:
             state.edit_mode = AUTO_LINE_PASS_MODE
+            ui_elements[AUTO_LINE_PASS_BUTTON].on()
+            state.log("(Change mode) Auto Line Pass")
         else:
             state.edit_mode = 0
             ui_elements[AUTO_LINE_PASS_BUTTON].off()
+            state.log("(Change mode) None")
 
         state.coor_base = (0, state.coor_cur[1])
         state.coor_cur = (state.get_cols() - 1, state.coor_cur[1])
 
-        print("Auto line pass mode!")
         # state.focus_idx = AUTO_LINE_PASS_BUTTON
 
 
-class FixLineToReceptor(OnOffButton):
+class FixLineModeButton(OnOffButton):
     def __init__(
         self, element: UIButton | UITextEntryLine | UIPanel | UITextBox | UILabel
     ):
@@ -887,24 +888,25 @@ class FixLineToReceptor(OnOffButton):
     def condition(self, state: State, event: pygame.Event):
         return super().condition(state, event)
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
-        if state.edit_mode == 1:
+        if state.edit_mode == AUTO_LINE_PASS_MODE:
             ui_elements[AUTO_LINE_PASS_BUTTON].off()
 
-        if state.edit_mode != 2:
+        if state.edit_mode != FIX_LINE_TO_RECEPTOR_MODE:
             ui_elements[FIX_LINE_BUTTON].on()
             state.edit_mode = FIX_LINE_TO_RECEPTOR_MODE
+            state.log("(Change mode) Fix Line Mode")
         else:
             state.edit_mode = 0
-            ui_elements[AUTO_LINE_PASS_BUTTON].off()
+            ui_elements[FIX_LINE_BUTTON].off()
+            state.log("(Change mode) None")
 
-        print("Fix line to!!!")
         # state.focus_idx = FIX_LINE_BUTTON
 
 

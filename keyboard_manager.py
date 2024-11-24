@@ -1,6 +1,12 @@
 import pygame, copy, time
 
-from ui_elements import PlayButton, SaveButton, ElementBase
+from ui_elements import (
+    PlayButton,
+    SaveButton,
+    AutoLinePassButton,
+    FixLineModeButton,
+    ElementBase,
+)
 from typing import List, Tuple
 from state import State
 from history_manager import HistoryManager, StepChartChangeDelta
@@ -744,11 +750,47 @@ class StepSizeKey(KeyBase):
             state.update_x_info()
             state.update_y_info()
             state.update_scr_to_time()
+            state.sync_scr_y()
         elif event.key == pygame.K_MINUS and state.step_size_idx != 0:
             state.step_size_idx -= 1
             state.update_x_info()
             state.update_y_info()
             state.update_scr_to_time()
+            state.sync_scr_y()
+
+
+class AutoPassModeKey(KeyBase):
+    def __init__(self):
+        super().__init__()
+
+    def condition(self, state: State, event: pygame.Event) -> bool:
+        return event.type == pygame.KEYDOWN and event.key == pygame.K_F1
+
+    def action(
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
+    ) -> None:
+        return AutoLinePassButton.action(history_manager, state, event, ui_elements)
+
+
+class FixLineModeKey(KeyBase):
+    def __init__(self):
+        super().__init__()
+
+    def condition(self, state: State, event: pygame.Event) -> bool:
+        return event.type == pygame.KEYDOWN and event.key == pygame.K_F2
+
+    def action(
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
+    ) -> None:
+        return FixLineModeButton.action(history_manager, state, event, ui_elements)
 
 
 class StepKeyUp(KeyBase):
@@ -782,6 +824,7 @@ class StepKeyUp(KeyBase):
             ln_next = min(ln + 1, len(state.step_data) - 1)
             state.coor_base = (0, ln_next)
             state.coor_cur = (state.get_cols() - 1, ln_next)
+            state.sync_scr_y()
 
 
 class KeyboardManager:
@@ -823,6 +866,9 @@ class KeyboardManager:
             StepSizeKey(),
             # Step Key Up
             StepKeyUp(),
+            # Mode Shortcut
+            AutoPassModeKey(),
+            FixLineModeKey(),
         ]
 
     def process_event(
