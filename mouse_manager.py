@@ -9,12 +9,16 @@ class MouseManager:
         pass
 
     def _process_mouse_wheel_up(state: State, event: pygame.Event):
-        state.IS_SCROLL = True
-        state.scr_y = max(state.scr_y - SCROLL_SPEED, 0)
+        mouse_x, _ = event.pos
+        if state.step_x_start <= mouse_x < state.measure_x_start:
+            state.IS_SCROLL = True
+            state.scr_y = max(state.scr_y - SCROLL_SPEED, 0)
 
     def _process_mouse_wheel_down(state: State, event: pygame.Event):
-        state.IS_SCROLL = True
-        state.scr_y = min(state.scr_y + SCROLL_SPEED, state.max_y)
+        mouse_x, _ = event.pos
+        if state.step_x_start <= mouse_x < state.measure_x_start:
+            state.IS_SCROLL = True
+            state.scr_y = min(state.scr_y + SCROLL_SPEED, state.max_y)
 
     def _process_mouse_click(state: State, event: pygame.Event):
         state.LATTICE_CLICKED = state.SCROLLBAR_CLICKED = False
