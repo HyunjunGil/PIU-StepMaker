@@ -573,11 +573,16 @@ class StepMaker:
                 ),
                 (state.screen_height - SCROLLBAR_BUTTON_HEIGHT) - state.scrollbar_h,
             )
-            state.scr_y = (
-                (state.scrollbar_y - SCROLLBAR_BUTTON_HEIGHT) * state.max_y
-            ) // (
-                (state.screen_height - 2 * SCROLLBAR_BUTTON_HEIGHT) - state.scrollbar_h
-            )
+            denom = (
+                state.screen_height - 2 * SCROLLBAR_BUTTON_HEIGHT
+            ) - state.scrollbar_h
+            if denom != 0:
+                state.scr_y = (
+                    (state.scrollbar_y - SCROLLBAR_BUTTON_HEIGHT) * state.max_y
+                ) // (
+                    (state.screen_height - 2 * SCROLLBAR_BUTTON_HEIGHT)
+                    - state.scrollbar_h
+                )
         else:
             state.scrollbar_y = (
                 SCROLLBAR_BUTTON_HEIGHT

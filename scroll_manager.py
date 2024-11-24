@@ -4,8 +4,7 @@ from constants import *
 
 class ScrollManager:
     def update_scrollbar_info(state: State):
-        screen_width, screen_height, max_y = (
-            state.screen_width,
+        screen_height, max_y = (
             state.screen_height - 2 * SCROLLBAR_BUTTON_HEIGHT,
             state.max_y,
         )

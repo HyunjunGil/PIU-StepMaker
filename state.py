@@ -115,6 +115,15 @@ class State:
 
         self.max_y = y
 
+        screen_height, max_y = (
+            self.screen_height - 2 * SCROLLBAR_BUTTON_HEIGHT,
+            self.max_y,
+        )
+        self.scrollbar_h = max(
+            MIN_SCROLL_BAR_HEIGHT,
+            min(screen_height, (screen_height * screen_height) // max_y),
+        )
+
     def update_scr_to_time(self):
         step_data, block_info = self.get_step_info()
         step_size = self.get_step_size()
@@ -219,7 +228,7 @@ class State:
         self.scr_y = 0
 
         # scroll bar info
-        self.scrollbar_h = 0
+        self.scrollbar_h = SCREEN_HEIGHT - 2 * SCROLLBAR_BUTTON_HEIGHT
         self.scrollbar_y = 0
         self.scrollbar_y_init = 0
         self.scr_mouse_init = -1
