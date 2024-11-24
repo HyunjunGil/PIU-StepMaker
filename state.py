@@ -259,5 +259,8 @@ class State:
         # 2 : Fix line to receptor
         self.edit_mode = 0
 
+        # Mode 2 Receptor y location
+        self.receptor_y = 0
+
         self.update_y_info()
         self.update_scr_to_time()

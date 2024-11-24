@@ -178,11 +178,11 @@ class StepMaker:
             mouse_y = state.mouse_pos[1]
             if mouse_y < 0:
                 speed = max(-mouse_y, 100) // 20
-                state.scr_y = max(0, state.scr_y - speed)
+                state.scr_y = max(-state.receptor_y, state.scr_y - speed)
             elif state.mouse_pos[1] > state.screen_height:
                 speed = max(mouse_y - state.screen_height, 100) // 20
                 state.scr_y = min(
-                    state.max_y - state.screen_height + step_size,
+                    state.max_y - state.receptor_y - state.screen_height + step_size,
                     state.scr_y + speed,
                 )
 
@@ -193,7 +193,7 @@ class StepMaker:
             state.music_start_offset
             + (t - state.music_start_time) * MUSIC_SPEED_MAP[state.music_speed_idx]
             > state.music_len
-            or state.scr_y >= state.max_y - 1
+            or state.scr_y >= state.max_y - state.receptor_y - 1
         ):
             PlayButton.action(self.history_manager, self.state, None, [])
             self.ui_manager.ui_elements[FILE_PLAY_BUTTON].e.set_text("Play")

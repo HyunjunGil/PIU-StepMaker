@@ -139,7 +139,7 @@ class UpKey(KeyBase):
             if block_idx != block_idx_prev:
                 state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
 
-        if state.edit_mode in [AUTO_LINE_PASS_MODE, FIX_LINE_TO_RECEPTOR_MODE]:
+        if state.edit_mode in [AUTO_LINE_PASS_MODE, FIX_LINE_MODE]:
             state.coor_base = (state.coor_base[0], state.coor_cur[1])
         elif not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
             state.coor_base = state.coor_cur
@@ -186,7 +186,7 @@ class DownKey(KeyBase):
             if block_idx != block_idx_prev:
                 state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
 
-        if state.edit_mode in [AUTO_LINE_PASS_MODE, FIX_LINE_TO_RECEPTOR_MODE]:
+        if state.edit_mode in [AUTO_LINE_PASS_MODE, FIX_LINE_MODE]:
             state.coor_base = (state.coor_base[0], state.coor_cur[1])
         elif not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
             state.coor_base = state.coor_cur
@@ -213,7 +213,7 @@ class LeftKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        if state.edit_mode in [AUTO_LINE_PASS_MODE, FIX_LINE_TO_RECEPTOR_MODE]:
+        if state.edit_mode in [AUTO_LINE_PASS_MODE, FIX_LINE_MODE]:
             return
         x = state.coor_cur[0]
         pressed_keys = pygame.key.get_pressed()
@@ -242,7 +242,7 @@ class RightKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        if state.edit_mode in [AUTO_LINE_PASS_MODE, FIX_LINE_TO_RECEPTOR_MODE]:
+        if state.edit_mode in [AUTO_LINE_PASS_MODE, FIX_LINE_MODE]:
             return
         x = state.coor_cur[0]
         cols = state.get_cols()
