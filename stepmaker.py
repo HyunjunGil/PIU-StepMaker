@@ -433,6 +433,17 @@ class StepMaker:
         tot_ln = len(step_data)
         screen_bottom = state.scr_y + state.screen_height
         block_idx, bpm, beat, split, delay, dy = -1, 0, 0, 0, 0, 0
+
+        pygame.draw.rect(
+            self.screen,
+            SEMI_BLACK,
+            (
+                OPTION_WIDTH,
+                state.max_y - state.scr_y,
+                step_size * cols,
+                state.screen_height,
+            ),
+        )
         even_split, triple_split = False, False
         if split % 3 == 0:
             even_split, triple_split = False, True
