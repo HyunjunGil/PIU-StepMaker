@@ -9,8 +9,11 @@ class State:
     def __init__(self):
         self.initialize()
 
-    def get_step_size(self):
+    def get_step_size(self) -> int:
         return STEP_SIZE_MAP[self.step_size_idx]
+
+    def get_font_size(self) -> int:
+        return 4 * self.step_size_idx + 8
 
     def get_cols(self) -> int:
         if self.mode == "Single":

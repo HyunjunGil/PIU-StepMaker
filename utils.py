@@ -8,7 +8,18 @@ from constants import (
     BLOCK_BT_IDX,
     BLOCK_SP_IDX,
     BLOCK_SB_IDX,
+    BPM_MIN_COLOR,
+    BPM_MAX_COLOR,
 )
+
+
+def get_bpm_color(bpm_min: int, bpm_max: int, bpm: int):
+    if bpm_min == bpm_max:
+        return BPM_MIN_COLOR
+    r = (bpm - bpm_min) / (bpm_max - bpm_min)
+    r1, g1, b1 = BPM_MIN_COLOR
+    r2, g2, b2 = BPM_MAX_COLOR
+    return (r1 * (1 - r) + r2 * r, g1 * (1 - r) + g2 * r, b1 * (1 - r) + b2 * r)
 
 
 def num_to_str(num: float | int):

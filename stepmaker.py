@@ -11,7 +11,7 @@ from mouse_manager import MouseManager
 from keyboard_manager import KeyboardManager
 from history_manager import HistoryManager, StepChartChangeDelta
 
-from utils import binary_search, ms_to_str, update_validity
+from utils import binary_search, ms_to_str, update_validity, num_to_str, get_bpm_color
 
 
 class StepMaker:
@@ -329,20 +329,22 @@ class StepMaker:
         self.screen.blit(text_surface, text_rect)
 
     def draw_step_chart(self):
-        state = self.state
+        state, screen = self.state, self.screen
         step_data, block_info = state.get_step_info()
         y_to_ln, ln_to_y = state.get_y_info()
         cols = state.get_cols()
-        ln = y_to_ln[state.scr_y]
+        ln = y_to_ln[max(state.scr_y, 0)]
         y = ln_to_y[ln]
-        font = pygame.font.SysFont("Verdana", 18)
+        font = pygame.font.SysFont("Verdana", state.get_font_size())
         step_size = state.get_step_size()
         tot_ln = len(step_data)
         screen_bottom = state.scr_y + state.screen_height
+        bpm_list = [block[BLOCK_BPM_IDX] for block in block_info]
+        bpm_min, bpm_max = min(bpm_list), max(bpm_list)
         block_idx, bpm, beat, split, delay, dy = -1, 0, 0, 0, 0, 0
 
         pygame.draw.rect(
-            self.screen,
+            screen,
             SEMI_BLACK,
             (
                 OPTION_WIDTH,
@@ -351,6 +353,19 @@ class StepMaker:
                 state.screen_height,
             ),
         )
+
+        # # Draw current measure description at the top right
+        # block = block_info[step_data[ln][STEP_DATA_BI_IDX]]
+        # bpm, delay = block[BLOCK_BPM_IDX], block[BLOCK_DL_IDX]
+        # text = font.render(
+        #     "BPM {}\nDelay {}".format(num_to_str(bpm), num_to_str(delay)),
+        #     True,
+        #     BLACK,
+        # )
+        # text_rect = text.get_rect()
+        # text_rect.topleft = (state.measure_x_start, max(0, -state.scr_y))
+        # screen.blit(text, text_rect)
+
         even_split, triple_split = False, False
         if split % 3 == 0:
             even_split, triple_split = False, True
@@ -386,10 +401,9 @@ class StepMaker:
                 dy = min(max((step_size * 2) // split, MIN_SPLIT_SIZE), step_size)
 
             # Fill background
-            bg_color = None
             if row[STEP_DATA_VD_IDX] == 0:
                 pygame.draw.rect(
-                    self.screen,
+                    screen,
                     LIGHT_RED,
                     (
                         state.step_x_start,
@@ -400,8 +414,23 @@ class StepMaker:
                 )
 
             if mi == 0 and bti == 0 and si == 0:  # Start of Blcok
+                # print("hi")
+                ln_from, ln_to = state.get_block_range_by_y(y)
+                # print(ln_from, ln_to)
+                measure_height = ln_to_y[ln_to] - ln_to_y[ln_from]
+                # print(measure_height)
+                pygame.draw.rect(
+                    screen,
+                    get_bpm_color(bpm_min, bpm_max, bpm),
+                    (
+                        state.measure_x_start,
+                        y - state.scr_y,
+                        MEASURE_DESCRIPTOR_WIDTH,
+                        measure_height,
+                    ),
+                )
                 pygame.draw.line(
-                    self.screen,
+                    screen,
                     RED,
                     (state.step_x_start, y - state.scr_y),
                     (state.scrollbar_x_start, y - state.scr_y),
@@ -411,11 +440,12 @@ class StepMaker:
                 text_rect = text.get_rect()
                 text_rect.topright = (state.scrollbar_x_start, y - state.scr_y)
 
-                self.screen.blit(text, text_rect)
+                screen.blit(text, text_rect)
 
             elif bti == 0 and si == 0:  # Start of Measure
+                # Fill background
                 pygame.draw.line(
-                    self.screen,
+                    screen,
                     ROYAL_BLUE,
                     (state.step_x_start, y - state.scr_y),
                     (state.scrollbar_x_start, y - state.scr_y),
@@ -425,11 +455,11 @@ class StepMaker:
                 text_rect = text.get_rect()
                 text_rect.topright = (state.scrollbar_x_start, y - state.scr_y)
 
-                self.screen.blit(text, text_rect)
+                screen.blit(text, text_rect)
 
             elif si == 0:  # Start of Beat
                 pygame.draw.line(
-                    self.screen,
+                    screen,
                     ROYAL_BLUE,
                     (state.step_x_start, y - state.scr_y),
                     (state.measure_x_start, y - state.scr_y),
@@ -439,7 +469,7 @@ class StepMaker:
             elif triple_split:
                 if si % (split // 3) == 0:
                     pygame.draw.line(
-                        self.screen,
+                        screen,
                         LIGHT_GREEN,
                         (state.step_x_start, y - state.scr_y),
                         (state.measure_x_start, y - state.scr_y),
@@ -448,7 +478,7 @@ class StepMaker:
             elif even_split:
                 if si % (split // 2) == 0:
                     pygame.draw.line(
-                        self.screen,
+                        screen,
                         LIGHT_GREEN,
                         (state.step_x_start, y - state.scr_y),
                         (state.measure_x_start, y - state.scr_y),
@@ -472,7 +502,7 @@ class StepMaker:
             ln += 1
 
         # Draw Receptor Image
-        self.screen.blit(
+        screen.blit(
             self.RECEPTOR_IMAGES[f"{state.mode}_{state.step_size_idx}"],
             (state.step_x_start, state.receptor_y),
         )
@@ -481,7 +511,7 @@ class StepMaker:
         image_rects = sorted(image_rects, key=lambda x: x[0])
         for rect in image_rects:
             z, y, col, code = rect
-            self.screen.blit(
+            screen.blit(
                 self.TOTAL_IMAGES[state.step_size_idx][code][col],
                 (state.step_x_start + col * step_size, y - state.scr_y),
             )
