@@ -85,9 +85,9 @@ class StepChartChangeDelta(StateDelta):
         state.sync_scr_y()
 
         if ln_from == ln_to - 1:
-            state.log(f"(Undo) Undo Ln{ln_from}", quite=False)
+            state.log(f"(Undo) Ln{ln_from}", quite=False)
         else:
-            state.log(f"(Undo) Undo Ln{ln_from}~{ln_to}", quite=False)
+            state.log(f"(Undo) Ln{ln_from}~{ln_to}", quite=False)
 
     def redo(self, state: State):
         step_data = state.step_data
@@ -104,9 +104,9 @@ class StepChartChangeDelta(StateDelta):
         state.coor_cur, state.coor_base = self.coor_redo
         state.sync_scr_y()
         if ln_from == ln_to - 1:
-            state.log(f"(Redo) Redo Ln{ln_from}", quite=False)
+            state.log(f"(Redo) Ln{ln_from}", quite=False)
         else:
-            state.log(f"(Redo) Redo Ln{ln_from}~{ln_to}", quite=False)
+            state.log(f"(Redo) Ln{ln_from}~{ln_to}", quite=False)
 
 
 class BlockModifyDelta(StateDelta):
