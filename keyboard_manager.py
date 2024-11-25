@@ -3,6 +3,9 @@ import pygame, copy, time
 from ui_elements import (
     PlayButton,
     SaveButton,
+    SaveAsButton,
+    LoadButton,
+    LoadMP3Button,
     AutoLinePassButton,
     FixLineModeButton,
     ElementBase,
@@ -708,7 +711,11 @@ class SaveKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        SaveButton.action(history_manager, state, event, [])
+        pressed_keys = pygame.key.get_pressed()
+        if pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]:
+            SaveAsButton.action(history_manager, state, event, ui_elements)
+        else:
+            SaveButton.action(history_manager, state, event, ui_elements)
 
 
 class LoadKey(KeyBase):
@@ -730,8 +737,11 @@ class LoadKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        state.focus_idx = FILE_LOAD_BUTTON  # Focus to Load button
-        state.EMIT_BUTTON_PRESS = True
+        pressed_keys = pygame.key.get_pressed()
+        if pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]:
+            LoadMP3Button.action(history_manager, state, event, ui_elements)
+        else:
+            LoadButton.action(history_manager, state, event, ui_elements)
 
 
 class StepSizeKey(KeyBase):
