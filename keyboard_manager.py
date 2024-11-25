@@ -64,8 +64,6 @@ class StepChartKey(KeyBase):
             max(state.coor_cur[1], state.coor_base[1]) + 1,
         )
 
-        prev_step_data = copy.deepcopy(step_data[ln_from:ln_to])
-
         step_diff: List[Tuple[int, int, int, int]] = []
 
         if ln_from == ln_to - 1:  # Only one line is selected
@@ -139,7 +137,7 @@ class UpKey(KeyBase):
             if block_idx != block_idx_prev:
                 state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
 
-        if state.edit_mode in [AUTO_LINE_PASS_MODE, FIX_LINE_MODE]:
+        if state.AUTO_LINE_PASS:
             state.coor_base = (state.coor_base[0], state.coor_cur[1])
         elif not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
             state.coor_base = state.coor_cur
@@ -186,7 +184,7 @@ class DownKey(KeyBase):
             if block_idx != block_idx_prev:
                 state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
 
-        if state.edit_mode in [AUTO_LINE_PASS_MODE, FIX_LINE_MODE]:
+        if state.AUTO_LINE_PASS:
             state.coor_base = (state.coor_base[0], state.coor_cur[1])
         elif not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
             state.coor_base = state.coor_cur
@@ -213,7 +211,7 @@ class LeftKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        if state.edit_mode in [AUTO_LINE_PASS_MODE, FIX_LINE_MODE]:
+        if state.AUTO_LINE_PASS:
             return
         x = state.coor_cur[0]
         pressed_keys = pygame.key.get_pressed()
@@ -242,7 +240,7 @@ class RightKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        if state.edit_mode in [AUTO_LINE_PASS_MODE, FIX_LINE_MODE]:
+        if state.AUTO_LINE_PASS:
             return
         x = state.coor_cur[0]
         cols = state.get_cols()
@@ -553,7 +551,7 @@ class PasteKey(KeyBase):
         update_validity(step_data, ln_from - 1, ln_to + 1)
 
         # Update coor_cur, y_base and coor_cur
-        if state.edit_mode == 1:
+        if state.AUTO_LINE_PASS:
             ln_next = min(ln_to, len(step_data) - 1)
             state.coor_cur = (col_from, ln_next)
             state.coor_base = (col_to, ln_next)
@@ -662,6 +660,8 @@ class FindKey(KeyBase):
                 state.coor_cur = (state.get_cols() - 1, ln)
                 state.sync_scr_y()
                 return
+
+        state.log("No error line found")
 
 
 class MusicKey(KeyBase):
@@ -798,19 +798,20 @@ class StepKeyUp(KeyBase):
         super().__init__()
 
     def condition(self, state: State, event: pygame.Event) -> bool:
-        pressed_keys = pygame.key.get_pressed()
+        if not (event.type == pygame.KEYUP and state.AUTO_LINE_PASS):
+            return False
+
         target_keys = list(
             (KEY_SINGLE if state.mode == "Single" else KEY_DOUBLE).keys()
         )
+        if not event.key in target_keys:
+            return False
+
+        pressed_keys = pygame.key.get_pressed()
         all_step_key_released = (
             sum(list(map(lambda x: pressed_keys[x], target_keys))) == 0
         )
-        return (
-            event.type == pygame.KEYUP
-            and not (pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL])
-            and event.key in target_keys
-            and all_step_key_released
-        )
+        return all_step_key_released
 
     def action(
         self,
@@ -819,7 +820,7 @@ class StepKeyUp(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        if state.edit_mode == AUTO_LINE_PASS_MODE:
+        if state.AUTO_LINE_PASS:
             ln = state.coor_cur[1]
             ln_next = min(ln + 1, len(state.step_data) - 1)
             state.coor_base = (0, ln_next)

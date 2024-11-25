@@ -869,7 +869,7 @@ class AutoLinePassButton(OnOffButton):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
-        state.edit_mode = AUTO_LINE_PASS_MODE
+        state.AUTO_LINE_PASS = True
         state.coor_base = (0, state.coor_cur[1])
         state.coor_cur = (state.get_cols() - 1, state.coor_cur[1])
         state.log("(Change mode) Auto Line Pass")
@@ -885,7 +885,7 @@ class AutoLinePassButton(OnOffButton):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
-        state.edit_mode = 0
+        state.AUTO_LINE_PASS = False
         state.log("(Change mode) None")
 
         element = ui_elements[AUTO_LINE_PASS_BUTTON].e
@@ -899,14 +899,12 @@ class AutoLinePassButton(OnOffButton):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
-        if state.edit_mode == FIX_LINE_MODE:
-            FixLineModeButton.off(history_manager, state, event, ui_elements)
 
-        if state.edit_mode != AUTO_LINE_PASS_MODE:
-            AutoLinePassButton.on(history_manager, state, event, ui_elements)
+        if state.AUTO_LINE_PASS:
+            AutoLinePassButton.off(history_manager, state, event, ui_elements)
 
         else:
-            AutoLinePassButton.off(history_manager, state, event, ui_elements)
+            AutoLinePassButton.on(history_manager, state, event, ui_elements)
 
 
 class FixLineModeButton(OnOffButton):
@@ -925,8 +923,11 @@ class FixLineModeButton(OnOffButton):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
-        state.edit_mode = FIX_LINE_MODE
+        state.FIX_LINE = True
         state.log("(Change mode) Fix Line Mode")
+
+        # Adjust receptor_y
+        state.receptor_y = state.ln_to_y[state.coor_cur[1]] - state.scr_y
 
         element = ui_elements[FIX_LINE_BUTTON].e
         element.colours["normal_bg"] = pygame.Color(BUTTON_ON_COLOR)
@@ -939,8 +940,11 @@ class FixLineModeButton(OnOffButton):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
-        state.edit_mode = 0
+        state.FIX_LINE = False
         state.log("(Change mode) None")
+
+        state.scr_y += state.receptor_y
+        state.receptor_y = 0
 
         element = ui_elements[FIX_LINE_BUTTON].e
         element.colours["normal_bg"] = pygame.Color(BUTTON_OFF_COLOR)
@@ -953,14 +957,12 @@ class FixLineModeButton(OnOffButton):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
-        if state.edit_mode == AUTO_LINE_PASS_MODE:
-            AutoLinePassButton.off(history_manager, state, event, ui_elements)
 
-        if state.edit_mode != FIX_LINE_MODE:
-            FixLineModeButton.on(history_manager, state, event, ui_elements)
+        if state.FIX_LINE:
+            FixLineModeButton.off(history_manager, state, event, ui_elements)
 
         else:
-            FixLineModeButton.off(history_manager, state, event, ui_elements)
+            FixLineModeButton.on(history_manager, state, event, ui_elements)
 
 
 class LogTextbox(ElementBase):

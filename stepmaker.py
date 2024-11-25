@@ -460,37 +460,36 @@ class StepMaker:
 
     def draw_scrollbar(self):
         state, screen = self.state, self.screen
+        denom = (state.screen_height - 2 * SCROLLBAR_BUTTON_HEIGHT) - state.scrollbar_h
+
         if state.SCROLLBAR_CLICKED:
             _, mouse_y = pygame.mouse.get_pos()
-            state.scrollbar_y = min(
+            new_scrollbar_y = min(
                 max(
                     state.scrollbar_y_init + (mouse_y - state.scr_mouse_init),
                     SCROLLBAR_BUTTON_HEIGHT,
                 ),
                 (state.screen_height - SCROLLBAR_BUTTON_HEIGHT) - state.scrollbar_h,
             )
-            denom = (
-                state.screen_height - 2 * SCROLLBAR_BUTTON_HEIGHT
-            ) - state.scrollbar_h
             if denom != 0:
-                state.scr_y = (
-                    (state.scrollbar_y - SCROLLBAR_BUTTON_HEIGHT) * state.max_y
-                ) // (
-                    (state.screen_height - 2 * SCROLLBAR_BUTTON_HEIGHT)
-                    - state.scrollbar_h
-                )
+                new_scr_y = (
+                    (new_scrollbar_y - SCROLLBAR_BUTTON_HEIGHT) * state.max_y
+                ) // denom
+                if state.FIX_LINE:
+                    ln_new = state.y_to_ln[new_scr_y]
+                    state.coor_base = state.coor_cur = (state.coor_cur[0], ln_new)
+                    state.sync_scr_y()
+                    scr_y = state.scr_y + state.receptor_y
+                    state.scrollbar_y = (
+                        scr_y * denom
+                    ) // state.max_y + SCROLLBAR_BUTTON_HEIGHT
+                else:
+                    state.scrollbar_y = new_scrollbar_y
+                    state.scr_y = new_scr_y
         else:
             state.scrollbar_y = (
-                SCROLLBAR_BUTTON_HEIGHT
-                + (
-                    (
-                        (state.screen_height - 2 * SCROLLBAR_BUTTON_HEIGHT)
-                        - state.scrollbar_h
-                    )
-                    * state.scr_y
-                )
-                // state.max_y
-            )
+                (state.scr_y + state.receptor_y) * denom
+            ) // state.max_y + SCROLLBAR_BUTTON_HEIGHT
 
         pygame.draw.rect(
             screen,

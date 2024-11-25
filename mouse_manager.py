@@ -12,15 +12,29 @@ class MouseManager:
         mouse_x, _ = event.pos
         if state.step_x_start <= mouse_x < state.measure_x_start:
             state.IS_SCROLL = True
-            state.scr_y = max(state.scr_y - SCROLL_SPEED, -state.receptor_y)
+            if state.FIX_LINE:
+                state.coor_base = (state.coor_base[0], max(state.coor_base[1] - 1, 0))
+                state.coor_cur = (state.coor_cur[0], max(state.coor_cur[1] - 1, 0))
+                state.sync_scr_y()
+            else:
+                state.scr_y = max(state.scr_y - SCROLL_SPEED, -state.receptor_y)
 
     def _process_mouse_wheel_down(state: State, event: pygame.Event):
         mouse_x, _ = event.pos
         if state.step_x_start <= mouse_x < state.measure_x_start:
             state.IS_SCROLL = True
-            state.scr_y = min(
-                state.scr_y + SCROLL_SPEED, state.max_y - state.receptor_y
-            )
+            if state.FIX_LINE:
+                ln_max = len(state.step_data) - 1
+                state.coor_base = (
+                    state.coor_base[0],
+                    min(state.coor_base[1] + 1, ln_max),
+                )
+                state.coor_cur = (state.coor_cur[0], min(state.coor_cur[1] + 1, ln_max))
+                state.sync_scr_y()
+            else:
+                state.scr_y = min(
+                    state.scr_y + SCROLL_SPEED, state.max_y - state.receptor_y
+                )
 
     def _process_mouse_click(state: State, event: pygame.Event):
         state.LATTICE_CLICKED = state.SCROLLBAR_CLICKED = False
@@ -86,6 +100,7 @@ class MouseManager:
                     (mouse_x - state.step_x_start) // step_size,
                     state.y_to_ln[mouse_y + state.scr_y],
                 )
+                state.sync_scr_y()
 
     @staticmethod
     def process_event(state: State, event: pygame.Event):
