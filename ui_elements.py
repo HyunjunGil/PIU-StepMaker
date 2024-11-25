@@ -310,7 +310,9 @@ class PlayButton(ElementBase):
             raw_data = np.array(audio.get_array_of_samples())
 
             state.music_start_time = int(time.time() * 1000)
-            state.music_start_offset = int(state.scr_to_time[state.scr_y])
+            state.music_start_offset = int(
+                state.scr_to_time[state.scr_y + state.receptor_y]
+            )
             # a = time.time()
             start_idx = int(
                 len(raw_data) * (state.music_start_offset / state.music_len)

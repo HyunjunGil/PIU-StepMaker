@@ -139,7 +139,7 @@ class StepMaker:
 
         # Update time text
         self.ui_manager.ui_elements[FILE_PLAYTIME_TEXT].e.set_text(
-            ms_to_str(state.scr_to_time[state.scr_y])
+            ms_to_str(state.scr_to_time[state.scr_y + state.receptor_y])
         )
 
         if state.MUSIC_PLAYING and play_button.text != "Stop":
@@ -189,27 +189,34 @@ class StepMaker:
     def adjust_scr_y_to_music(self):
         state = self.state
         t = int(time.time() * 1000)
+        print(
+            state.scr_y,
+            state.max_y,
+            state.receptor_y,
+            state.max_y - state.receptor_y - 1,
+        )
         if (
             state.music_start_offset
             + (t - state.music_start_time) * MUSIC_SPEED_MAP[state.music_speed_idx]
             > state.music_len
-            or state.scr_y >= state.max_y - state.receptor_y - 1
+            or state.scr_y >= state.max_y - state.receptor_y - state.get_step_size() - 1
         ):
             PlayButton.action(self.history_manager, self.state, None, [])
             self.ui_manager.ui_elements[FILE_PLAY_BUTTON].e.set_text("Play")
+            return
 
-        state.scr_y = binary_search(
+        new_scr_y = binary_search(
             state.scr_to_time[: state.max_y],
             state.music_start_offset + int(time.time() * 1000) - state.music_start_time,
         )
-        pass
+        if state.FIX_LINE:
+            ln_new = state.y_to_ln[new_scr_y]
+            state.coor_base = state.coor_cur = (state.coor_cur[0], ln_new)
+            state.sync_scr_y()
+        else:
+            state.scr_y = new_scr_y
 
     def draw(self):
-        # print(
-        #     pd.Timestamp(time.time(), tz="utc", unit="s").strftime(
-        #         "%Y-%m-%d %H:%M:%S.%f"
-        #     )
-        # )
 
         # If music is playing, adjust scr.y
         if self.state.MUSIC_PLAYING:
