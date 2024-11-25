@@ -191,12 +191,6 @@ class StepMaker:
     def adjust_scr_y_to_music(self):
         state = self.state
         t = int(time.time() * 1000)
-        print(
-            state.scr_y,
-            state.max_y,
-            state.receptor_y,
-            state.max_y - state.receptor_y - 1,
-        )
         if (
             state.music_start_offset
             + (t - state.music_start_time) * MUSIC_SPEED_MAP[state.music_speed_idx]
@@ -216,30 +210,6 @@ class StepMaker:
             step_data = state.step_data
             ln = state.coor_cur[1]
             ln_new = state.y_to_ln[new_scr_y]
-            # if ln_new != ln:
-            #     # Adjust Stepchart
-            #     step_diff: List[Tuple[int, int, int, int]] = []
-            #     target_keys = KEY_SINGLE if state.mode == "Single" else KEY_DOUBLE
-            #     pressed_keys = pygame.key.get_pressed()
-            #     for key, i in target_keys.items():
-            #         col = i + STEP_DATA_OFFSET
-            #         if pressed_keys[key]:
-            #             if step_data[ln][col] == 1:
-            #                 step_diff.append((ln, col, 1, 2))
-            #                 step_data[ln][col] = 2
-            #                 ln_next = min(ln + 1, len(step_data) - 1)
-            #                 step_diff.append((ln_next, col, step_data[ln_next][col], 3))
-            #                 step_data[ln_next][col] = 3
-            #         elif ln - 1 >= 0 and step_data[ln - 1][col] == 3:
-            #             step_diff.append((ln, col, 3, 4))
-            #             step_data[ln][col] = 4
-
-            #     coor_undo = (state.coor_cur, state.coor_base)
-            #     coor_redo = ((state.coor_cur[0], ln_new), (state.coor_cur[0], ln_new))
-            #     if len(step_diff) > 0:
-            #         self.history_manager.append(
-            #             StepChartChangeDelta(coor_undo, coor_redo, step_diff)
-            #         )
 
             state.coor_base = state.coor_cur = (state.coor_cur[0], ln_new)
             state.sync_scr_y()
