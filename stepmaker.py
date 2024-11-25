@@ -542,7 +542,16 @@ class StepMaker:
                 step_size,
             ),
         )
-        pass
+
+        # Draw middle line if double mode
+        if state.mode == "Double":
+            pygame.draw.line(
+                self.screen,
+                MIDDLE_GRAY,
+                (state.step_x_start + 5 * step_size, -state.scr_y),
+                (state.step_x_start + 5 * step_size, state.max_y - state.scr_y),
+                1,
+            )
 
     def draw_selected_area(self):
 
