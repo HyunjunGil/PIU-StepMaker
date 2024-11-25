@@ -64,9 +64,9 @@ def _valid_after(cur: int, next: int) -> bool:
 
 def update_validity(step_data: List[List[int]], ln_from: int, ln_to: int):
     ln_from, ln_to = max(0, ln_from), min(len(step_data), ln_to)
-    assert (
-        0 <= ln_from < ln_to <= len(step_data)
-    ), "Invalid parameters, {} {} {}".format(ln_from, ln_to)
+    assert 0 <= ln_from < ln_to <= len(step_data), "Invalid parameters, {} {}".format(
+        ln_from, ln_to
+    )
     tot_len = len(step_data[0])
     cols = range(STEP_DATA_OFFSET, tot_len)
     for ln in range(ln_from, ln_to):
