@@ -98,7 +98,7 @@ class MouseManager:
             if state.step_x_start <= mouse_x < state.measure_x_start:
                 state.coor_cur = (
                     (mouse_x - state.step_x_start) // step_size,
-                    state.y_to_ln[mouse_y + state.scr_y],
+                    state.y_to_ln[min(mouse_y + state.scr_y, state.max_y - 1)],
                 )
                 state.sync_scr_y()
 

@@ -182,8 +182,10 @@ class StepMaker:
             elif state.mouse_pos[1] > state.screen_height:
                 speed = max(mouse_y - state.screen_height, 100) // 20
                 state.scr_y = min(
-                    state.max_y - state.receptor_y - state.screen_height + step_size,
                     state.scr_y + speed,
+                    max(state.max_y - state.screen_height, 0)
+                    - state.receptor_y
+                    + step_size,
                 )
 
     def adjust_scr_y_to_music(self):
