@@ -750,6 +750,10 @@ class BlockSplitButton(ElementBase):
         coor_undo = (state.coor_cur, state.coor_base)
         ln = state.coor_cur[1]
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
+        ln_from, _ = state.get_block_range_by_block_idx(block_idx)
+        if ln_from == ln:
+            state.log("Cannot split the block at first line of it")
+            return
         state.step_data, state.block_info = split_block(
             step_data, block_info, block_idx, ln
         )
