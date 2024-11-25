@@ -16,6 +16,7 @@ class MouseManager:
                 state.coor_base = (state.coor_base[0], max(state.coor_base[1] - 1, 0))
                 state.coor_cur = (state.coor_cur[0], max(state.coor_cur[1] - 1, 0))
                 state.sync_scr_y()
+                state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
             else:
                 state.scr_y = max(state.scr_y - SCROLL_SPEED, -state.receptor_y)
 
@@ -31,6 +32,7 @@ class MouseManager:
                 )
                 state.coor_cur = (state.coor_cur[0], min(state.coor_cur[1] + 1, ln_max))
                 state.sync_scr_y()
+                state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
             else:
                 state.scr_y = min(
                     state.scr_y + SCROLL_SPEED, state.max_y - state.receptor_y
