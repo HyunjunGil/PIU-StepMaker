@@ -131,6 +131,10 @@ class LoadButton(ElementBase):
         mp3_file_path = ucs_file_path[:-3] + "mp3"
         ucs_name = file_path.split("/")[-1]
         mp3_name = mp3_file_path.split("/")[-1]
+        if state.AUTO_LINE_PASS:
+            AutoLinePassButton.off(history_manager, state, event, ui_elements)
+        if state.FIX_LINE:
+            FixLineModeButton.off(history_manager, state, event, ui_elements)
         step_size_idx = state.step_size_idx
         state.initialize()
         state.step_size_idx = step_size_idx
@@ -925,6 +929,7 @@ class FixLineModeButton(OnOffButton):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
+        state.sync_scr_y()
         state.FIX_LINE = True
         state.log("(Change mode) Fix Line Mode")
 

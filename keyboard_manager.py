@@ -816,6 +816,8 @@ class StepKeyUp(KeyBase):
             return False
 
         pressed_keys = pygame.key.get_pressed()
+        if pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL]:
+            return False
         all_step_key_released = (
             sum(list(map(lambda x: pressed_keys[x], target_keys))) == 0
         )
