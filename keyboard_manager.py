@@ -202,7 +202,11 @@ class LeftKey(KeyBase):
         super().__init__()
 
     def condition(self, state: State, event: pygame.Event) -> bool:
-        return event.type == pygame.KEYDOWN and event.key == pygame.K_LEFT
+        return (
+            event.type == pygame.KEYDOWN
+            and event.key == pygame.K_LEFT
+            and not (BI_BPM_TEXTBOX <= state.focus_idx <= BI_SP_TEXTBOX)
+        )
 
     def action(
         self,
@@ -231,7 +235,11 @@ class RightKey(KeyBase):
         super().__init__()
 
     def condition(self, state: State, event: pygame.Event) -> bool:
-        return event.type == pygame.KEYDOWN and event.key == pygame.K_RIGHT
+        return (
+            event.type == pygame.KEYDOWN
+            and event.key == pygame.K_RIGHT
+            and not (BI_BPM_TEXTBOX <= state.focus_idx <= BI_SP_TEXTBOX)
+        )
 
     def action(
         self,
