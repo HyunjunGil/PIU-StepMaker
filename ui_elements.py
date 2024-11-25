@@ -188,7 +188,7 @@ class LoadMP3Button(ElementBase):
             state.log("MP3 file is not selected")
             return
         load_music_file(state, mp3_file_path)
-        state.log("MP3 file {f} is loaded")
+        state.log(f"MP3 file {file_name} is loaded")
         # Hide sub-panel
         state.focus_idx = -1
 
@@ -296,33 +296,37 @@ class PlayButton(ElementBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
-        if state.music_len == 0:
-            state.log("Play Failed : Music is not loaded")
-            return
 
         if state.MUSIC_PLAYING:
-            pygame.mixer.stop()
+            if state.music_len != 0:
+                pygame.mixer.stop()
             state.MUSIC_PLAYING = False
         else:
-            music_speed = MUSIC_SPEED_MAP[state.music_speed_idx]
+            if state.music_len != 0:
+                music_speed = MUSIC_SPEED_MAP[state.music_speed_idx]
 
-            new_frame_rate = int(state.music.frame_rate * music_speed)
-            audio = state.music._spawn(
-                state.music.raw_data, overrides={"frame_rate": new_frame_rate}
-            ).set_frame_rate(PYGAME_SAMPLE_RATE)
-            raw_data = np.array(audio.get_array_of_samples())
+                new_frame_rate = int(state.music.frame_rate * music_speed)
+                audio = state.music._spawn(
+                    state.music.raw_data, overrides={"frame_rate": new_frame_rate}
+                ).set_frame_rate(PYGAME_SAMPLE_RATE)
+                raw_data = np.array(audio.get_array_of_samples())
 
-            state.music_start_time = int(time.time() * 1000)
-            state.music_start_offset = int(
-                state.scr_to_time[state.scr_y + state.receptor_y]
-            )
-            # a = time.time()
-            start_idx = int(
-                len(raw_data) * (state.music_start_offset / state.music_len)
-            )
-            sound = pygame.mixer.Sound(buffer=raw_data[start_idx:].tobytes())
-            # print("Elapsed : {:.4f}s".format(time.time() - a))
-            sound.play()
+                state.music_start_time = int(time.time() * 1000)
+                state.music_start_offset = int(
+                    state.scr_to_time[state.scr_y + state.receptor_y]
+                )
+                # a = time.time()
+                start_idx = int(
+                    len(raw_data) * (state.music_start_offset / state.music_len)
+                )
+                sound = pygame.mixer.Sound(buffer=raw_data[start_idx:].tobytes())
+                # print("Elapsed : {:.4f}s".format(time.time() - a))
+                sound.play()
+            else:
+                state.music_start_time = int(time.time() * 1000)
+                state.music_start_offset = int(
+                    state.scr_to_time[state.scr_y + state.receptor_y]
+                )
             state.MUSIC_PLAYING = True
 
         state.focus_idx = FILE_PLAY_BUTTON

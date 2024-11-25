@@ -205,7 +205,8 @@ class StepMaker:
         t = int(time.time() * 1000)
         music_speed = MUSIC_SPEED_MAP[state.music_speed_idx]
         if (
-            state.music_start_offset + (t - state.music_start_time) * music_speed
+            state.music_len != 0
+            and state.music_start_offset + (t - state.music_start_time) * music_speed
             > state.music_len
             or state.scr_y >= state.max_y - state.receptor_y - state.get_step_size() - 1
         ):

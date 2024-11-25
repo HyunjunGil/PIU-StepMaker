@@ -131,7 +131,6 @@ class State:
     def update_scr_to_time(self):
         step_data, block_info = self.get_step_info()
         step_size = self.get_step_size()
-        # music_speed = MUSIC_SPEED_MAP[self.music_speed_idx]
         t, ms_per_pixel = 0.0, 0.0
         block_idx, measure, bpm, beat, split = -1, 0, 0, 0, 0
 
