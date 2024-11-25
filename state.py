@@ -131,8 +131,8 @@ class State:
     def update_scr_to_time(self):
         step_data, block_info = self.get_step_info()
         step_size = self.get_step_size()
-        music_speed = MUSIC_SPEED_MAP[self.music_speed_idx]
-        t, ms_per_pixel = 0, 0.0
+        # music_speed = MUSIC_SPEED_MAP[self.music_speed_idx]
+        t, ms_per_pixel = 0.0, 0.0
         block_idx, measure, bpm, beat, split = -1, 0, 0, 0, 0
 
         scr_to_time = self.scr_to_time
@@ -151,7 +151,7 @@ class State:
                     max((step_size * 2) // split, MIN_SPLIT_SIZE), step_size
                 )
                 beat_height = line_height * split
-                ms_per_pixel = 60_000.0 / (music_speed * bpm) / beat_height
+                ms_per_pixel = 60_000.0 / bpm / beat_height
             t += ms_per_pixel
 
     def clear_step(self, ln: int, col: int):

@@ -191,9 +191,9 @@ class StepMaker:
     def adjust_scr_y_to_music(self):
         state = self.state
         t = int(time.time() * 1000)
+        music_speed = MUSIC_SPEED_MAP[state.music_speed_idx]
         if (
-            state.music_start_offset
-            + (t - state.music_start_time) * MUSIC_SPEED_MAP[state.music_speed_idx]
+            state.music_start_offset + (t - state.music_start_time) * music_speed
             > state.music_len
             or state.scr_y >= state.max_y - state.receptor_y - state.get_step_size() - 1
         ):
@@ -204,7 +204,8 @@ class StepMaker:
 
         new_scr_y = binary_search(
             state.scr_to_time[: state.max_y],
-            state.music_start_offset + int(time.time() * 1000) - state.music_start_time,
+            state.music_start_offset
+            + music_speed * (int(time.time() * 1000) - state.music_start_time),
         )
         if state.FIX_LINE:
             step_data = state.step_data

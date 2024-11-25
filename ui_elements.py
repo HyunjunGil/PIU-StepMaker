@@ -275,7 +275,6 @@ class PlaySpeedButton(ElementBase):
         state.music_speed_idx = (state.music_speed_idx + 1) % len(MUSIC_SPEED_MAP)
         music_speed = MUSIC_SPEED_MAP[state.music_speed_idx]
         ui_elements[FILE_PLAYSPEED_BUTTON].e.set_text(f"{music_speed}x")
-        state.update_scr_to_time()
         if restart:
             PlayButton.action(history_manager, state, event, ui_elements)
 
