@@ -67,14 +67,16 @@ def update_validity(step_data: List[List[int]], ln_from: int, ln_to: int):
     assert 0 <= ln_from < ln_to <= len(step_data), "Invalid parameters, {} {}".format(
         ln_from, ln_to
     )
-    tot_len = len(step_data[0])
-    cols = range(STEP_DATA_OFFSET, tot_len)
+    tot_len = len(step_data)
+    cols = range(STEP_DATA_OFFSET, len(step_data[0]))
     for ln in range(ln_from, ln_to):
         line = step_data[ln]
         flag = True
         for col in cols:
             if ln == 0:
-                flag &= _valid_after(step_data[ln][col], step_data[ln + 1][col])
+                flag &= (ln + 1 == tot_len) or _valid_after(
+                    step_data[ln][col], step_data[ln + 1][col]
+                )
             elif ln < len(step_data) - 1:
                 flag &= _valid_before(
                     step_data[ln - 1][col], step_data[ln][col]
