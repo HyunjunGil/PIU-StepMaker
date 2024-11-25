@@ -278,7 +278,7 @@ class PlaySpeedButton(ElementBase):
         if restart:
             PlayButton.action(history_manager, state, event, ui_elements)
 
-        state.focus_idx = FILE_PLAYSPEED_BUTTON
+        # state.focus_idx = FILE_PLAYSPEED_BUTTON
 
 
 # UI_INDEX : 0
@@ -329,7 +329,7 @@ class PlayButton(ElementBase):
                 )
             state.MUSIC_PLAYING = True
 
-        state.focus_idx = FILE_PLAY_BUTTON
+        # state.focus_idx = FILE_PLAY_BUTTON
 
 
 class PlayTimeTextbox(ElementBase):
@@ -690,7 +690,7 @@ class BlockAddAboveButton(ElementBase):
         coor_redo = (state.coor_cur, state.coor_base)
 
         state.log(f"(Add ^) Block #{block_idx} is added")
-        state.focus_idx = BO_BLOCK_ADD_A_BUTTON
+        # state.focus_idx = BO_BLOCK_ADD_A_BUTTON
         history_manager.append(BlockAddAboveDelta(coor_undo, coor_redo, block_idx))
 
 
@@ -727,7 +727,7 @@ class BlockAddBelowButton(ElementBase):
         coor_redo = (state.coor_cur, state.coor_base)
 
         state.log(f"(Add v) Block #{block_idx + 1} is added")
-        state.focus_idx = BO_BLOCK_ADD_B_BUTTON
+        # state.focus_idx = BO_BLOCK_ADD_B_BUTTON
         history_manager.append(BlockAddBelowDelta(coor_undo, coor_redo, block_idx))
 
 
@@ -759,7 +759,7 @@ class BlockSplitButton(ElementBase):
         coor_redo = (state.coor_cur, state.coor_base)
 
         state.log(f"(Split) Block #{block_idx} is splited")
-        state.focus_idx = BO_BLOCK_SPLIT_BUTTON
+        # state.focus_idx = BO_BLOCK_SPLIT_BUTTON
         state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
         history_manager.append(BlockSplitDelta(coor_undo, coor_redo, block_idx, ln))
 
@@ -816,7 +816,7 @@ class BlockDeleteButton(ElementBase):
         coor_redo = (state.coor_cur, state.coor_base)
 
         state.log(f"(Delete) Block #{block_idx} is deleted")
-        state.focus_idx = BO_BLOCK_DELETE_BUTTON
+        # state.focus_idx = BO_BLOCK_DELETE_BUTTON
         state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
         history_manager.append(
             BlockDeleteDelta(
@@ -967,7 +967,6 @@ class FixLineModeButton(OnOffButton):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
-
         if state.FIX_LINE:
             FixLineModeButton.off(history_manager, state, event, ui_elements)
 
@@ -1013,7 +1012,7 @@ class LogClearButton(ElementBase):
     ):
         t = time.strftime("%H:%M:%S")
         ui_elements[LOG_TEXTBOX].e.set_text(f"[{t}] Clear logs")
-        state.focus_idx = LOG_CLEAR_BUTTON
+        # state.focus_idx = LOG_CLEAR_BUTTON
 
 
 # UI_INDEX : 18
@@ -1032,7 +1031,7 @@ class ScrollUpButton(ElementBase):
         ui_elements: List[ElementBase],
     ):
         state.scr_y = max(state.scr_y - SCROLL_SPEED, -state.receptor_y)
-        state.focus_idx = SCROLLBAR_UP_BUTTON
+        # state.focus_idx = SCROLLBAR_UP_BUTTON
 
     def set_location(self, loc: Tuple[int, int]):
         self.e.get_abs_rect().topleft = loc
@@ -1055,7 +1054,7 @@ class ScrollDownButton(ElementBase):
         ui_elements: List[ElementBase],
     ):
         state.scr_y = min(state.scr_y + SCROLL_SPEED, state.max_y - state.receptor_y)
-        state.focus_idx = SCROLLBAR_DOWN_BUTTON
+        # state.focus_idx = SCROLLBAR_DOWN_BUTTON
 
     def set_location(self, loc: Tuple[int, int]):
         self.e.get_abs_rect().bottomleft = loc
