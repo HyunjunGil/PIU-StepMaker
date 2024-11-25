@@ -55,6 +55,12 @@ class StepMaker:
                     LONG_TAIL_IMAGES,
                 ]
             )
+        self.RECEPTOR_IMAGES = dict()
+        for i, suffix in enumerate(["s", "m", "l"]):
+            for mode in ["Single", "Double"]:
+                self.RECEPTOR_IMAGES[f"{mode}_{i}"] = pygame.image.load(
+                    f"./images/receptor_{mode.lower()}_{suffix}.png"
+                ).convert_alpha()
 
     def resize_screen(self, size: Tuple[int, int]):
         state = self.state
@@ -463,6 +469,12 @@ class StepMaker:
 
             y += dy
             ln += 1
+
+        # Draw Receptor Image
+        self.screen.blit(
+            self.RECEPTOR_IMAGES[f"{state.mode}_{state.step_size_idx}"],
+            (state.step_x_start, state.receptor_y),
+        )
 
         # Draw Images
         image_rects = sorted(image_rects, key=lambda x: x[0])
