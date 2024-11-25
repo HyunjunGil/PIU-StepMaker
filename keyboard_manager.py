@@ -654,6 +654,14 @@ class FindKey(KeyBase):
     ) -> None:
         pressed_keys = pygame.key.get_pressed()
         step_data, block_info = state.get_step_info()
+
+        error_cnt = update_validity(step_data, 0, len(step_data))
+        if error_cnt == 0:
+            state.log("No error line found")
+            return
+
+        state.log(f"{error_cnt} error lines found")
+
         ln, tot_ln = state.coor_cur[1], len(step_data)
 
         d = (
@@ -671,8 +679,6 @@ class FindKey(KeyBase):
                 state.coor_cur = (state.get_cols() - 1, ln)
                 state.sync_scr_y()
                 return
-
-        state.log("No error line found")
 
 
 class MusicKey(KeyBase):

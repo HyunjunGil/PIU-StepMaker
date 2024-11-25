@@ -62,13 +62,14 @@ def _valid_after(cur: int, next: int) -> bool:
     )
 
 
-def update_validity(step_data: List[List[int]], ln_from: int, ln_to: int):
+def update_validity(step_data: List[List[int]], ln_from: int, ln_to: int) -> int:
     ln_from, ln_to = max(0, ln_from), min(len(step_data), ln_to)
     assert 0 <= ln_from < ln_to <= len(step_data), "Invalid parameters, {} {}".format(
         ln_from, ln_to
     )
     tot_len = len(step_data)
     cols = range(STEP_DATA_OFFSET, len(step_data[0]))
+    error_cnt = 0
     for ln in range(ln_from, ln_to):
         line = step_data[ln]
         flag = True
@@ -85,7 +86,10 @@ def update_validity(step_data: List[List[int]], ln_from: int, ln_to: int):
                 flag &= _valid_before(step_data[ln - 1][col], step_data[ln][col])
             if not flag:
                 break
+        error_cnt += 1 - flag
         step_data[ln][STEP_DATA_VD_IDX] = flag
+
+    return error_cnt
 
 
 def get_step_diff(
