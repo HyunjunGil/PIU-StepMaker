@@ -9,6 +9,10 @@ from ui_elements import (
     AutoLinePassButton,
     FixLineModeButton,
     ElementBase,
+    BlockAddAboveButton,
+    BlockAddBelowButton,
+    BlockSplitButton,
+    BlockDeleteButton,
 )
 from typing import List, Tuple
 from state import State
@@ -854,6 +858,35 @@ class StepKeyUp(KeyBase):
             state.sync_scr_y()
 
 
+class BlockOperationKey(KeyBase):
+    def __init__(self):
+        super().__init__()
+
+    def condition(self, state: State, event: pygame.Event) -> bool:
+        pressed_keys = pygame.key.get_pressed()
+        return (
+            event.type == pygame.KEYDOWN
+            and (pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL])
+            and event.key in [pygame.K_u, pygame.K_i, pygame.K_o, pygame.K_p]
+        )
+
+    def action(
+        self,
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
+    ) -> None:
+        if event.key == pygame.K_u:
+            BlockAddAboveButton.action(history_manager, state, event, ui_elements)
+        elif event.key == pygame.K_i:
+            BlockAddBelowButton.action(history_manager, state, event, ui_elements)
+        elif event.key == pygame.K_o:
+            BlockSplitButton.action(history_manager, state, event, ui_elements)
+        elif event.key == pygame.K_p:
+            BlockDeleteButton.action(history_manager, state, event, ui_elements)
+
+
 class KeyboardManager:
 
     def __init__(self):
@@ -896,6 +929,8 @@ class KeyboardManager:
             # Mode Shortcut
             AutoPassModeKey(),
             FixLineModeKey(),
+            # Block Operation Shortcut
+            BlockOperationKey(),
         ]
 
     def process_event(
