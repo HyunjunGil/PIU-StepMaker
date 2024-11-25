@@ -1,8 +1,6 @@
 import pygame, pygame_gui, sys, time, numpy as np
 
-from typing import List, Tuple
 from constants import *
-from file_manager import load_ucs_file, save_ucs_file
 from block_logic import *
 from pygame import Surface
 
@@ -17,7 +15,6 @@ stepmaker = StepMaker(
     pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
 )
 
-# stepmaker.load_initial_file("sample.ucs", "sample.mp3")
 
 running = True
 
