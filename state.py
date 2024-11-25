@@ -9,8 +9,11 @@ class State:
     def __init__(self):
         self.initialize()
 
-    def get_step_size(self) -> int:
+    def get_step_width(self) -> int:
         return STEP_SIZE_MAP[self.step_size_idx]
+
+    def get_step_height(self) -> int:
+        return int(self.get_step_width() * self.step_vertical_mp / 10)
 
     def get_font_size(self) -> int:
         return 4 * self.step_size_idx + 8
@@ -68,7 +71,7 @@ class State:
             y_cur = self.ln_to_y[self.coor_cur[1]]
             self.scr_y = max(
                 min(self.scr_y, y_cur),
-                y_cur + self.get_step_size() - self.screen_height,
+                y_cur + self.get_step_height() - self.screen_height,
             )
 
     def get_screen_size(self):
@@ -89,7 +92,7 @@ class State:
         self.logs.append(s)
 
     def update_x_info(self):
-        step_size, cols = self.get_step_size(), self.get_cols()
+        step_size, cols = self.get_step_width(), self.get_cols()
         self.measure_x_start = self.step_x_start + step_size * cols
         self.scrollbar_x_start = self.measure_x_start + MEASURE_DESCRIPTOR_WIDTH
 
@@ -98,7 +101,7 @@ class State:
         step_data, block_info = self.get_step_info()
         block_idx, measure, bpm, beat, split = -1, 0, 0, 0, 0
         y, ny = 0, 0
-        step_size = self.get_step_size()
+        step_height = self.get_step_height()
         tot_ln = len(step_data)
         line_height = 0
         for ln in range(tot_ln):
@@ -110,7 +113,8 @@ class State:
                 bpm, beat, split, delay = block[0], block[1], block[2], block[3]
 
                 line_height = min(
-                    max((step_size * 2) // split, MIN_SPLIT_SIZE), step_size
+                    max((step_height * 2) // split, MIN_SPLIT_SIZE),
+                    step_height,
                 )
             ny = y + line_height
             self.ln_to_y[ln] = y
@@ -118,7 +122,7 @@ class State:
                 self.y_to_ln[i] = ln
 
             y = ny
-        self.ln_to_y[tot_ln] = self.ln_to_y[tot_ln - 1] + step_size
+        self.ln_to_y[tot_ln] = self.ln_to_y[tot_ln - 1] + step_height
 
         self.max_y = y
 
@@ -133,7 +137,7 @@ class State:
 
     def update_scr_to_time(self):
         step_data, block_info = self.get_step_info()
-        step_size = self.get_step_size()
+        step_height = self.get_step_height()
         t, ms_per_pixel = 0.0, 0.0
         block_idx, measure, bpm, beat, split = -1, 0, 0, 0, 0
 
@@ -150,7 +154,7 @@ class State:
                 t += delay
 
                 line_height = min(
-                    max((step_size * 2) // split, MIN_SPLIT_SIZE), step_size
+                    max((step_height * 2) // split, MIN_SPLIT_SIZE), step_height
                 )
                 beat_height = line_height * split
                 ms_per_pixel = 60_000.0 / bpm / beat_height
@@ -194,6 +198,7 @@ class State:
         # 1 : medium, 36px
         # 2 : large, 48px
         self.step_size_idx = 2
+        self.step_vertical_mp = 10
 
         # Initial Chart Information
         self.format: int = 1
@@ -201,7 +206,7 @@ class State:
 
         # Offset for Step Area and Scrollbar Area
         self.step_x_start = OPTION_WIDTH
-        self.measure_x_start = self.step_x_start + STEP_SIZE_MAP[self.step_size_idx] * 5
+        self.measure_x_start = self.step_x_start + self.get_step_width() * 5
         self.scrollbar_x_start = self.measure_x_start + MEASURE_DESCRIPTOR_WIDTH
 
         # Block information

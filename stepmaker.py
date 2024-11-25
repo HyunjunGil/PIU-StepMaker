@@ -66,7 +66,7 @@ class StepMaker:
         state = self.state
         w, h = size
         w = max(
-            state.get_step_size() * state.get_cols()
+            state.get_step_width() * state.get_cols()
             + OPTION_WIDTH
             + MEASURE_DESCRIPTOR_WIDTH
             + SCROLLBAR_BUTTON_WIDTH,
@@ -181,7 +181,7 @@ class StepMaker:
 
     def update_scr_y(self):
         state = self.state
-        step_size = state.get_step_size()
+        step_height = state.get_step_height()
         if (
             not state.MUSIC_PLAYING
             and state.MOUSE_CLICKED
@@ -197,7 +197,7 @@ class StepMaker:
                     state.scr_y + speed,
                     max(state.max_y - state.screen_height, 0)
                     - state.receptor_y
-                    + step_size,
+                    + step_height,
                 )
 
     def adjust_scr_y_to_music(self):
@@ -208,7 +208,8 @@ class StepMaker:
             state.music_len != 0
             and state.music_start_offset + (t - state.music_start_time) * music_speed
             > state.music_len
-            or state.scr_y >= state.max_y - state.receptor_y - state.get_step_size() - 1
+            or state.scr_y
+            >= state.max_y - state.receptor_y - state.get_step_height() - 1
         ):
             PlayButton.action(self.history_manager, self.state, None, [])
             self.ui_manager.ui_elements[FILE_PLAY_BUTTON].e.set_text("Play")
@@ -265,7 +266,7 @@ class StepMaker:
         cols = state.get_cols()
         ln = y_to_ln[state.scr_y]
         y = ln_to_y[ln]
-        step_size = state.get_step_size()
+        step_size = state.get_step_width()
         screen_bottom = state.scr_y + state.screen_height
 
         while ln < len(step_data) and y < screen_bottom:
@@ -336,7 +337,7 @@ class StepMaker:
         ln = y_to_ln[max(state.scr_y, 0)]
         y = ln_to_y[ln]
         font = pygame.font.SysFont("Verdana", state.get_font_size())
-        step_size = state.get_step_size()
+        step_size, step_height = state.get_step_width(), state.get_step_height()
         tot_ln = len(step_data)
         screen_bottom = state.scr_y + state.screen_height
         bpm_list = [block[BLOCK_BPM_IDX] for block in block_info]
@@ -398,20 +399,7 @@ class StepMaker:
                     even_split, triple_split = True, False
                 else:
                     even_split, triple_split = False, False
-                dy = min(max((step_size * 2) // split, MIN_SPLIT_SIZE), step_size)
-
-            # Fill background
-            if row[STEP_DATA_VD_IDX] == 0:
-                pygame.draw.rect(
-                    screen,
-                    LIGHT_RED,
-                    (
-                        state.step_x_start,
-                        y - state.scr_y,
-                        step_size * cols + 10,
-                        step_size,
-                    ),
-                )
+                dy = min(max((step_height * 2) // split, MIN_SPLIT_SIZE), step_height)
 
             if mi == 0 and bti == 0 and si == 0:  # Start of Blcok
                 # print("hi")
@@ -487,16 +475,24 @@ class StepMaker:
 
             # Draw step if exists
             cols = 5 if state.mode == "Single" else 10
-            for col in range(cols):
-                idx = col + STEP_DATA_OFFSET
+            for idx in range(cols):
+                col = idx + STEP_DATA_OFFSET
                 image = None
-                if row[idx] == 0:
+                if row[col] == 0:
                     continue
-                elif row[idx] == 2:
-                    image = self.TOTAL_IMAGES[0][col % 5]
-                    image_rects.append((ln + INF, y, col, 2))
+                elif row[col] in [2, 3]:
+                    image_rects.append((ln + INF, y, idx, row[col]))
+
+                    if step_height > step_size:
+                        middle_cnt = (step_height + step_size - 1) // step_size
+                        for i in range(1, middle_cnt):
+                            if i < middle_cnt - 1:
+                                image_rects.append((ln, y + step_size * i, idx, 3))
+                            else:
+                                image_rects.append((ln, y + dy - step_size, idx, 3))
+
                 else:
-                    image_rects.append((ln, y, col, row[idx]))
+                    image_rects.append((ln, y, idx, row[col]))
 
             y += dy
             ln += 1
@@ -562,7 +558,8 @@ class StepMaker:
 
     def draw_hovered_area(self):
         state, screen = self.state, self.screen
-        step_size = state.get_step_size()
+        step_size = state.get_step_width()
+        step_height = state.get_step_height()
         cols = 5 if state.mode == "Single" else 10
 
         y_cur, y_base = (
@@ -582,7 +579,7 @@ class StepMaker:
                 state.step_x_start,
                 y_cur - state.scr_y,
                 cols * step_size,
-                step_size,
+                step_height,
             ),
         )
 
@@ -599,7 +596,8 @@ class StepMaker:
     def draw_selected_area(self):
 
         state, screen = self.state, self.screen
-        step_size = state.get_step_size()
+        step_size = state.get_step_width()
+        step_height = state.get_step_height()
         cols = 5 if state.mode == "Single" else 10
 
         y_cur, y_base = (
@@ -619,7 +617,7 @@ class StepMaker:
                 min(x_base, x_cur),
                 min(y_base, y_cur) - state.scr_y,
                 abs(x_base - x_cur) + step_size,
-                abs(y_base - y_cur) + step_size,
+                abs(y_base - y_cur) + step_height,
             ),
             3,
         )

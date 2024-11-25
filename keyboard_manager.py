@@ -763,7 +763,8 @@ class StepSizeKey(KeyBase):
         return (
             event.type == pygame.KEYDOWN
             and (pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL])
-            and event.key in [pygame.K_EQUALS, pygame.K_MINUS]
+            and event.key
+            in [pygame.K_EQUALS, pygame.K_MINUS, pygame.K_COMMA, pygame.K_PERIOD]
         )
 
     def action(
@@ -773,15 +774,28 @@ class StepSizeKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        if event.key == pygame.K_EQUALS and state.step_size_idx != 2:
+        if event.key == pygame.K_PERIOD and state.step_size_idx != 2:
             state.step_size_idx += 1
             state.update_x_info()
             state.update_y_info()
             state.update_scr_to_time()
             state.sync_scr_y()
-        elif event.key == pygame.K_MINUS and state.step_size_idx != 0:
+        elif event.key == pygame.K_COMMA and state.step_size_idx != 0:
             state.step_size_idx -= 1
             state.update_x_info()
+            state.update_y_info()
+            state.update_scr_to_time()
+            state.sync_scr_y()
+        elif event.key == pygame.K_MINUS and state.step_vertical_mp != 10:
+            state.step_vertical_mp -= 1
+            state.update_y_info()
+            state.update_scr_to_time()
+            state.sync_scr_y()
+        elif (
+            event.key == pygame.K_EQUALS
+            and state.step_vertical_mp != VERTICAL_MULTIPLIER_MAX
+        ):
+            state.step_vertical_mp += 1
             state.update_y_info()
             state.update_scr_to_time()
             state.sync_scr_y()

@@ -6,7 +6,7 @@ class ScrollManager:
     def update_scrollbar_info(state: State):
         screen_height, max_y = (
             state.screen_height - 2 * SCROLLBAR_BUTTON_HEIGHT,
-            state.max_y - state.get_step_size(),
+            state.max_y - state.get_step_height(),
         )
         state.scrollbar_h = max(
             MIN_SCROLL_BAR_HEIGHT,
