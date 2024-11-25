@@ -10,7 +10,7 @@ class MouseManager:
 
     def _process_mouse_wheel_up(state: State, event: pygame.Event):
         mouse_x, _ = event.pos
-        if state.step_x_start <= mouse_x < state.measure_x_start:
+        if state.step_x_start <= mouse_x < state.scrollbar_x_start:
             state.IS_SCROLL = True
             if state.FIX_LINE:
                 state.coor_base = (state.coor_base[0], max(state.coor_base[1] - 1, 0))
@@ -22,7 +22,7 @@ class MouseManager:
 
     def _process_mouse_wheel_down(state: State, event: pygame.Event):
         mouse_x, _ = event.pos
-        if state.step_x_start <= mouse_x < state.measure_x_start:
+        if state.step_x_start <= mouse_x < state.scrollbar_x_start:
             state.IS_SCROLL = True
             if state.FIX_LINE:
                 ln_max = len(state.step_data) - 1
@@ -35,7 +35,8 @@ class MouseManager:
                 state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
             else:
                 state.scr_y = min(
-                    state.scr_y + SCROLL_SPEED, state.max_y - state.receptor_y
+                    state.scr_y + SCROLL_SPEED,
+                    state.max_y - state.get_step_size() - state.receptor_y,
                 )
 
     def _process_mouse_click(state: State, event: pygame.Event):
