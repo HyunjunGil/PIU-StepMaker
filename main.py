@@ -33,7 +33,7 @@ while running:
             sys.exit()
 
         elif event.type == pygame.VIDEORESIZE:
-            stepmaker.resize_screen(event)
+            stepmaker.resize_screen(event.size)
         elif event.type in [
             pygame.MOUSEBUTTONDOWN,
             pygame.MOUSEBUTTONUP,

@@ -56,9 +56,9 @@ class StepMaker:
                 ]
             )
 
-    def resize_screen(self, event: pygame.Event):
+    def resize_screen(self, size: Tuple[int, int]):
         state = self.state
-        w, h = event.size
+        w, h = size
         w = max(
             state.get_step_size() * state.get_cols()
             + OPTION_WIDTH
@@ -92,6 +92,12 @@ class StepMaker:
 
     def update_ui_elements(self):
         state = self.state
+
+        # Resize screen if screen width
+        if state.screen_width < state.scrollbar_x_start + SCROLLBAR_BUTTON_WIDTH:
+            self.resize_screen(
+                (state.scrollbar_x_start + SCROLLBAR_BUTTON_WIDTH, state.screen_height)
+            )
 
         self.ui_manager.relocate_elements(self.state)
 
