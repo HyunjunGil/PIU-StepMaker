@@ -401,12 +401,21 @@ class StepMaker:
                     even_split, triple_split = False, False
                 dy = min(max((step_height * 2) // split, MIN_SPLIT_SIZE), step_height)
 
+            if row[STEP_DATA_VD_IDX] == 0:
+                pygame.draw.rect(
+                    screen,
+                    LIGHT_RED,
+                    (
+                        state.step_x_start,
+                        y - state.scr_y,
+                        step_size * cols,
+                        step_size,
+                    ),
+                )
+
             if mi == 0 and bti == 0 and si == 0:  # Start of Blcok
-                # print("hi")
                 ln_from, ln_to = state.get_block_range_by_y(y)
-                # print(ln_from, ln_to)
                 measure_height = ln_to_y[ln_to] - ln_to_y[ln_from]
-                # print(measure_height)
                 pygame.draw.rect(
                     screen,
                     get_bpm_color(bpm_min, bpm_max, bpm),
