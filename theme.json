@@ -161,8 +161,9 @@
       "text_vert_alignment": "bottom"
     },
     "font": {
-      "name": "Verdana",
-      "size": 11
+      "name": "D2Coding",
+      "size": 11,
+      "regular_path": "./d2coding.ttf"
     }
   },
   "@button_onoff": {
