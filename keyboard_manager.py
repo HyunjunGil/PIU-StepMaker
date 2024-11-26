@@ -131,7 +131,6 @@ class UpKey(KeyBase):
     ) -> None:
 
         if state.pressed_timestamp[pygame.K_UP] == INFINITY:
-            print("Up", int(time.time() * 1000))
             state.pressed_timestamp[pygame.K_UP] = int(time.time() * 1000)
 
         step_data, block_info = state.get_step_info()
@@ -181,7 +180,6 @@ class DownKey(KeyBase):
     ) -> None:
 
         if state.pressed_timestamp[pygame.K_DOWN] == INFINITY:
-            print("Down", int(time.time() * 1000))
             state.pressed_timestamp[pygame.K_DOWN] = int(time.time() * 1000)
 
         step_data, block_info = state.get_step_info()
