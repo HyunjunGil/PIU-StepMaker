@@ -68,14 +68,11 @@ class State:
 
     def sync_scr_y(self):
 
-        if self.FIX_LINE:
-            self.scr_y = self.ln_to_y[self.coor_cur[1]] - self.receptor_y
-        else:
-            y_cur = self.ln_to_y[self.coor_cur[1]]
-            self.scr_y = max(
-                min(self.scr_y, y_cur),
-                y_cur + self.get_step_height() - self.screen_height,
-            )
+        y_cur = self.ln_to_y[self.coor_cur[1]]
+        self.scr_y = max(
+            min(self.scr_y, y_cur),
+            y_cur + self.get_step_height() - self.screen_height,
+        )
 
     def get_screen_size(self):
         return self.screen_width, self.screen_height
@@ -220,7 +217,6 @@ class State:
         self.SCREEN_SIZE_CHANGED = False
         self.MUSIC_PLAYING = False
         self.AUTO_LINE_PASS = False
-        self.FIX_LINE = False
 
         # Save Information
         self.ucs_file_path: str = ""

@@ -247,16 +247,7 @@ class StepMaker:
             state.music_start_offset
             + music_speed * (int(time.time() * 1000) - state.music_start_time),
         )
-        if state.FIX_LINE:
-            step_data = state.step_data
-            ln = state.coor_cur[1]
-            ln_new = state.y_to_ln[new_scr_y]
-
-            state.coor_base = state.coor_cur = (state.coor_cur[0], ln_new)
-            state.sync_scr_y()
-
-        else:
-            state.scr_y = new_scr_y
+        state.scr_y = new_scr_y
 
     def draw(self):
 
@@ -572,17 +563,8 @@ class StepMaker:
                 new_scr_y = (
                     (new_scrollbar_y - SCROLLBAR_BUTTON_HEIGHT) * state.max_y
                 ) // denom
-                if state.FIX_LINE:
-                    ln_new = state.y_to_ln[new_scr_y]
-                    state.coor_base = state.coor_cur = (state.coor_cur[0], ln_new)
-                    state.sync_scr_y()
-                    scr_y = state.scr_y + state.receptor_y
-                    state.scrollbar_y = (
-                        scr_y * denom
-                    ) // state.max_y + SCROLLBAR_BUTTON_HEIGHT
-                else:
-                    state.scrollbar_y = new_scrollbar_y
-                    state.scr_y = new_scr_y
+                state.scrollbar_y = new_scrollbar_y
+                state.scr_y = new_scr_y
         else:
             state.scrollbar_y = (
                 (state.scr_y + state.receptor_y) * denom

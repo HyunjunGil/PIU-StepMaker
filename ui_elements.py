@@ -133,8 +133,6 @@ class LoadButton(ElementBase):
         mp3_name = mp3_file_path.split("/")[-1]
         if state.AUTO_LINE_PASS:
             AutoLinePassButton.off(history_manager, state, event, ui_elements)
-        if state.FIX_LINE:
-            FixLineModeButton.off(history_manager, state, event, ui_elements)
         state.initialize()
         load_ucs_file(ucs_file_path, state)
         if not os.path.exists(mp3_file_path):
@@ -940,64 +938,6 @@ class AutoLinePassButton(OnOffButton):
 
         else:
             AutoLinePassButton.on(history_manager, state, event, ui_elements)
-
-
-class FixLineModeButton(OnOffButton):
-    def __init__(
-        self, element: UIButton | UITextEntryLine | UIPanel | UITextBox | UILabel
-    ):
-        super().__init__(element)
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    @staticmethod
-    def on(
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: List[ElementBase],
-    ):
-        state.sync_scr_y()
-        state.FIX_LINE = True
-        state.log("(Change mode) Fix Line Mode")
-
-        # Adjust receptor_y
-        state.receptor_y = state.ln_to_y[state.coor_cur[1]] - state.scr_y
-
-        element = ui_elements[FIX_LINE_BUTTON].e
-        element.colours["normal_bg"] = pygame.Color(BUTTON_ON_COLOR)
-        element.rebuild()
-
-    @staticmethod
-    def off(
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: List[ElementBase],
-    ):
-        state.FIX_LINE = False
-        state.log("(Change mode) None")
-
-        state.scr_y += state.receptor_y
-        state.receptor_y = 0
-
-        element = ui_elements[FIX_LINE_BUTTON].e
-        element.colours["normal_bg"] = pygame.Color(BUTTON_OFF_COLOR)
-        element.rebuild()
-
-    @staticmethod
-    def action(
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: List[ElementBase],
-    ):
-        if state.FIX_LINE:
-            FixLineModeButton.off(history_manager, state, event, ui_elements)
-
-        else:
-            FixLineModeButton.on(history_manager, state, event, ui_elements)
 
 
 class LogTextbox(ElementBase):

@@ -7,7 +7,6 @@ from ui_elements import (
     LoadButton,
     LoadMP3Button,
     AutoLinePassButton,
-    FixLineModeButton,
     ElementBase,
     BlockAddAboveButton,
     BlockAddBelowButton,
@@ -899,24 +898,6 @@ class AutoPassModeKey(KeyBase):
         return AutoLinePassButton.action(history_manager, state, event, ui_elements)
 
 
-class FixLineModeKey(KeyBase):
-    def __init__(self):
-        super().__init__()
-
-    @staticmethod
-    def condition(state: State, event: pygame.Event) -> bool:
-        return event.type == pygame.KEYDOWN and event.key == pygame.K_F2
-
-    @staticmethod
-    def action(
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: List[ElementBase],
-    ) -> None:
-        return FixLineModeButton.action(history_manager, state, event, ui_elements)
-
-
 class StepKeyUp(KeyBase):
     def __init__(self):
         super().__init__()
@@ -1053,7 +1034,6 @@ class KeyboardManager:
             StepKeyUp,
             # Mode Shortcut
             AutoPassModeKey,
-            FixLineModeKey,
             # Block Operation Shortcut
             BlockOperationKey,
             # Hold Key Up Dection
