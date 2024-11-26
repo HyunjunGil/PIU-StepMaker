@@ -1,4 +1,4 @@
-import pandas as pd
+from datetime import datetime
 from typing import List, Tuple
 from constants import (
     STEP_DATA_OFFSET,
@@ -182,4 +182,4 @@ def clear_step(
 
 
 def ms_to_str(ms: int):
-    return pd.Timestamp(ms, unit="ms").strftime("%M:%S.%f")[:-3]
+    return datetime.fromtimestamp(ms / 1000).strftime("%M:%S.%f")[:-3]

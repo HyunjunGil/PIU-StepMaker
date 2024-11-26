@@ -1,4 +1,4 @@
-import pygame, pygame_gui, numpy as np, time, pandas as pd
+import pygame, pygame_gui, numpy as np, time
 
 from tkinter import Tk
 from typing import List, Tuple, Dict
