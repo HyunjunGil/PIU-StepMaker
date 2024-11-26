@@ -68,7 +68,7 @@ class StepMaker:
         w = max(
             state.get_step_width() * state.get_cols()
             + OPTION_WIDTH
-            + MEASURE_DESCRIPTOR_WIDTH
+            + state.get_measure_width()
             + SCROLLBAR_BUTTON_WIDTH,
             w,
         )
@@ -422,7 +422,7 @@ class StepMaker:
                     (
                         state.measure_x_start,
                         y - state.scr_y,
-                        MEASURE_DESCRIPTOR_WIDTH,
+                        state.get_measure_width(),
                         measure_height,
                     ),
                 )

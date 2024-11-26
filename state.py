@@ -12,11 +12,14 @@ class State:
     def get_step_width(self) -> int:
         return STEP_SIZE_MAP[self.step_size_idx]
 
+    def get_measure_width(self) -> int:
+        return int(MEASURE_DESCRIPTOR_WIDTH * (1 + self.step_size_idx / 2))
+
     def get_step_height(self) -> int:
         return int(self.get_step_width() * self.step_vertical_mp / 10)
 
     def get_font_size(self) -> int:
-        return 4 * self.step_size_idx + 8
+        return 2 * self.step_size_idx + 10
 
     def get_cols(self) -> int:
         if self.mode == "Single":
@@ -94,7 +97,7 @@ class State:
     def update_x_info(self):
         step_size, cols = self.get_step_width(), self.get_cols()
         self.measure_x_start = self.step_x_start + step_size * cols
-        self.scrollbar_x_start = self.measure_x_start + MEASURE_DESCRIPTOR_WIDTH
+        self.scrollbar_x_start = self.measure_x_start + self.get_measure_width()
 
     def is_valid_step_info(
         self, step_data: List[List[int]], block_info: List[List[float | int]]
@@ -237,7 +240,7 @@ class State:
         # Offset for Step Area and Scrollbar Area
         self.step_x_start = OPTION_WIDTH
         self.measure_x_start = self.step_x_start + self.get_step_width() * 5
-        self.scrollbar_x_start = self.measure_x_start + MEASURE_DESCRIPTOR_WIDTH
+        self.scrollbar_x_start = self.measure_x_start + self.get_measure_width()
 
         # Block information
         self.block_info: List[List[int | float]] = [
