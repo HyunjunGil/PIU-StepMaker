@@ -764,6 +764,44 @@ class LoadKey(KeyBase):
             LoadButton.action(history_manager, state, event, ui_elements)
 
 
+class SelectAllKey(KeyBase):
+    def __init__(self):
+        super().__init__()
+
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
+        pressed_keys = pygame.key.get_pressed()
+        return (
+            event.type == pygame.KEYDOWN
+            and (pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL])
+            and event.key == pygame.K_a
+        )
+
+    @staticmethod
+    def action(
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
+    ) -> None:
+        step_data, block_info = state.get_step_info()
+        x_base, ln_base = state.coor_base
+        x_cur, ln_cur = state.coor_cur
+        bi_from = step_data[ln_base][STEP_DATA_BI_IDX]
+        bi_to = step_data[ln_cur][STEP_DATA_BI_IDX]
+        ln_ff, _ = state.get_block_range_by_block_idx(bi_from)
+        _, ln_tt = state.get_block_range_by_block_idx(bi_to)
+        cols = state.get_cols()
+        if state.coor_base == (0, ln_ff) and state.coor_cur == (cols - 1, ln_tt - 1):
+            state.coor_base = (0, 0)
+            state.coor_cur = (cols - 1, len(step_data) - 1)
+        else:
+            state.coor_base = (0, ln_ff)
+            state.coor_cur = (cols - 1, ln_tt - 1)
+
+        state.sync_scr_y()
+
+
 class StepSizeKey(KeyBase):
     def __init__(self):
         super().__init__()
@@ -985,6 +1023,8 @@ class KeyboardManager:
             PasteKey,
             # Undo, Redo
             UndoKey,
+            # Select All
+            SelectAllKey,
             # Find Error
             FindKey,
             # Music Play/Stop
