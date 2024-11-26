@@ -27,11 +27,12 @@ class KeyBase:
     def __init__(self):
         pass
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         raise Exception("Condition for KeyBase is Not implemented")
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -45,7 +46,8 @@ class StepChartKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -56,8 +58,8 @@ class StepChartKey(KeyBase):
             )
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -116,16 +118,22 @@ class UpKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         return event.type == pygame.KEYDOWN and event.key == pygame.K_UP
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
+
+        if state.pressed_timestamp[pygame.K_UP] == INFINITY:
+            print("Up", int(time.time() * 1000))
+            state.pressed_timestamp[pygame.K_UP] = int(time.time() * 1000)
+
         step_data, block_info = state.get_step_info()
         ln = state.coor_cur[1]
         pressed_keys = pygame.key.get_pressed()
@@ -160,16 +168,22 @@ class DownKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         return event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
+
+        if state.pressed_timestamp[pygame.K_DOWN] == INFINITY:
+            print("Down", int(time.time() * 1000))
+            state.pressed_timestamp[pygame.K_DOWN] = int(time.time() * 1000)
+
         step_data, block_info = state.get_step_info()
         block_idx_prev = None
         ln = state.coor_cur[1]
@@ -208,15 +222,16 @@ class LeftKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         return (
             event.type == pygame.KEYDOWN
             and event.key == pygame.K_LEFT
             and not (BI_BPM_TEXTBOX <= state.focus_idx <= BI_SP_TEXTBOX)
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -241,15 +256,16 @@ class RightKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         return (
             event.type == pygame.KEYDOWN
             and event.key == pygame.K_RIGHT
             and not (BI_BPM_TEXTBOX <= state.focus_idx <= BI_SP_TEXTBOX)
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -274,15 +290,16 @@ class TabKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         return (
             event.type == pygame.KEYDOWN
             and event.key == pygame.K_TAB
             and state.focus_idx != -1
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -307,15 +324,16 @@ class EscKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         return (
             event.type == pygame.KEYDOWN
             and event.key == pygame.K_ESCAPE
             and state.focus_idx != -1
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -330,7 +348,8 @@ class AreaKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -339,8 +358,8 @@ class AreaKey(KeyBase):
             in [pygame.K_1, pygame.K_2, pygame.K_3, pygame.K_4, pygame.K_5]
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -368,14 +387,15 @@ class EnterKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         return event.type == pygame.KEYDOWN and event.key in [
             pygame.K_RETURN,
             pygame.K_KP_ENTER,
         ]
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -388,15 +408,16 @@ class BackspaceKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         return (
             event.type == pygame.KEYDOWN
             and event.key == pygame.K_BACKSPACE
             and not (BI_BPM_TEXTBOX <= state.focus_idx < BI_APPLY_BUTTON)
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -432,7 +453,8 @@ class CopyKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -440,8 +462,8 @@ class CopyKey(KeyBase):
             and event.key == pygame.K_c
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -469,7 +491,8 @@ class CutKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -477,8 +500,8 @@ class CutKey(KeyBase):
             and event.key == pygame.K_x
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -509,7 +532,8 @@ class PasteKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -517,8 +541,8 @@ class PasteKey(KeyBase):
             and event.key == pygame.K_v
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -594,46 +618,30 @@ class UndoKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
             and (pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL])
-            and not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT])
             and event.key == pygame.K_z
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        history_manager.undo(state)
-
-
-class RedoKey(KeyBase):
-    def __init__(self):
-        super().__init__()
-
-    def condition(self, state: State, event: pygame.Event) -> bool:
         pressed_keys = pygame.key.get_pressed()
-        return (
-            event.type == pygame.KEYDOWN
-            and (pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL])
-            and (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT])
-            and event.key == pygame.K_z
-        )
+        if state.pressed_timestamp[pygame.K_z] == INFINITY:
+            state.pressed_timestamp[pygame.K_z] = int(time.time() * 1000)
 
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: List[ElementBase],
-    ) -> None:
-        history_manager.redo(state)
+        if pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]:
+            history_manager.redo(state)
+        else:
+            history_manager.undo(state)
 
 
 # Goto the error line
@@ -641,7 +649,8 @@ class FindKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -649,8 +658,8 @@ class FindKey(KeyBase):
             and event.key == pygame.K_f
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -689,11 +698,12 @@ class MusicKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         return event.type == pygame.KEYDOWN and event.key == pygame.K_F5
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -706,7 +716,8 @@ class SaveKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -714,8 +725,8 @@ class SaveKey(KeyBase):
             and event.key == pygame.K_s
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -732,7 +743,8 @@ class LoadKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -740,8 +752,8 @@ class LoadKey(KeyBase):
             and event.key == pygame.K_l
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -758,7 +770,8 @@ class StepSizeKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -767,8 +780,8 @@ class StepSizeKey(KeyBase):
             in [pygame.K_EQUALS, pygame.K_MINUS, pygame.K_COMMA, pygame.K_PERIOD]
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -821,11 +834,12 @@ class AutoPassModeKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         return event.type == pygame.KEYDOWN and event.key == pygame.K_F1
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -838,11 +852,12 @@ class FixLineModeKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         return event.type == pygame.KEYDOWN and event.key == pygame.K_F2
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -855,7 +870,8 @@ class StepKeyUp(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         if not (event.type == pygame.KEYUP and state.AUTO_LINE_PASS):
             return False
 
@@ -873,8 +889,8 @@ class StepKeyUp(KeyBase):
         )
         return all_step_key_released
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -892,7 +908,8 @@ class BlockOperationKey(KeyBase):
     def __init__(self):
         super().__init__()
 
-    def condition(self, state: State, event: pygame.Event) -> bool:
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -900,8 +917,8 @@ class BlockOperationKey(KeyBase):
             and event.key in [pygame.K_u, pygame.K_i, pygame.K_o, pygame.K_p]
         )
 
+    @staticmethod
     def action(
-        self,
         history_manager: HistoryManager,
         state: State,
         event: pygame.Event,
@@ -917,50 +934,77 @@ class BlockOperationKey(KeyBase):
             BlockDeleteButton.action(history_manager, state, event, ui_elements)
 
 
+class HoldKeyUp(KeyBase):
+    def __init__(self):
+        super().__init__()
+
+    @staticmethod
+    def condition(state: State, event: pygame.Event) -> bool:
+        pressed_keys = pygame.key.get_pressed()
+        return (
+            event.type == pygame.KEYUP and event.key in state.pressed_timestamp.keys()
+        )
+
+    @staticmethod
+    def action(
+        history_manager: HistoryManager,
+        state: State,
+        event: pygame.Event,
+        ui_elements: List[ElementBase],
+    ) -> None:
+        if event.key == pygame.K_z:
+            state.pressed_timestamp[pygame.K_z] = INFINITY
+        elif event.key == pygame.K_UP:
+            state.pressed_timestamp[pygame.K_UP] = INFINITY
+        elif event.key == pygame.K_DOWN:
+            state.pressed_timestamp[pygame.K_DOWN] = INFINITY
+
+
 class KeyboardManager:
 
     def __init__(self):
         self.keys: List[KeyBase] = [
             # Step Chart Keys
-            StepChartKey(),
+            StepChartKey,
             # Up & Down
-            UpKey(),
-            DownKey(),
-            RightKey(),
-            LeftKey(),
+            UpKey,
+            DownKey,
+            RightKey,
+            LeftKey,
             # Tab
-            TabKey(),
+            TabKey,
             # Esc
-            EscKey(),
+            EscKey,
             # Ctrl + (1, 2, 3, 4) -> Key for Focusing Each Area
-            AreaKey(),
+            AreaKey,
             # Backspace
-            BackspaceKey(),
+            BackspaceKey,
             # Enter
-            EnterKey(),
+            EnterKey,
             # Copy, Cut, Paste
-            CopyKey(),
-            CutKey(),
-            PasteKey(),
+            CopyKey,
+            CutKey,
+            PasteKey,
             # Undo, Redo
-            UndoKey(),
-            RedoKey(),
+            UndoKey,
             # Find Error
-            FindKey(),
+            FindKey,
             # Music Play/Stop
-            MusicKey(),
+            MusicKey,
             # Save, Load
-            SaveKey(),
-            LoadKey(),
+            SaveKey,
+            LoadKey,
             # Step Size Adjust
-            StepSizeKey(),
+            StepSizeKey,
             # Step Key Up
-            StepKeyUp(),
+            StepKeyUp,
             # Mode Shortcut
-            AutoPassModeKey(),
-            FixLineModeKey(),
+            AutoPassModeKey,
+            FixLineModeKey,
             # Block Operation Shortcut
-            BlockOperationKey(),
+            BlockOperationKey,
+            # Hold Key Up Dection
+            HoldKeyUp,
         ]
 
     def process_event(

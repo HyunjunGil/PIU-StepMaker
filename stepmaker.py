@@ -8,7 +8,7 @@ from scroll_manager import ScrollManager
 from ui_element_manager import UIElementManager, ElementBase
 from ui_elements import PlayButton
 from mouse_manager import MouseManager
-from keyboard_manager import KeyboardManager
+from keyboard_manager import KeyboardManager, UndoKey, UpKey, DownKey
 from history_manager import HistoryManager, StepChartChangeDelta
 
 from utils import binary_search, ms_to_str, update_validity, num_to_str, get_bpm_color
@@ -158,6 +158,25 @@ class StepMaker:
             play_button.set_text("Stop")
         elif not state.MUSIC_PLAYING and play_button.text != "Play":
             play_button.set_text("Play")
+
+    def process_hold_key(self):
+        state = self.state
+        pressed_timestamp = state.pressed_timestamp
+        current_timestmap = int(time.time() * 1000)
+        key, first_timestamp = sorted(pressed_timestamp.items(), key=lambda x: x[1])[0]
+        if (
+            first_timestamp != INFINITY
+            and current_timestmap > first_timestamp + KEY_HOLD_DELAY_MS
+        ):
+            pressed_timestamp[key] = (
+                current_timestmap - KEY_HOLD_DELAY_MS + KEY_HOLD_INTERVAL_MS
+            )
+            if key == pygame.K_z:
+                UndoKey.action(self.history_manager, self.state, None, [])
+            elif key == pygame.K_UP:
+                UpKey.action(self.history_manager, self.state, None, [])
+            elif key == pygame.K_DOWN:
+                DownKey.action(self.history_manager, self.state, None, [])
 
     def process_mouse_event(self, event: pygame.Event):
         MouseManager.process_event(self.state, event)
@@ -490,7 +509,7 @@ class StepMaker:
                 if row[col] == 0:
                     continue
                 elif row[col] in [2, 3]:
-                    image_rects.append((ln + INF, y, idx, row[col]))
+                    image_rects.append((ln + INFINITY, y, idx, row[col]))
 
                     if step_height > step_size:
                         middle_cnt = (step_height + step_size - 1) // step_size

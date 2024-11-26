@@ -8,6 +8,10 @@ class DelayUnit(Enum):
     ms = 2
 
 
+# Key Hold Delay
+KEY_HOLD_DELAY_MS = 500
+KEY_HOLD_INTERVAL_MS = 50
+
 # HARD MAX Y
 HARD_MAX_Y = 100_000  # maximum scrollable height
 HARD_MAX_LINES = 2_000  # maximum number of lines
@@ -95,7 +99,7 @@ PANEL_5 = SCROLLBAR_DOWN_BUTTON + 5
 
 
 # INF
-INF = 1_000_000
+INFINITY = 1_000_000_000_000_000
 
 # Used Colors
 RED = (255, 0, 0)

@@ -47,6 +47,7 @@ while running:
             stepmaker.process_ui_element_event(event)
 
         stepmaker.process_ui_manager_event(event)
+    stepmaker.process_hold_key()
     stepmaker.update_scr_y()
     stepmaker.ui_manager.manager.update(time_delta)
 

@@ -301,5 +301,12 @@ class State:
         # Mode 2 Receptor y location
         self.receptor_y = 0
 
+        # Hold Information
+        self.pressed_timestamp = {
+            pygame.K_z: INFINITY,
+            pygame.K_UP: INFINITY,
+            pygame.K_DOWN: INFINITY,
+        }
+
         self.update_y_info()
         self.update_scr_to_time()
