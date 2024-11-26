@@ -76,35 +76,50 @@ class StepChartKey(KeyBase):
         step_diff: List[Tuple[int, int, int, int]] = []
 
         if ln_from == ln_to - 1:  # Only one line is selected
+            if step_data[ln_from][col] == 1:
+                return
             if step_data[ln_from][col] == 0:
                 step_data[ln_from][col] = 1
-                step_diff.append((ln_from, col, 0, 1))
             else:
-                step_diff = step_diff + clear_step(step_data, ln_from, ln_to, col)
+                v = step_data[ln_from][col]
+                step_diff = list(
+                    filter(
+                        lambda x: x[0] != ln_from,
+                        clear_step(step_data, ln_from, ln_to, col),
+                    )
+                ) + [(ln_from, col, v, 1)]
+
+                step_data[ln_from][col] = 1
+
         else:  # Many lines are selected
-            clear = True
+            done = True
             for ln in range(ln_from, ln_to):
-                clear &= step_data[ln][col] == 0
-                if not clear:
-                    break
-            if clear:
-                # If there are no notes in the column, fill it
+                v = step_data[ln][col]
+                if ln == ln_from and v != 2:
+                    done = False
+                    step_diff.append((ln, col, v, 2))
+                elif ln < ln_to - 1 and v != 3:
+                    done = False
+                    step_diff.append((ln, col, v, 3))
+                elif ln == ln_to - 1 and v != 4:
+                    done = False
+                    step_diff.append((ln, col, v, 4))
+            if done:
+                return
+            if not done:
+                step_diff = step_diff + list(
+                    filter(
+                        lambda x: not (ln_from <= x[0] < ln_to),
+                        clear_step(step_data, ln_from, ln_to, col),
+                    )
+                )
                 for ln in range(ln_from, ln_to):
                     if ln == ln_from:
                         step_data[ln][col] = 2
-                        step_diff.append((ln, col, 0, 2))
                     elif ln < ln_to - 1:
                         step_data[ln][col] = 3
-                        step_diff.append((ln, col, 0, 3))
                     else:
                         step_data[ln][col] = 4
-                        step_diff.append((ln, col, 0, 4))
-            else:
-                step_diff = clear_step(step_data, ln_from, ln_to, col)
-                for ln in range(ln_from, ln_to):
-                    if step_data[ln][col] != 0:
-                        step_diff.append((ln, col, step_data[ln][col], 0))
-                        step_data[ln][col] = 0
 
         update_validity(step_data, ln_from - 1, ln_to + 1)
 
