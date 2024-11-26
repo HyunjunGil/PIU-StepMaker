@@ -774,19 +774,28 @@ class StepSizeKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        if event.key == pygame.K_PERIOD and state.step_size_idx != 2:
-            state.step_size_idx += 1
-            state.update_x_info()
-            state.update_y_info()
-            state.update_scr_to_time()
-            state.sync_scr_y()
-        elif event.key == pygame.K_COMMA and state.step_size_idx != 0:
+        if event.key == pygame.K_COMMA and state.step_size_idx != 0:
+            # Step size down
             state.step_size_idx -= 1
             state.update_x_info()
             state.update_y_info()
             state.update_scr_to_time()
             state.sync_scr_y()
+        elif event.key == pygame.K_PERIOD and state.step_size_idx != 2:
+            # Step size up
+            state.step_size_idx += 1
+            if not state.is_valid_step_info(state.step_data, state.block_info)[0]:
+                state.log(
+                    "(Error) Cannot increase step size. Maximum scrollable height reached"
+                )
+                state.step_size_idx -= 1
+                return
+            state.update_x_info()
+            state.update_y_info()
+            state.update_scr_to_time()
+            state.sync_scr_y()
         elif event.key == pygame.K_MINUS and state.step_vertical_mp != 10:
+            # Step height down
             state.step_vertical_mp -= 1
             state.update_y_info()
             state.update_scr_to_time()
@@ -795,7 +804,14 @@ class StepSizeKey(KeyBase):
             event.key == pygame.K_EQUALS
             and state.step_vertical_mp != VERTICAL_MULTIPLIER_MAX
         ):
+            # Step height up
             state.step_vertical_mp += 1
+            if state.is_valid_step_info(state.step_data, state.block_info)[0]:
+                state.log(
+                    "(Error) Cannot increase step height. Maximum scrollable height reached"
+                )
+                state.step_vertical_mp -= 1
+                return
             state.update_y_info()
             state.update_scr_to_time()
             state.sync_scr_y()

@@ -135,9 +135,7 @@ class LoadButton(ElementBase):
             AutoLinePassButton.off(history_manager, state, event, ui_elements)
         if state.FIX_LINE:
             FixLineModeButton.off(history_manager, state, event, ui_elements)
-        step_size_idx = state.step_size_idx
         state.initialize()
-        state.step_size_idx = step_size_idx
         load_ucs_file(ucs_file_path, state)
         if not os.path.exists(mp3_file_path):
             state.log("(Warning) MP3 file is not loaded")
@@ -627,11 +625,20 @@ class ApplyButton(ElementBase):
         ln_from, ln_to = state.get_block_range_by_block_idx(block_idx)
         prev_block_step_data = copy.deepcopy(step_data[ln_from:ln_to])
         prev_block_info = block_info[block_idx]
-
-        step_data, block_info = modify_block(step_data, block_info, new_info, block_idx)
-        update_validity(step_data, ln_from, ln_to)
-        state.step_data = step_data
-        state.block_info = block_info
+        try:
+            new_step_data, new_block_info = modify_block(
+                step_data, block_info, new_info, block_idx
+            )
+            valid, error_msg = state.is_valid_step_info(new_step_data, new_block_info)
+            if not valid:
+                state.log(f"(Error) {error_msg}")
+                return
+        except:
+            state.log("(Error) Failed to modify block. Please check your input")
+            return
+        state.step_data = new_step_data
+        state.block_info = new_block_info
+        update_validity(state.step_data, ln_from, ln_to)
         state.update_y_info()
         state.update_scr_to_time()
 
@@ -676,7 +683,14 @@ class BlockAddAboveButton(ElementBase):
 
         ln = state.coor_cur[1]
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
-
+        ln_from, ln_to = state.get_block_range_by_block_idx(block_idx)
+        block_height = state.ln_to_y[ln_to] - state.ln_to_y[ln_from]
+        if len(step_data) + (ln_to - ln_from) > HARD_MAX_LINES:
+            state.log("(Error) Cannot add block. Maximum line number reached")
+            return
+        elif state.max_y + block_height >= HARD_MAX_Y:
+            state.log("(Error) Cannot add block. Maximum scrollable height reached")
+            return
         coor_undo = (state.coor_cur, state.coor_base)
 
         state.step_data, state.block_info = add_block_up(
@@ -713,6 +727,14 @@ class BlockAddBelowButton(ElementBase):
 
         ln = state.coor_cur[1]
         block_idx = step_data[ln][STEP_DATA_BI_IDX]
+        ln_from, ln_to = state.get_block_range_by_block_idx(block_idx)
+        block_height = state.ln_to_y[ln_to] - state.ln_to_y[ln_from]
+        if len(step_data) + (ln_to - ln_from) > HARD_MAX_LINES:
+            state.log("(Error) Cannot add block. Maximum line number reached")
+            return
+        elif state.max_y + block_height >= HARD_MAX_Y:
+            state.log("(Error) Cannot add block. Maximum scrollable height reached")
+            return
 
         coor_undo = (state.coor_cur, state.coor_base)
 

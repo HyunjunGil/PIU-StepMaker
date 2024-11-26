@@ -96,6 +96,36 @@ class State:
         self.measure_x_start = self.step_x_start + step_size * cols
         self.scrollbar_x_start = self.measure_x_start + MEASURE_DESCRIPTOR_WIDTH
 
+    def is_valid_step_info(
+        self, step_data: List[List[int]], block_info: List[List[float | int]]
+    ) -> Tuple[bool, str]:
+        # Check maximum line
+        if len(step_data) > HARD_MAX_LINES:
+            return (
+                False,
+                "Cannot modify block : Maximum line number reached. Please decrese number and try again",
+            )
+
+        y = 0
+        step_height = self.get_step_height()
+        tot_ln = len(step_data)
+        for i, block in enumerate(block_info):
+            line_height = min(
+                max((step_height * 2) // block[BLOCK_SB_IDX], MIN_SPLIT_SIZE),
+                step_height,
+            )
+            ln_cnt = (
+                block[BLOCK_MS_IDX] * block[BLOCK_BM_IDX] + block[BLOCK_BT_IDX]
+            ) * block[BLOCK_SB_IDX] + block[BLOCK_SP_IDX]
+            y += ln_cnt * line_height
+        if y + line_height >= HARD_MAX_Y:
+            return (
+                False,
+                "Cannot modify block : Maximum scrollable height reached. Please decrese {step size, step height} and try again",
+            )
+
+        return True, ""
+
     def update_y_info(self):
 
         step_data, block_info = self.get_step_info()
@@ -197,7 +227,7 @@ class State:
         # 0 : small, 24px
         # 1 : medium, 36px
         # 2 : large, 48px
-        self.step_size_idx = 2
+        self.step_size_idx = 0
         self.step_vertical_mp = 10
 
         # Initial Chart Information
@@ -228,9 +258,8 @@ class State:
 
         # Information for each y
         self.max_y = -1
-        # self.y_info: List[List[int]] = [[0, 0] for _ in range(100000)]
-        self.y_to_ln: List[int] = [0 for _ in range(100000)]
-        self.ln_to_y: List[int] = [0 for _ in range(100000)]
+        self.y_to_ln: List[int] = [0 for _ in range(HARD_MAX_Y)]
+        self.ln_to_y: List[int] = [0 for _ in range(HARD_MAX_LINES + 1)]
 
         # selected line info
         self.coor_cur = (0, 0)
@@ -256,7 +285,7 @@ class State:
         self.mouse_pos: Tuple[int, int] = (0, 0)
 
         # Music
-        self.scr_to_time: List[int] = [0 for _ in range(100000)]
+        self.scr_to_time: List[int] = [0 for _ in range(HARD_MAX_Y)]
         self.music: any = None
         self.music_len: int = 0  # in ms
         self.music_speed_idx: int = 3

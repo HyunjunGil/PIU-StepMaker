@@ -1,23 +1,6 @@
+import copy
 from typing import List, Tuple
 from constants import *
-
-
-def check_input(
-    new_info: List[
-        int
-    ],  # [bpm, beat/measure, split/beat, delay, #measures, #beats, #splits]
-):
-    # new_bpm, new_bm, new_sb, new_delay, new_mcnt, new_bcnt, new_scnt = (
-    #     new_info[0],
-    #     new_info[1],
-    #     new_info[2],
-    #     new_info[3],
-    #     new_info[4],
-    #     new_info[5],
-    #     new_info[6],
-    # )
-
-    return True
 
 
 def modify_block(
@@ -63,8 +46,9 @@ def modify_block(
             new_block_step_data.append(line + [1] + [0 for _ in range(cols)])
 
     # Update step_data and block_info
-    step_data = step_data[:s] + new_block_step_data + step_data[e:]
-    block_info[block_idx] = [
+    new_step_data = step_data[:s] + new_block_step_data + step_data[e:]
+    new_block_info = copy.deepcopy(block_info)
+    new_block_info[block_idx] = [
         new_bpm,
         new_bm,
         new_sb,
@@ -74,7 +58,7 @@ def modify_block(
         new_scnt,
     ]
 
-    return step_data, block_info
+    return new_step_data, new_block_info
 
 
 def delete_block(

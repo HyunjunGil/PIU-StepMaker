@@ -8,6 +8,10 @@ class DelayUnit(Enum):
     ms = 2
 
 
+# HARD MAX Y
+HARD_MAX_Y = 100_000  # maximum scrollable height
+HARD_MAX_LINES = 2_000  # maximum number of lines
+
 # Pygame.mixer sample_rate
 PYGAME_SAMPLE_RATE = 44100
 

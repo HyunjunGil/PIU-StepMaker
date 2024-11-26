@@ -14,9 +14,6 @@ def load_music_file(state: State, path: str):
     state.music = AudioSegment.from_file(path)
     state.music_len = int(state.music.duration_seconds * 1000)
 
-    # state.music_len = int(pygame.mixer.Sound(path).get_length() * 1000)
-    # pygame.mixer.music.load(path)
-
 
 def load_ucs_file(
     path: str,
@@ -57,14 +54,22 @@ def load_ucs_file(
         beat = int(file_lines[ln + 2].strip().split("=")[1])
         split = int(file_lines[ln + 3].strip().split("=")[1])
         block_idx = 0
-        lcnt = 0
+        lcnt, acc_lcnt = 0, 0
+        step_height = state.get_step_height()
+        y = 0
+
+        line_height = min(
+            max((step_height * 2) // split, MIN_SPLIT_SIZE),
+            step_height,
+        )
         ln += 4
 
-        while ln < tot_ln:
+        while (
+            ln < tot_ln and acc_lcnt < HARD_MAX_LINES and y + line_height < HARD_MAX_Y
+        ):
             if file_lines[ln].startswith(":"):
 
                 assert lcnt > 0, "Zero Size Block Occured at line {}".format(ln)
-
                 block_info.append(
                     [
                         bpm,
@@ -90,6 +95,10 @@ def load_ucs_file(
                 split = int(file_lines[ln + 3].strip().split("=")[1])
                 block_idx += 1
                 lcnt = 0
+                line_height = min(
+                    max((step_height * 2) // split, MIN_SPLIT_SIZE),
+                    step_height,
+                )
                 ln += 4
                 # print(delay, beat, split)
             else:
@@ -102,7 +111,18 @@ def load_ucs_file(
                 ] + [STEP_TO_CODE[c] for c in file_lines[ln].strip()]
                 step_data.append(parsed_line)
                 lcnt += 1
+                acc_lcnt += 1
+                y += line_height
                 ln += 1
+
+    if acc_lcnt == HARD_MAX_LINES:
+        state.log(
+            f"(Warning) Maximum line numbers reached. Only {acc_lcnt} lines are loaded"
+        )
+    elif y + line_height >= HARD_MAX_Y:
+        state.log(
+            f"(Warning) Maximum scrollable height reached. Only {acc_lcnt} lines are loaded",
+        )
 
     block_info.append(
         [
