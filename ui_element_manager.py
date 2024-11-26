@@ -362,7 +362,7 @@ class UIElementManager:
 
         block_delay_unit_button = UIButton(
             relative_rect=Rect(BI_x2, BI_y3, 40, BI_h),
-            text="beats",
+            text="ms",
             object_id="@delay_unit_button",
             manager=manager,
             container=panel_2,

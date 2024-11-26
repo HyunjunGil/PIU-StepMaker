@@ -11,7 +11,14 @@ from mouse_manager import MouseManager
 from keyboard_manager import KeyboardManager, UndoKey, UpKey, DownKey
 from history_manager import HistoryManager, StepChartChangeDelta
 
-from utils import binary_search, ms_to_str, update_validity, num_to_str, get_bpm_color
+from utils import (
+    binary_search,
+    ms_to_str,
+    update_validity,
+    num_to_str,
+    get_bpm_color,
+    ms_to_beats,
+)
 
 
 class StepMaker:
@@ -374,18 +381,6 @@ class StepMaker:
             ),
         )
 
-        # # Draw current measure description at the top right
-        # block = block_info[step_data[ln][STEP_DATA_BI_IDX]]
-        # bpm, delay = block[BLOCK_BPM_IDX], block[BLOCK_DL_IDX]
-        # text = font.render(
-        #     "BPM {}\nDelay {}".format(num_to_str(bpm), num_to_str(delay)),
-        #     True,
-        #     BLACK,
-        # )
-        # text_rect = text.get_rect()
-        # text_rect.topleft = (state.measure_x_start, max(0, -state.scr_y))
-        # screen.blit(text, text_rect)
-
         even_split, triple_split = False, False
         if split % 3 == 0:
             even_split, triple_split = False, True
@@ -456,6 +451,26 @@ class StepMaker:
                 text_rect = text.get_rect()
                 text_rect.topright = (state.scrollbar_x_start, y - state.scr_y)
 
+                screen.blit(text, text_rect)
+
+                # Draw current measure description at the top right
+                block = block_info[step_data[ln][STEP_DATA_BI_IDX]]
+                bpm, delay = block[BLOCK_BPM_IDX], block[BLOCK_DL_IDX]
+                delay_beat = ms_to_beats(bpm, delay)
+                text = font.render(
+                    "{}bpm\n{}".format(
+                        num_to_str(bpm),
+                        (
+                            f"{delay_beat}beats"
+                            if isinstance(delay_beat, int) and delay_beat != 0
+                            else f"{num_to_str(delay)}ms"
+                        ),
+                    ),
+                    True,
+                    BLACK,
+                )
+                text_rect = text.get_rect()
+                text_rect.topleft = (state.measure_x_start, y - state.scr_y)
                 screen.blit(text, text_rect)
 
             elif bti == 0 and si == 0:  # Start of Measure
@@ -680,7 +695,7 @@ class StepMaker:
                 ln_from + 1, ln_to + 1, ln_to - ln_from + 1
             )
 
-        line_text = pygame.font.SysFont("Verdana", 12).render(
+        line_text = pygame.font.SysFont("Verdana", state.get_font_size()).render(
             txt, True, BLACK, LIGHT_GRAY
         )
         line_text_rect = line_text.get_rect()

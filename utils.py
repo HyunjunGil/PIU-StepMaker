@@ -30,11 +30,19 @@ def num_to_str(num: float | int):
 
 
 def ms_to_beats(bpm: float | int, ms: float | int):
-    return round(bpm / 60_000 * ms, 4)
+    v = round(bpm / 60_000 * ms, 4)
+    if v == int(v):
+        return int(v)
+    else:
+        return v
 
 
 def beats_to_ms(bpm: float | int, beats: float | int):
-    return round(60_000 * beats / bpm, 4)
+    v = round(round(60_000 * beats / bpm, 4))
+    if v == int(v):
+        return int(v)
+    else:
+        return v
 
 
 def get_block_size(block: List[float | int]) -> int:
