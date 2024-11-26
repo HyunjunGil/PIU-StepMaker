@@ -806,7 +806,7 @@ class StepSizeKey(KeyBase):
         ):
             # Step height up
             state.step_vertical_mp += 1
-            if state.is_valid_step_info(state.step_data, state.block_info)[0]:
+            if not state.is_valid_step_info(state.step_data, state.block_info)[0]:
                 state.log(
                     "(Error) Cannot increase step height. Maximum scrollable height reached"
                 )
