@@ -643,11 +643,15 @@ class ApplyButton(ElementBase):
         state.update_y_info()
         state.update_scr_to_time()
 
-        state.coor_cur = (state.coor_cur[0], min(len(step_data) - 1, state.coor_cur[1]))
+        state.coor_cur = (
+            state.coor_cur[0],
+            min(len(state.step_data) - 1, state.coor_cur[1]),
+        )
         state.coor_base = (
             state.coor_base[0],
-            min(len(step_data) - 1, state.coor_base[1]),
+            min(len(state.step_data) - 1, state.coor_base[1]),
         )
+        state.sync_scr_y()
         coor_redo = (state.coor_cur, state.coor_base)
         state.focus_idx = -1
 
