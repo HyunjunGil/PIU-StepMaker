@@ -611,6 +611,9 @@ class ApplyButton(ElementBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
+        if state.MUSIC_PLAYING:
+            state.log("(Error) Cannot modify block while music playing")
+            return
         new_info = [_str_to_num(x) for x in _get_block_info_texts(ui_elements)]
         if state.delay_unit == DelayUnit.beats:
             new_info[BLOCK_DL_IDX] = beats_to_ms(
@@ -677,6 +680,9 @@ class BlockAddAboveButton(ElementBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
+        if state.MUSIC_PLAYING:
+            state.log("(Error) Cannot add block while music playing")
+            return
         step_data, block_info = state.get_step_info()
 
         ln = state.coor_cur[1]
@@ -721,6 +727,10 @@ class BlockAddBelowButton(ElementBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
+        if state.MUSIC_PLAYING:
+            state.log("(Error) Cannot add block while music playing")
+            return
+
         step_data, block_info = state.get_step_info()
 
         ln = state.coor_cur[1]
@@ -766,6 +776,10 @@ class BlockSplitButton(ElementBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
+        if state.MUSIC_PLAYING:
+            state.log("(Error) Cannot split block while music playing")
+            return
+
         step_data, block_info = state.get_step_info()
         coor_undo = (state.coor_cur, state.coor_base)
         ln = state.coor_cur[1]
@@ -803,6 +817,10 @@ class BlockDeleteButton(ElementBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
+        if state.MUSIC_PLAYING:
+            state.log("(Error) Cannot delete block while music playing")
+            return
+
         step_data, block_info = state.get_step_info()
 
         # Check that there is only one block
