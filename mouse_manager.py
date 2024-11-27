@@ -27,7 +27,6 @@ class MouseManager:
 
     def _process_mouse_click(state: State, event: pygame.Event):
         state.LATTICE_CLICKED = state.SCROLLBAR_CLICKED = False
-        state.MOUSE_CLICKED = True
         state.focus_idx = -1
 
         mouse_x, mouse_y = event.pos
@@ -36,18 +35,27 @@ class MouseManager:
         pressed_keys = pygame.key.get_pressed()
 
         if state.step_x_start <= mouse_x < state.measure_x_start:
-            state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
             state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = True, False
-            state.focus_idx = -1
+            if state.receptor_y <= mouse_y < state.receptor_y + step_size:
+                state.RECEPTOR_CLICKED = True
+                state.focus_idx = -1
 
-            state.coor_cur = (
-                (mouse_x - state.step_x_start) // step_size,
-                state.y_to_ln[mouse_y + state.scr_y],
-            )
+                state.receptor_mouse_init = mouse_y
+                state.receptor_y_init = state.receptor_y
+            else:
+                state.MOUSE_CLICKED = True
+                state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
 
-            if not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
-                state.coor_base = state.coor_cur
-            state.sync_scr_y()
+                state.focus_idx = -1
+
+                state.coor_cur = (
+                    (mouse_x - state.step_x_start) // step_size,
+                    state.y_to_ln[mouse_y + state.scr_y],
+                )
+
+                if not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
+                    state.coor_base = state.coor_cur
+                state.sync_scr_y()
 
         elif state.measure_x_start <= mouse_x < state.scrollbar_x_start:
             state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = False, False
@@ -77,12 +85,22 @@ class MouseManager:
             state.LATTICE_CLICKED,
             state.SCROLLBAR_CLICKED,
             state.MOUSE_CLICKED,
-        ) = (False, False, False, False)
+            state.RECEPTOR_CLICKED,
+        ) = (False, False, False, False, False)
 
     def _process_mouse_motion(state: State, event: pygame.Event):
         state.mouse_pos = event.pos
         step_size = state.get_step_width()
-        if state.MOUSE_CLICKED:
+        if state.RECEPTOR_CLICKED:
+            mouse_x, mouse_y = event.pos
+            state.receptor_y = min(
+                max(
+                    state.receptor_y_init + (mouse_y - state.receptor_mouse_init),
+                    max(0, -state.scr_y),
+                ),
+                min(state.max_y - state.scr_y, state.screen_height) - step_size,
+            )
+        elif state.MOUSE_CLICKED:
             mouse_x, mouse_y = event.pos
             if state.step_x_start <= mouse_x < state.scrollbar_x_start:
                 state.coor_cur = (

@@ -242,12 +242,14 @@ class StepMaker:
             update_validity(state.step_data, 0, len(state.step_data) - 1)
             return
 
-        new_scr_y = binary_search(
-            state.scr_to_time[: state.max_y],
-            state.music_start_offset
-            + music_speed * (int(time.time() * 1000) - state.music_start_time),
+        state.scr_y = (
+            binary_search(
+                state.scr_to_time[: state.max_y],
+                state.music_start_offset
+                + music_speed * (int(time.time() * 1000) - state.music_start_time),
+            )
+            - state.receptor_y
         )
-        state.scr_y = new_scr_y
 
     def draw(self):
 
@@ -550,6 +552,7 @@ class StepMaker:
         state, screen = self.state, self.screen
         denom = (state.screen_height - 2 * SCROLLBAR_BUTTON_HEIGHT) - state.scrollbar_h
 
+        max_y = state.max_y - state.get_step_height()
         if state.SCROLLBAR_CLICKED:
             _, mouse_y = pygame.mouse.get_pos()
             new_scrollbar_y = min(
@@ -561,14 +564,14 @@ class StepMaker:
             )
             if denom != 0:
                 new_scr_y = (
-                    (new_scrollbar_y - SCROLLBAR_BUTTON_HEIGHT) * state.max_y
-                ) // denom
+                    (new_scrollbar_y - SCROLLBAR_BUTTON_HEIGHT) * max_y
+                ) // denom - state.receptor_y
                 state.scrollbar_y = new_scrollbar_y
                 state.scr_y = new_scr_y
         else:
-            state.scrollbar_y = (
-                (state.scr_y + state.receptor_y) * denom
-            ) // state.max_y + SCROLLBAR_BUTTON_HEIGHT
+            state.scrollbar_y = ((state.scr_y + state.receptor_y) * denom) // (
+                max_y
+            ) + SCROLLBAR_BUTTON_HEIGHT
 
         pygame.draw.rect(
             screen,

@@ -209,6 +209,7 @@ class State:
         self.IS_SCROLL = False
         self.LATTICE_CLICKED = False
         self.SCROLLBAR_CLICKED = False
+        self.RECEPTOR_CLICKED = False
         self.LINE_SELECTED = False
         self.MOUSE_CLICKED = False
         self.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
@@ -272,6 +273,10 @@ class State:
         self.scrollbar_y = 0
         self.scrollbar_y_init = 0
         self.scr_mouse_init = -1
+
+        # receptor info
+        self.receptor_y_init = 0
+        self.receptor_mouse_init = -1
 
         # Element Focus Rectangle
         self.focus_idx_prev = -1
