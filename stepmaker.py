@@ -50,6 +50,12 @@ class StepMaker:
                 pygame.image.load(f"./images/hold{i % 5}_{suffix}.png").convert_alpha()
                 for i in range(10)
             ]
+            LONG_MIDDLE_HALF_IMAGES = [
+                pygame.image.load(
+                    f"./images/hold_half{i % 5}_{suffix}.png"
+                ).convert_alpha()
+                for i in range(10)
+            ]
             LONG_TAIL_IMAGES = [
                 pygame.image.load(f"./images/end{i % 5}_{suffix}.png").convert_alpha()
                 for i in range(10)
@@ -62,6 +68,7 @@ class StepMaker:
                     LONG_HEAD_IMAGES,
                     LONG_MIDDLE_IMAGES,
                     LONG_TAIL_IMAGES,
+                    LONG_MIDDLE_HALF_IMAGES,
                 ]
             )
         self.RECEPTOR_IMAGES = dict()
@@ -566,15 +573,24 @@ class StepMaker:
                 if row[col] == 0:
                     continue
                 elif row[col] in [2, 3]:
-                    image_rects.append((ln + INFINITY, y, idx, row[col]))
+                    image_rects.append(
+                        (ln + (INFINITY if row[col] == 2 else 0), y, idx, row[col])
+                    )
 
                     if step_height > step_size:
-                        middle_cnt = (step_height + step_size - 1) // step_size
-                        for i in range(1, middle_cnt):
-                            if i < middle_cnt - 1:
-                                image_rects.append((ln, y + step_size * i, idx, 3))
-                            else:
+                        h = step_size
+                        half_size = step_size // 2
+                        while h < dy:
+                            dh = dy - h
+                            if dh <= half_size:
+                                image_rects.append((ln, y + dy - half_size, idx, 5))
+                                break
+                            elif dh <= step_size:
                                 image_rects.append((ln, y + dy - step_size, idx, 3))
+                                break
+                            else:
+                                image_rects.append((ln, y + h, idx, 3))
+                                h += step_size
 
                 else:
                     image_rects.append((ln, y, idx, row[col]))
