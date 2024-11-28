@@ -157,7 +157,7 @@ class UpKey(KeyBase):
         if ln != 0:
             ln -= 1
             block_idx_prev = step_data[ln][STEP_DATA_BI_IDX]
-            if pressed_keys[pygame.K_LALT] or pressed_keys[pygame.K_RALT]:
+            if pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL]:
                 line = step_data[ln]
                 block = block_info[line[STEP_DATA_BI_IDX]]
                 ln -= line[STEP_DATA_BT_IDX] * block[2] + line[STEP_DATA_SP_IDX]
@@ -208,7 +208,7 @@ class DownKey(KeyBase):
         pressed_keys = pygame.key.get_pressed()
         if ln != len(step_data) - 1:
             block_idx_prev = step_data[ln][STEP_DATA_BI_IDX]
-            if pressed_keys[pygame.K_LALT] or pressed_keys[pygame.K_RALT]:
+            if pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL]:
                 line = step_data[ln]
                 block = block_info[line[STEP_DATA_BI_IDX]]
                 ln -= line[STEP_DATA_BT_IDX] * block[2] + line[STEP_DATA_SP_IDX]
@@ -262,7 +262,7 @@ class LeftKey(KeyBase):
         x = state.coor_cur[0]
         pressed_keys = pygame.key.get_pressed()
         if x != 0:
-            if pressed_keys[pygame.K_LALT] or pressed_keys[pygame.K_RALT]:
+            if pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL]:
                 x = 0
             else:
                 x -= 1
@@ -299,7 +299,7 @@ class RightKey(KeyBase):
         cols = state.get_cols()
         pressed_keys = pygame.key.get_pressed()
         if x != cols - 1:
-            if pressed_keys[pygame.K_LALT] or pressed_keys[pygame.K_RALT]:
+            if pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRLs]:
                 x = cols - 1
             else:
                 x += 1
