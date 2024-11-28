@@ -5,6 +5,16 @@ from constants import *
 from enum import Enum
 
 
+class PressedStepKeyInfo:
+    def __init__(self):
+        self.initialize()
+
+    def initialize(self):
+        self.ln_from = -1
+        self.ln_to = -1
+        self.step_diff: List[Tuple[int, int, int, int]] = []
+
+
 class State:
     def __init__(self):
         self.initialize()
@@ -307,6 +317,9 @@ class State:
             pygame.K_z: INFINITY,
             pygame.K_UP: INFINITY,
             pygame.K_DOWN: INFINITY,
+        }
+        self.stepkey_info: Dict[int, PressedStepKeyInfo] = {
+            k: PressedStepKeyInfo() for k in KEY_DOUBLE.keys()
         }
 
         self.update_y_info()

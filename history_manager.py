@@ -71,7 +71,10 @@ class StepChartChangeDelta(StateDelta):
 
     def undo(self, state: State):
         step_data = state.step_data
-        for diff in self.step_diff:
+
+        # Undo in reverse order
+        for i in range(len(self.step_diff) - 1, -1, -1):
+            diff = self.step_diff[i]
             ln, col, prev, _ = diff
             step_data[ln][col] = prev
 

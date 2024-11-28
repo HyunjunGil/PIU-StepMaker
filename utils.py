@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from constants import (
     STEP_DATA_OFFSET,
     STEP_DATA_VD_IDX,
@@ -228,3 +228,18 @@ def get_note_range(step_data: List[List[int]], ln: int, col: int) -> Tuple[int, 
         ):
             ln_from -= 1
         return ln_from, ln
+
+
+def reduce_diff(step_diff: List[Tuple[int, int, int, int]]):
+    initial_state: Dict[Tuple[int, int], int] = dict()
+    final_state: Dict[Tuple[int, int], int] = dict()
+    res_diff: List[Tuple[int, int, int, int]] = []
+    for diff in step_diff:
+        ln, col, prev, cur = diff
+        if not (ln, col) in initial_state:
+            initial_state[(ln, col)] = prev
+        final_state[(ln, col)] = cur
+
+    for ln, col in initial_state.keys():
+        res_diff.append((ln, col, initial_state[(ln, col)], final_state[(ln, col)]))
+    return res_diff

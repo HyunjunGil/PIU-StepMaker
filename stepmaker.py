@@ -18,6 +18,8 @@ from utils import (
     num_to_str,
     get_bpm_color,
     ms_to_beats,
+    clear_step,
+    reduce_diff,
 )
 
 
@@ -184,6 +186,51 @@ class StepMaker:
                 UpKey.action(self.history_manager, self.state, None, [])
             elif key == pygame.K_DOWN:
                 DownKey.action(self.history_manager, self.state, None, [])
+
+    def process_stepkey(self):
+        state = self.state
+        if not state.MUSIC_PLAYING:
+            return
+
+        ln = state.y_to_ln[state.scr_y + state.receptor_y]
+
+        target_keys = KEY_SINGLE if state.mode == "Single" else KEY_DOUBLE
+        pressed_keys = pygame.key.get_pressed()
+        stepkey_info, step_data = state.stepkey_info, state.step_data
+        for k in target_keys.keys():
+            i = target_keys[k]
+            col = i + STEP_DATA_OFFSET
+            info = stepkey_info[k]
+            if not pressed_keys[k] and info.ln_from != -1:
+                if info.ln_from != info.ln_to:
+                    info.step_diff.append((info.ln_to, col, 3, 4))
+                    step_data[info.ln_to][col] = 4
+                self.history_manager.append(
+                    StepChartChangeDelta(
+                        ((col - STEP_DATA_OFFSET), (info.ln_from)),
+                        ((col - STEP_DATA_OFFSET), (info.ln_to)),
+                        info.step_diff,
+                    )
+                )
+                info.initialize()
+
+            elif pressed_keys[k]:
+
+                if info.ln_from == -1:
+                    info.ln_from = info.ln_to = ln
+                    info.step_diff = info.step_diff + clear_step(
+                        step_data, ln, ln + 1, col
+                    )
+                    info.step_diff.append((ln, col, 0, 1))
+                    step_data[ln][col] = 1
+                elif info.ln_to != ln:
+                    info.ln_to = ln
+                    if ln == info.ln_from + 1:
+                        info.step_diff.append((ln - 1, col, 1, 2))
+                        step_data[ln - 1][col] = 2
+                    info.step_diff.extend(clear_step(step_data, ln, ln + 1, col))
+                    info.step_diff.append((ln, col, 0, 3))
+                    step_data[ln][col] = 3
 
     def process_mouse_event(self, event: pygame.Event):
         MouseManager.process_event(self.state, event)

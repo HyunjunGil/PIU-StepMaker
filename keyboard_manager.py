@@ -739,7 +739,6 @@ class CopyKey(KeyBase):
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
         if state.MUSIC_PLAYING:
-            state.log("(Error) Cannot copy while music playing")
             return False
         pressed_keys = pygame.key.get_pressed()
         return (
@@ -780,7 +779,6 @@ class CutKey(KeyBase):
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
         if state.MUSIC_PLAYING:
-            state.log("(Error) Cannot cut while music playing")
             return False
         pressed_keys = pygame.key.get_pressed()
         return (
@@ -824,7 +822,6 @@ class PasteKey(KeyBase):
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
         if state.MUSIC_PLAYING:
-            state.log("(Error) Cannot paste while music playing")
             return False
         pressed_keys = pygame.key.get_pressed()
         return (
@@ -913,7 +910,6 @@ class UndoKey(KeyBase):
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
         if state.MUSIC_PLAYING:
-            state.log("(Error) Cannot undo/redo while music playing")
             return
         pressed_keys = pygame.key.get_pressed()
         return (
