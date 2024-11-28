@@ -307,7 +307,6 @@ class PlayButton(ElementBase):
                 ).set_frame_rate(PYGAME_SAMPLE_RATE)
                 raw_data = np.array(audio.get_array_of_samples())
 
-                state.music_start_time = int(time.time() * 1000)
                 state.music_start_offset = int(
                     state.scr_to_time[state.scr_y + state.receptor_y]
                 )
@@ -318,6 +317,7 @@ class PlayButton(ElementBase):
                 sound = pygame.mixer.Sound(buffer=raw_data[start_idx:].tobytes())
                 # print("Elapsed : {:.4f}s".format(time.time() - a))
                 sound.play()
+                state.music_start_time = int(time.time() * 1000)
             else:
                 state.music_start_time = int(time.time() * 1000)
                 state.music_start_offset = int(
