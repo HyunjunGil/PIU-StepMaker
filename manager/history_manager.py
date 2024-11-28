@@ -134,6 +134,7 @@ class BlockModifyDelta(StateDelta):
         state.step_data = (
             step_data[:ln_from] + self.prev_block_step_data + step_data[ln_to:]
         )
+        state.block_info[self.block_idx] = self.prev_block_info
         ln_from, ln_to = state.get_block_range_by_block_idx(self.block_idx)
         update_validity(state.step_data, ln_from - 1, ln_from + 1)
         update_validity(state.step_data, ln_to - 1, ln_to + 1)
