@@ -444,7 +444,7 @@ class StepMaker:
             (
                 OPTION_WIDTH,
                 state.max_y - state.scr_y,
-                step_size * cols,
+                state.scrollbar_x_start - OPTION_WIDTH,
                 state.screen_height,
             ),
         )
@@ -636,6 +636,17 @@ class StepMaker:
         state, screen = self.state, self.screen
         denom = (state.screen_height - 2 * SCROLLBAR_BUTTON_HEIGHT) - state.scrollbar_h
 
+        pygame.draw.rect(
+            screen,
+            SEMI_WHITE,
+            (
+                state.scrollbar_x_start,
+                0,
+                SCROLLBAR_BUTTON_WIDTH,
+                state.screen_height,
+            ),
+        )
+
         max_y = state.max_y - state.get_step_height()
         if state.SCROLLBAR_CLICKED:
             _, mouse_y = pygame.mouse.get_pos()
@@ -764,9 +775,9 @@ class StepMaker:
                 ln_from + 1, ln_to + 1, ln_to - ln_from + 1
             )
 
-        line_text = pygame.font.SysFont("Verdana", state.get_font_size()).render(
-            txt, True, BLACK, LIGHT_GRAY
-        )
+        line_text = pygame.font.SysFont(
+            "Verdana", int(1.5 * state.get_font_size())
+        ).render(txt, True, BLACK, LIGHT_GRAY)
         line_text_rect = line_text.get_rect()
         line_text_rect.bottomleft = (state.step_x_start, state.screen_height)
         screen.blit(line_text, line_text_rect)
