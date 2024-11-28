@@ -1,6 +1,4 @@
-from pydub import AudioSegment
 from typing import List, Tuple, Dict
-from utils import get_block_size
 from constants import *
 from enum import Enum
 
@@ -66,14 +64,19 @@ class State:
         ln_to = ln_from + ((block[4] * block[1] + block[5]) * block[2] + block[6])
         return ln_from, ln_to
 
+    def get_block_size(self, block: List[float | int]) -> int:
+        return (
+            block[BLOCK_MS_IDX] * block[BLOCK_BM_IDX] + block[BLOCK_BT_IDX]
+        ) * block[BLOCK_SB_IDX] + block[BLOCK_SP_IDX]
+
     def get_block_range_by_block_idx(self, block_idx: int):
         ln_from, idx = 0, 0
         while idx < block_idx:
             block = self.block_info[idx]
-            ln_from += get_block_size(block)  # number of lines in the block
+            ln_from += self.get_block_size(block)  # number of lines in the block
             idx += 1
         block = self.block_info[block_idx]
-        ln_to = ln_from + get_block_size(block)
+        ln_to = ln_from + self.get_block_size(block)
         return ln_from, ln_to
 
     def sync_scr_y(self):
@@ -100,6 +103,16 @@ class State:
         if not quite:
             print(s)
         self.logs.append(s)
+
+    def update_scrollbar_info(self):
+        screen_height, max_y = (
+            self.screen_height - 2 * SCROLLBAR_BUTTON_HEIGHT,
+            self.max_y - self.get_step_height(),
+        )
+        self.scrollbar_h = max(
+            MIN_SCROLL_BAR_HEIGHT,
+            min(screen_height, (screen_height * screen_height) // max_y),
+        )
 
     def update_x_info(self):
         step_size, cols = self.get_step_width(), self.get_cols()

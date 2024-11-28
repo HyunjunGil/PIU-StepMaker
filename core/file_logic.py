@@ -2,7 +2,7 @@ import os, io
 
 from typing import List, Tuple
 from constants import *
-from state import State
+from manager.state_manager import State
 from utils import update_validity
 from pydub import AudioSegment
 

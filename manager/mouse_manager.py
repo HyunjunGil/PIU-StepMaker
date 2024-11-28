@@ -1,7 +1,5 @@
-import pygame, pygame_gui
-
 from constants import *
-from state import State
+from manager.state_manager import State
 
 
 class MouseManager:

@@ -3,13 +3,10 @@ import pygame, pygame_gui, numpy as np, time
 from tkinter import Tk
 from typing import List, Tuple, Dict
 from constants import *
-from state import State
-from scroll_manager import ScrollManager
-from ui_element_manager import UIElementManager, ElementBase
-from ui_elements import PlayButton
-from mouse_manager import MouseManager
-from keyboard_manager import KeyboardManager, UndoKey, UpKey, DownKey
-from history_manager import HistoryManager, StepChartChangeDelta
+from manager.state_manager import State
+
+from manager import *
+from gui import PlayButton
 
 from utils import (
     binary_search,
@@ -19,7 +16,6 @@ from utils import (
     get_bpm_color,
     ms_to_beats,
     clear_step,
-    reduce_diff,
 )
 
 
@@ -39,25 +35,33 @@ class StepMaker:
         self.TOTAL_IMAGES = []
         for suffix in ["s", "m", "l"]:
             SHORT_IMAGES = [
-                pygame.image.load(f"./images/note{i % 5}_{suffix}.png").convert_alpha()
+                pygame.image.load(
+                    f"./assets/images/note{i % 5}_{suffix}.png"
+                ).convert_alpha()
                 for i in range(10)
             ]
             LONG_HEAD_IMAGES = [
-                pygame.image.load(f"./images/start{i % 5}_{suffix}.png").convert_alpha()
+                pygame.image.load(
+                    f"./assets/images/start{i % 5}_{suffix}.png"
+                ).convert_alpha()
                 for i in range(10)
             ]
             LONG_MIDDLE_IMAGES = [
-                pygame.image.load(f"./images/hold{i % 5}_{suffix}.png").convert_alpha()
+                pygame.image.load(
+                    f"./assets/images/hold{i % 5}_{suffix}.png"
+                ).convert_alpha()
                 for i in range(10)
             ]
             LONG_MIDDLE_HALF_IMAGES = [
                 pygame.image.load(
-                    f"./images/hold_half{i % 5}_{suffix}.png"
+                    f"./assets/images/hold_half{i % 5}_{suffix}.png"
                 ).convert_alpha()
                 for i in range(10)
             ]
             LONG_TAIL_IMAGES = [
-                pygame.image.load(f"./images/end{i % 5}_{suffix}.png").convert_alpha()
+                pygame.image.load(
+                    f"./assets/images/end{i % 5}_{suffix}.png"
+                ).convert_alpha()
                 for i in range(10)
             ]
 
@@ -75,7 +79,7 @@ class StepMaker:
         for i, suffix in enumerate(["s", "m", "l"]):
             for mode in ["Single", "Double"]:
                 self.RECEPTOR_IMAGES[f"{mode}_{i}"] = pygame.image.load(
-                    f"./images/receptor_{mode.lower()}_{suffix}.png"
+                    f"./assets/images/receptor_{mode.lower()}_{suffix}.png"
                 ).convert_alpha()
 
     def resize_screen(self, size: Tuple[int, int]):
@@ -89,11 +93,11 @@ class StepMaker:
             w,
         )
         h = max(MIN_SCREEN_HEIGHT, h)
-        self.state.screen_width = w
-        self.state.screen_height = h
+        state.screen_width = w
+        state.screen_height = h
         self.screen = pygame.display.set_mode((w, h), pygame.RESIZABLE)
         self.ui_manager.manager.set_window_resolution((w, h))
-        ScrollManager.update_scrollbar_info(self.state)
+        state.update_scrollbar_info()
 
     def emit_event(self):
         state = self.state

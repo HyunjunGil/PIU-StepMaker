@@ -29,6 +29,13 @@ def num_to_str(num: float | int):
         return str(num)
 
 
+def str_to_num(x: str):
+    try:
+        return int(x)
+    except:
+        return round(float(x), 4)
+
+
 def ms_to_beats(bpm: float | int, ms: float | int):
     v = round(bpm / 60_000 * ms, 4)
     if v == int(v):
@@ -43,12 +50,6 @@ def beats_to_ms(bpm: float | int, beats: float | int):
         return int(v)
     else:
         return v
-
-
-def get_block_size(block: List[float | int]) -> int:
-    return (block[BLOCK_MS_IDX] * block[BLOCK_BM_IDX] + block[BLOCK_BT_IDX]) * block[
-        BLOCK_SB_IDX
-    ] + block[BLOCK_SP_IDX]
 
 
 def binary_search(arr: List[int], v: int):

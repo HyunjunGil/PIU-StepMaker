@@ -1,10 +1,10 @@
 import pygame, pygame_gui
 
 from typing import List, Tuple, Dict
-from state import State
+from manager.state_manager import State
 from enum import Enum
-from block_logic import *
-from utils import update_validity, get_block_size
+from core.block_logic import *
+from utils import update_validity
 
 
 class DeltaType(Enum):
@@ -183,7 +183,7 @@ class BlockDeleteDelta(StateDelta):
                 1,
             ]
             + [0 for _ in range(cols)]
-            for i in range(get_block_size(block))
+            for i in range(state.get_block_size(block))
         ]
 
         state.step_data = step_data[:ln_from] + deleted_step_data + step_data[ln_from:]

@@ -1,4 +1,4 @@
-import pygame, pygame_gui
+import pygame, pygame_gui, time
 
 from typing import List, Tuple, Dict, Union
 from pygame import Rect
@@ -7,10 +7,11 @@ from pygame_gui.elements import UIButton, UITextEntryLine, UIPanel, UITextBox, U
 type UIElement = Union[UIButton, UITextEntryLine, UIPanel, UITextBox, UILabel]
 
 
-from state import State
+from manager.state_manager import State
 from constants import *
-from history_manager import HistoryManager
-from ui_elements import *
+from gui import *
+from manager.history_manager import HistoryManager
+from utils import *
 
 
 class UIElementManager:
@@ -119,7 +120,9 @@ class UIElementManager:
 
     def initialize(self):
 
-        manager = pygame_gui.UIManager((SCREEN_WIDTH, SCREEN_HEIGHT), "theme.json")
+        manager = pygame_gui.UIManager(
+            (SCREEN_WIDTH, SCREEN_HEIGHT), "./assets/theme.json"
+        )
 
         PANEL_1_HEIGHT = 30
         PANEL_2_HEIGHT = 200

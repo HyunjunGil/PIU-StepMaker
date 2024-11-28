@@ -1,87 +1,29 @@
-import pygame, pygame_gui, copy, time, io, numpy as np
-
-
-from pydub import AudioSegment
-from pydub.playback import _play_with_simpleaudio
+import os, numpy as np, time, copy
+from gui.custom_ui_elements.base import *
+from constants import *
 from tkinter.filedialog import askopenfilename, asksaveasfilename
-from file_manager import *
-from abc import *
-from typing import List, Tuple, Dict, Union
-from pygame import Rect
-from pygame_gui.elements import UIButton, UITextEntryLine, UIPanel, UITextBox, UILabel
-
-type UIElement = Union[UIButton, UITextEntryLine, UIPanel, UITextBox, UILabel]
-
-from history_manager import (
-    HistoryManager,
+from utils import (
+    str_to_num,
+    beats_to_ms,
+    update_validity,
+)
+from core import (
+    modify_block,
+    add_block_up,
+    add_block_down,
+    split_block,
+    delete_block,
+    save_ucs_file,
+    load_ucs_file,
+    load_music_file,
+)
+from manager.history_manager import (
     BlockModifyDelta,
     BlockAddAboveDelta,
     BlockAddBelowDelta,
     BlockSplitDelta,
     BlockDeleteDelta,
 )
-from state import State
-from utils import update_validity, ms_to_beats, beats_to_ms, num_to_str
-from constants import *
-from block_logic import *
-
-from file_manager import save_ucs_file, load_ucs_file
-from scroll_manager import ScrollManager
-
-
-class ElementBase:
-
-    def __init__(
-        self,
-        element: UIElement,
-    ):
-        self.e = element
-
-    def is_enable(self):
-        return self.e.is_enabled
-
-    def enable(self):
-        self.e.enable()
-
-    def disable(self):
-        self.e.disable()
-
-    def focus(self):
-        if type(self.e) == pygame_gui.elements.UITextEntryLine:
-            self.e.focus()
-
-    def unfocus(self):
-        if type(self.e) == pygame_gui.elements.UITextEntryLine:
-            self.e.unfocus()
-
-    def get_text(self):
-        return self.e.get_text()
-
-    def condition(self, state: State, event: pygame.Event):
-        if type(self.e) == pygame_gui.elements.UIButton:
-            return (
-                event.type == pygame_gui.UI_BUTTON_PRESSED
-                and event.ui_element == self.e
-            )
-        elif type(self.e) == pygame_gui.elements.UITextEntryLine:
-            return (
-                event.type == pygame_gui.UI_TEXT_ENTRY_FINISHED
-                and event.ui_element == self.e
-            )
-        else:
-            return False
-
-    @staticmethod
-    def action(
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, "ElementBase"],
-    ):
-        raise Exception("Action for ElementBase is not implemented")
-
-
-# TODO : Seperate files for each buttons
 
 
 class FileButton(ElementBase):
@@ -150,7 +92,7 @@ class LoadButton(ElementBase):
         ui_elements[SCROLLBAR_DOWN_BUTTON].set_location(
             (state.scrollbar_x_start, state.screen_height)
         )
-        ScrollManager.update_scrollbar_info(state)
+        state.update_scrollbar_info()
         state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
         ui_elements[BI_APPLY_BUTTON].e.disable()
         state.log(f"UCS file {ucs_name} is loaded")
@@ -328,197 +270,6 @@ class PlayButton(ElementBase):
         # state.focus_idx = FILE_PLAY_BUTTON
 
 
-class PlayTimeTextbox(ElementBase):
-    def __init__(
-        self, element: UIButton | UITextEntryLine | UIPanel | UITextBox | UILabel
-    ):
-        super().__init__(element)
-        self.e.disable()
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    @staticmethod
-    def action(
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        pass
-
-
-def _get_block_info_texts(ui_elements: Dict[str, ElementBase]) -> List[str]:
-    info = []
-    for k in [
-        BI_BPM_TEXTBOX,
-        BI_BM_TEXTBOX,
-        BI_BS_TEXTBOX,
-        BI_DL_TEXBOX,
-        BI_MS_TEXTBOX,
-        BI_BT_TEXTBOX,
-        BI_SP_TEXTBOX,
-    ]:
-        info.append(ui_elements[k].get_text())
-    return info
-
-
-def _str_to_num(x: str):
-    try:
-        return int(x)
-    except:
-        return round(float(x), 4)
-
-
-def _enable_apply_button(info: List[int | float], new_info: List[int | float]) -> bool:
-    assert len(info) == len(
-        new_info
-    ), "len(info) != len(new_info) in _enable_apply_button"
-    for v, nv in zip(info, new_info):
-        if nv == "":
-            return False
-        elif v != nv:
-            return True
-    return False
-
-
-# Block Information Text Box
-class BlockInformationText(ElementBase):
-    def __init__(self, element: UITextEntryLine):
-        super().__init__(element)
-
-    def condition(self, state: State, event: pygame.Event):
-        return (
-            event.type
-            in [pygame_gui.UI_TEXT_ENTRY_FINISHED, pygame_gui.UI_TEXT_ENTRY_CHANGED]
-            and event.ui_element == self.e
-        )
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: List[ElementBase],
-    ):
-        if event.type == pygame_gui.UI_TEXT_ENTRY_CHANGED:
-            ui_elements[state.focus_idx].e.redraw()
-            new_info = _get_block_info_texts(ui_elements)
-            if (
-                state.delay_unit == DelayUnit.beats
-                and len(new_info[BLOCK_DL_IDX])
-                and len(new_info[BLOCK_BPM_IDX])
-            ):
-                new_info[BLOCK_DL_IDX] = num_to_str(
-                    beats_to_ms(
-                        float(new_info[BLOCK_BPM_IDX]), float(new_info[BLOCK_DL_IDX])
-                    )
-                )
-            step_data, block_info = state.get_step_info()
-            info = block_info[step_data[state.coor_cur[1]][STEP_DATA_BI_IDX]]
-            info = [num_to_str(x) for x in info]
-            if _enable_apply_button(info, new_info):
-                ui_elements[BI_APPLY_BUTTON].enable()
-                state.APPLY_ENABLED = True
-            else:
-                ui_elements[BI_APPLY_BUTTON].disable()
-                state.APPLY_ENABLED = False
-        else:
-            text = ui_elements[state.focus_idx].get_text()
-            if text == "":
-                state.log("(Error) Cannot modify block : Empty input")
-                return
-            pygame.event.post(
-                pygame.event.Event(
-                    pygame_gui.UI_BUTTON_PRESSED,
-                    {
-                        "user_type": pygame_gui.UI_BUTTON_PRESSED,
-                        "ui_element": ui_elements[BI_APPLY_BUTTON].e,
-                    },
-                )
-            )
-
-    def set_text(self, s: str):
-        self.e.set_text(s)
-        self.e.redraw()
-
-
-# UI_INDEX : 5
-class BPMTexbox(BlockInformationText):
-    def __init__(self, element: UIElement):
-        super().__init__(element)
-        self.e.set_allowed_characters([f"{i}" for i in range(10)] + ["."])
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: List[ElementBase],
-    ):
-        return super().action(history_manager, state, event, ui_elements)
-
-
-# UI_INDEX : 6
-class BeatPerMeasureTextbox(BlockInformationText):
-    def __init__(self, element: UIElement):
-        super().__init__(element)
-        self.e.set_allowed_characters("numbers")
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: List[ElementBase],
-    ):
-        return super().action(history_manager, state, event, ui_elements)
-
-
-# UI_INDEX : 7
-class SplitPerBeatTextbox(BlockInformationText):
-    def __init__(self, element: UIElement):
-        super().__init__(element)
-        self.e.set_allowed_characters("numbers")
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: List[ElementBase],
-    ):
-        return super().action(history_manager, state, event, ui_elements)
-
-
-# UI_INDEX : 8
-class DelayTexbox(BlockInformationText):
-    def __init__(self, element: UIElement):
-        super().__init__(element)
-        self.e.set_allowed_characters([f"{i}" for i in range(10)] + ["."])
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: List[ElementBase],
-    ):
-        return super().action(history_manager, state, event, ui_elements)
-
-
 # UI_INDEX : 9
 class DelayUnitButton(ElementBase):
     def __init__(self, element: UIElement):
@@ -544,63 +295,6 @@ class DelayUnitButton(ElementBase):
             state.delay_unit = DelayUnit.ms
 
 
-# UI_INDEX : 10
-class MeasuresTexbox(BlockInformationText):
-    def __init__(self, element: UIElement):
-        super().__init__(element)
-        self.e.set_allowed_characters("numbers")
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: List[ElementBase],
-    ):
-        return super().action(history_manager, state, event, ui_elements)
-
-
-# UI_INDEX : 11
-class BeatsTexbox(BlockInformationText):
-    def __init__(self, element: UIElement):
-        super().__init__(element)
-        self.e.set_allowed_characters("numbers")
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: List[ElementBase],
-    ):
-        return super().action(history_manager, state, event, ui_elements)
-
-
-# UI_INDEX : 12
-class SplitsTexbox(BlockInformationText):
-    def __init__(self, element: UIElement):
-        super().__init__(element)
-        self.e.set_allowed_characters("numbers")
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    def action(
-        self,
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: List[ElementBase],
-    ):
-        return super().action(history_manager, state, event, ui_elements)
-
-
 # UI_INDEX : 13
 class ApplyButton(ElementBase):
     def __init__(self, element: UIElement):
@@ -619,7 +313,7 @@ class ApplyButton(ElementBase):
         if state.MUSIC_PLAYING:
             state.log("(Error) Cannot modify block while music playing")
             return
-        new_info = [_str_to_num(x) for x in _get_block_info_texts(ui_elements)]
+        new_info = [str_to_num(x) for x in get_block_info_texts(ui_elements)]
         if state.delay_unit == DelayUnit.beats:
             new_info[BLOCK_DL_IDX] = beats_to_ms(
                 new_info[BLOCK_BPM_IDX], new_info[BLOCK_DL_IDX]
@@ -965,26 +659,6 @@ class AutoLinePassButton(OnOffButton):
 
         else:
             AutoLinePassButton.on(history_manager, state, event, ui_elements)
-
-
-class LogTextbox(ElementBase):
-    def __init__(
-        self, element: UIButton | UITextEntryLine | UIPanel | UITextBox | UILabel
-    ):
-        super().__init__(element)
-        self.e.disable()
-
-    def condition(self, state: State, event: pygame.Event):
-        return super().condition(state, event)
-
-    @staticmethod
-    def action(
-        history_manager: HistoryManager,
-        state: State,
-        event: pygame.Event,
-        ui_elements: Dict[str, ElementBase],
-    ):
-        pass
 
 
 class LogClearButton(ElementBase):

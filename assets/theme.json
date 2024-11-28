@@ -163,7 +163,7 @@
     "font": {
       "name": "D2Coding",
       "size": 11,
-      "regular_path": "./d2coding.ttf"
+      "regular_path": "./assets/d2coding.ttf"
     }
   },
   "@button_onoff": {

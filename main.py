@@ -1,10 +1,8 @@
 import pygame, pygame_gui, sys, time, numpy as np
 
 from constants import *
-from block_logic import *
-from pygame import Surface
 
-from stepmaker import *
+from manager import StepMaker
 
 
 pygame.init()
