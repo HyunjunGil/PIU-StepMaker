@@ -8,13 +8,63 @@ class DelayUnit(Enum):
     ms = 2
 
 
+########################################
+########################################
+########################################
+####### USER MODIFIABLE CONSTANTS ######
+####### vvvvvvvvvvvvvvvvvvvvvvvvv ######
+####### vvvvvvvvvvvvvvvvvvvvvvvvv ######
+########################################
+
+
+# Maximum number of lines
+# Increase this value if your ucs file needs more combo or line
+# Too big value may lead to bad performance
+# Recommended value is 2,000 ~ 3,000
+HARD_MAX_LINES = 2_000  # maximum number of lines.
+
+# Maximum ucs file heihgt in pixel
+# Incrase this value if your ucs file needs more combo, line or height
+# Too big value may lead to bad performance
+# Recommended value is 100,000 ~ 200,000
+HARD_MAX_Y = 100_000  # maximum scrollable height
+
 # Key Hold Delay
+# Hold-and-Wait time to active the key input consequently
 KEY_HOLD_DELAY_MS = 500
+# Interval between each action
 KEY_HOLD_INTERVAL_MS = 50
 
-# HARD MAX Y
-HARD_MAX_Y = 100_000  # maximum scrollable height
-HARD_MAX_LINES = 2_000  # maximum number of lines
+# Music speed map
+MUSIC_SPEED_MAP = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+
+# Maximum Step Vertical Height Multiplier. 10 => 1.0x
+VERTICAL_MULTIPLIER_MAX = 50
+
+# Mouse Scroll Speed Config
+SCROLL_SPEED = 20
+
+# Minimum line height
+# Even if some measure have too big split/beat, the height of each line cannot be be lower than this value(in pixel)
+MIN_SPLIT_SIZE = 10
+
+
+# Music input user sync in pixel
+# This value adjust sync of your stepkey input while playing music
+# If you feel your input is bit early, adjust to this value under 0 : -1, -2, -3
+# If you feel your input is bit lately, adjust to this value under 0 : 1, 2, 3
+# The unit of this value is pixel, not ms
+MUSIC_INPUT_DELAY_IN_PIXEL = 10
+
+
+########################################
+####### ^^^^^^^^^^^^^^^^^^^^^^^^^ ######
+####### ^^^^^^^^^^^^^^^^^^^^^^^^^ ######
+####### USER MODIFIABLE CONSTANTS ######
+########################################
+########################################
+########################################
+
 
 # Pygame.mixer sample_rate
 PYGAME_SAMPLE_RATE = 44100
@@ -25,8 +75,6 @@ MIN_SCREEN_WIDTH, MIN_SCREEN_HEIGHT = 600, 600
 
 # Step Chart Size
 STEP_SIZE_MAP = [24, 36, 48]
-MUSIC_SPEED_MAP = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
-VERTICAL_MULTIPLIER_MAX = 50
 
 # Step <-> Code Inverter
 STEP_TO_CODE = {".": 0, "X": 1, "M": 2, "H": 3, "W": 4}
@@ -119,15 +167,6 @@ BUTTON_ON_COLOR = LIGHT_GREEN
 BPM_MIN_COLOR = (255, 255, 255)
 BPM_MAX_COLOR = (255, 126, 126)
 
-# Size config
-CELL_SIZE = 48
-MIN_SPLIT_SIZE = 10
-
-# Scroll Speed Config
-SCROLL_SPEED = 20
-
-# Line Selection Speed
-LINE_AUTO_MOVE_DELAY_MS = 500
 
 # Measure Descriptor Width
 MEASURE_DESCRIPTOR_WIDTH = 60

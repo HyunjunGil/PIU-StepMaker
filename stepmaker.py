@@ -192,7 +192,11 @@ class StepMaker:
         if not state.MUSIC_PLAYING:
             return
 
-        ln = state.y_to_ln[state.scr_y + state.receptor_y]
+        y = min(
+            max(state.scr_y + state.receptor_y + MUSIC_INPUT_DELAY_IN_PIXEL, 0),
+            state.max_y - 1,
+        )
+        ln = state.y_to_ln[y]
 
         target_keys = KEY_SINGLE if state.mode == "Single" else KEY_DOUBLE
         pressed_keys = pygame.key.get_pressed()
