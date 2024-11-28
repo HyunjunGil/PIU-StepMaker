@@ -55,6 +55,9 @@ MIN_SPLIT_SIZE = 10
 MUSIC_INPUT_DELAY_IN_PIXEL = 10
 
 
+# Allow long note while playing music
+ALLOW_LONG_NOTE = False
+
 #######################################
 ###### ^^^^^^^^^^^^^^^^^^^^^^^^^ ######
 ###### USER MODIFIABLE CONSTANTS ######
