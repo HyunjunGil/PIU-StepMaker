@@ -302,7 +302,7 @@ class State:
         self.scr_to_time: List[int] = [0 for _ in range(HARD_MAX_Y)]
         self.music: any = None
         self.music_len: int = 0  # in ms
-        self.music_speed_idx: int = 3
+        self.music_speed_idx: int = MUSIC_SPEED_MAP.index(1)
         self.music_start_time: int = 0  # in ms
         self.music_start_offset: int = 0  # in ms
 

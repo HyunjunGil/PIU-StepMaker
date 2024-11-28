@@ -8,13 +8,10 @@ class DelayUnit(Enum):
     ms = 2
 
 
-########################################
-########################################
-########################################
-####### USER MODIFIABLE CONSTANTS ######
-####### vvvvvvvvvvvvvvvvvvvvvvvvv ######
-####### vvvvvvvvvvvvvvvvvvvvvvvvv ######
-########################################
+#######################################
+###### USER MODIFIABLE CONSTANTS ######
+###### vvvvvvvvvvvvvvvvvvvvvvvvv ######
+#######################################
 
 
 # Maximum number of lines
@@ -36,7 +33,8 @@ KEY_HOLD_DELAY_MS = 500
 KEY_HOLD_INTERVAL_MS = 50
 
 # Music speed map
-MUSIC_SPEED_MAP = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+# It must contains 1
+MUSIC_SPEED_MAP = [0.2, 0.3, 0.4, 0.5, 0.6, 1]
 
 # Maximum Step Vertical Height Multiplier. 10 => 1.0x
 VERTICAL_MULTIPLIER_MAX = 50
@@ -57,13 +55,10 @@ MIN_SPLIT_SIZE = 10
 MUSIC_INPUT_DELAY_IN_PIXEL = 10
 
 
-########################################
-####### ^^^^^^^^^^^^^^^^^^^^^^^^^ ######
-####### ^^^^^^^^^^^^^^^^^^^^^^^^^ ######
-####### USER MODIFIABLE CONSTANTS ######
-########################################
-########################################
-########################################
+#######################################
+###### ^^^^^^^^^^^^^^^^^^^^^^^^^ ######
+###### USER MODIFIABLE CONSTANTS ######
+#######################################
 
 
 # Pygame.mixer sample_rate
