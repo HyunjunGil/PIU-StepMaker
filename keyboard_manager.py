@@ -1067,7 +1067,7 @@ class SelectAllKey(KeyBase):
 
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
-        if state.MUSIC_PLAYING:
+        if state.MUSIC_PLAYING or BI_BPM_TEXTBOX <= state.focus_idx < BI_APPLY_BUTTON:
             return False
         pressed_keys = pygame.key.get_pressed()
         return (

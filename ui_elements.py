@@ -402,6 +402,7 @@ class BlockInformationText(ElementBase):
         ui_elements: List[ElementBase],
     ):
         if event.type == pygame_gui.UI_TEXT_ENTRY_CHANGED:
+            ui_elements[state.focus_idx].e.redraw()
             new_info = _get_block_info_texts(ui_elements)
             if (
                 state.delay_unit == DelayUnit.beats
@@ -423,6 +424,10 @@ class BlockInformationText(ElementBase):
                 ui_elements[BI_APPLY_BUTTON].disable()
                 state.APPLY_ENABLED = False
         else:
+            text = ui_elements[state.focus_idx].get_text()
+            if text == "":
+                state.log("(Error) Cannot modify block : Empty input")
+                return
             pygame.event.post(
                 pygame.event.Event(
                     pygame_gui.UI_BUTTON_PRESSED,

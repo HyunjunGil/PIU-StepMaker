@@ -86,7 +86,6 @@ class StepMaker:
         self.state.screen_height = h
         self.screen = pygame.display.set_mode((w, h), pygame.RESIZABLE)
         self.ui_manager.manager.set_window_resolution((w, h))
-        # self.ui_manager.relocate_scroll_button(self.state)
         ScrollManager.update_scrollbar_info(self.state)
 
     def emit_event(self):
@@ -99,7 +98,6 @@ class StepMaker:
                     {
                         "user_type": pygame_gui.UI_BUTTON_PRESSED,
                         "ui_element": element.e,
-                        # "ui_object_id": button.most_specific_combined_id,
                     },
                 )
             )
