@@ -191,3 +191,40 @@ def clear_step(
 
 def ms_to_str(ms: int):
     return datetime.fromtimestamp(ms / 1000).strftime("%M:%S.%f")[:-3]
+
+
+def get_note_range(step_data: List[List[int]], ln: int, col: int) -> Tuple[int, int]:
+    if step_data[ln][col] == 0:
+        return ln, ln
+    elif step_data[ln][col] == 1:
+        return ln, ln
+    elif step_data[ln][col] == 2:
+        ln_to = ln
+        while ln_to + 1 < len(step_data) and (
+            (step_data[ln_to][col] == 2 and step_data[ln_to + 1][col] == 3)
+            or (step_data[ln_to][col] == 3 and step_data[ln_to + 1][col] in [3, 4])
+        ):
+            ln_to += 1
+        return ln, ln_to
+    elif step_data[ln][col] == 3:
+        ln_from = ln
+        while ln_from - 1 < len(step_data) and (
+            (step_data[ln_from][col] == 4 and step_data[ln_from - 1][col] == 3)
+            or (step_data[ln_from][col] == 3 and step_data[ln_from - 1][col] in [2, 3])
+        ):
+            ln_from -= 1
+        ln_to = ln
+        while ln_to + 1 < len(step_data) and (
+            (step_data[ln_to][col] == 2 and step_data[ln_to + 1][col] == 3)
+            or (step_data[ln_to][col] == 3 and step_data[ln_to + 1][col] in [3, 4])
+        ):
+            ln_to += 1
+        return ln_from, ln_to
+    elif step_data[ln][col] == 4:
+        ln_from = ln
+        while ln_from - 1 < len(step_data) and (
+            (step_data[ln_from][col] == 4 and step_data[ln_from - 1][col] == 3)
+            or (step_data[ln_from][col] == 3 and step_data[ln_from - 1][col] in [2, 3])
+        ):
+            ln_from -= 1
+        return ln_from, ln
