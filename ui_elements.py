@@ -1018,8 +1018,9 @@ class ScrollUpButton(ElementBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
+        if state.MUSIC_PLAYING:
+            return
         state.scr_y = max(state.scr_y - SCROLL_SPEED, -state.receptor_y)
-        # state.focus_idx = SCROLLBAR_UP_BUTTON
 
     def set_location(self, loc: Tuple[int, int]):
         self.e.get_abs_rect().topleft = loc
@@ -1041,8 +1042,9 @@ class ScrollDownButton(ElementBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
+        if state.MUSIC_PLAYING:
+            return
         state.scr_y = min(state.scr_y + SCROLL_SPEED, state.max_y - state.receptor_y)
-        # state.focus_idx = SCROLLBAR_DOWN_BUTTON
 
     def set_location(self, loc: Tuple[int, int]):
         self.e.get_abs_rect().bottomleft = loc

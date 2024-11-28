@@ -47,6 +47,8 @@ class StepChartKey(KeyBase):
 
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
+        if state.MUSIC_PLAYING:
+            return False
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -134,6 +136,8 @@ class UpKey(KeyBase):
 
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
+        if state.MUSIC_PLAYING:
+            return False
         return event.type == pygame.KEYDOWN and event.key == pygame.K_UP
 
     @staticmethod
@@ -183,6 +187,8 @@ class DownKey(KeyBase):
 
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
+        if state.MUSIC_PLAYING:
+            return False
         return event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN
 
     @staticmethod
@@ -236,6 +242,8 @@ class LeftKey(KeyBase):
 
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
+        if state.MUSIC_PLAYING:
+            return False
         return (
             event.type == pygame.KEYDOWN
             and event.key == pygame.K_LEFT
@@ -270,6 +278,8 @@ class RightKey(KeyBase):
 
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
+        if state.MUSIC_PLAYING:
+            return False
         return (
             event.type == pygame.KEYDOWN
             and event.key == pygame.K_RIGHT
@@ -422,6 +432,8 @@ class BackspaceKey(KeyBase):
 
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
+        if state.MUSIC_PLAYING:
+            return False
         return (
             event.type == pygame.KEYDOWN
             and event.key == pygame.K_BACKSPACE
@@ -467,6 +479,9 @@ class CopyKey(KeyBase):
 
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
+        if state.MUSIC_PLAYING:
+            state.log("(Error) Cannot copy while music playing")
+            return False
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -481,9 +496,6 @@ class CopyKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        if state.MUSIC_PLAYING:
-            state.log("(Error) Cannot copy while music playing")
-            return
         step_data, block_info = state.get_step_info()
         ln_from, ln_to = (
             min(state.coor_cur[1], state.coor_base[1]),
@@ -508,6 +520,9 @@ class CutKey(KeyBase):
 
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
+        if state.MUSIC_PLAYING:
+            state.log("(Error) Cannot cut while music playing")
+            return False
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -522,9 +537,6 @@ class CutKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        if state.MUSIC_PLAYING:
-            state.log("(Error) Cannot cut while music playing")
-            return
         step_data, block_info = state.get_step_info()
         ln_from, ln_to = (
             min(state.coor_cur[1], state.coor_base[1]),
@@ -552,6 +564,9 @@ class PasteKey(KeyBase):
 
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
+        if state.MUSIC_PLAYING:
+            state.log("(Error) Cannot paste while music playing")
+            return False
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -566,10 +581,7 @@ class PasteKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        if state.MUSIC_PLAYING:
-            state.log("(Error) Cannot copy while music playing")
-            return
-        elif state.clipboard is None:
+        if state.clipboard is None:
             state.log("(Paste) Nothing in clipboard")
             return
 
@@ -641,6 +653,9 @@ class UndoKey(KeyBase):
 
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
+        if state.MUSIC_PLAYING:
+            state.log("(Error) Cannot undo/redo while music playing")
+            return
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -655,9 +670,6 @@ class UndoKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        if state.MUSIC_PLAYING:
-            state.log("(Error) Cannot undo/redo while music playing")
-            return
         pressed_keys = pygame.key.get_pressed()
         if state.pressed_timestamp[pygame.K_z] == INFINITY:
             state.pressed_timestamp[pygame.K_z] = int(time.time() * 1000)
@@ -675,6 +687,9 @@ class FindKey(KeyBase):
 
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
+        if state.MUSIC_PLAYING:
+            return False
+
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -689,9 +704,7 @@ class FindKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        if state.MUSIC_PLAYING:
-            state.log("(Error) Cannot find error while music playing")
-            return
+
         pressed_keys = pygame.key.get_pressed()
         step_data, block_info = state.get_step_info()
 
@@ -799,6 +812,8 @@ class SelectAllKey(KeyBase):
 
     @staticmethod
     def condition(state: State, event: pygame.Event) -> bool:
+        if state.MUSIC_PLAYING:
+            return False
         pressed_keys = pygame.key.get_pressed()
         return (
             event.type == pygame.KEYDOWN
@@ -813,8 +828,6 @@ class SelectAllKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        if state.MUSIC_PLAYING:
-            return
         step_data, block_info = state.get_step_info()
         x_base, ln_base = state.coor_base
         x_cur, ln_cur = state.coor_cur
@@ -973,9 +986,7 @@ class BlockOperationKey(KeyBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ) -> None:
-        if state.MUSIC_PLAYING:
-            state.log("(Error) Cannot operate while music playing")
-            return
+
         if event.key == pygame.K_u:
             BlockAddAboveButton.action(history_manager, state, event, ui_elements)
         elif event.key == pygame.K_i:
