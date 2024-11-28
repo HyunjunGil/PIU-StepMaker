@@ -6,14 +6,15 @@ from manager import StepMaker
 
 
 pygame.init()
-
 screen_width, screen_height = SCREEN_WIDTH, SCREEN_HEIGHT
 
 stepmaker = StepMaker(
     pygame.display.set_mode((screen_width, screen_height), pygame.RESIZABLE)
 )
 
-
+pygame.display.set_caption("PIU StepMaker Keyboard Edition")
+icon = pygame.image.load("./assets/images/icon.png")  # 아이콘 경로
+pygame.display.set_icon(icon)
 running = True
 
 clock = pygame.time.Clock()
