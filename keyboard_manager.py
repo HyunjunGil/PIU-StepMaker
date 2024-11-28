@@ -81,6 +81,7 @@ class StepChartKey(KeyBase):
                 return
             if step_data[ln_from][col] == 0:
                 step_data[ln_from][col] = 1
+                step_diff.append((ln_from, col, 0, 1))
             else:
                 v = step_data[ln_from][col]
                 step_diff = list(
