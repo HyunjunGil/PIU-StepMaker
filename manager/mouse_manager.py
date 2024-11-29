@@ -46,16 +46,26 @@ class MouseManager:
 
                 state.focus_idx = -1
 
-                state.coor_cur = (
-                    (mouse_x - state.step_x_start) // step_size,
-                    state.y_to_ln[mouse_y + state.scr_y],
-                )
+                if state.AUTO_LINE_PASS:
+                    ln = state.y_to_ln[mouse_y + state.scr_y]
+                    state.coor_base = (0, ln)
+                    state.coor_cur = (state.get_cols() - 1, ln)
+                else:
+                    state.coor_cur = (
+                        (mouse_x - state.step_x_start) // step_size,
+                        state.y_to_ln[mouse_y + state.scr_y],
+                    )
 
-                if not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
-                    state.coor_base = state.coor_cur
-                state.sync_scr_y()
+                    if not (
+                        pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]
+                    ):
+                        state.coor_base = state.coor_cur
+                    state.sync_scr_y()
 
-        elif state.measure_x_start <= mouse_x < state.scrollbar_x_start:
+        elif (
+            state.measure_x_start <= mouse_x < state.scrollbar_x_start
+            and not state.AUTO_LINE_PASS
+        ):
             state.LATTICE_CLICKED, state.SCROLLBAR_CLICKED = False, False
             state.focus_idx = -1
 
