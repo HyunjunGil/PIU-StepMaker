@@ -28,9 +28,9 @@ HARD_MAX_Y = 100_000  # maximum scrollable height
 
 # Key Hold Delay
 # Hold-and-Wait time to active the key input consequently
-KEY_HOLD_DELAY_MS = 500
+KEY_REPEAT_DELAY_MS = 500
 # Interval between each action
-KEY_HOLD_INTERVAL_MS = 50
+KEY_REPEAT_RATE_MS = 50
 
 # Music speed map
 # It must contains 1

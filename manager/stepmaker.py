@@ -184,10 +184,10 @@ class StepMaker:
         key, first_timestamp = sorted(pressed_timestamp.items(), key=lambda x: x[1])[0]
         if (
             first_timestamp != INFINITY
-            and current_timestmap > first_timestamp + KEY_HOLD_DELAY_MS
+            and current_timestmap > first_timestamp + KEY_REPEAT_DELAY_MS
         ):
             pressed_timestamp[key] = (
-                current_timestmap - KEY_HOLD_DELAY_MS + KEY_HOLD_INTERVAL_MS
+                current_timestmap - KEY_REPEAT_DELAY_MS + KEY_REPEAT_RATE_MS
             )
             if key == pygame.K_z:
                 UndoKey.action(self.history_manager, self.state, None, [])
