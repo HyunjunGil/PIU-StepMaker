@@ -75,7 +75,7 @@ class LoadButton(ElementBase):
         mp3_name = mp3_file_path.split("/")[-1]
         if state.AUTO_LINE_PASS:
             AutoLinePassButton.off(history_manager, state, event, ui_elements)
-        state.initialize()
+        state.initialize(state.get_screen_size())
         load_ucs_file(ucs_file_path, state)
         if not os.path.exists(mp3_file_path):
             state.log("(Warning) MP3 file is not loaded")

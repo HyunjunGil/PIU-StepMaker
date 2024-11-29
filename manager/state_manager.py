@@ -227,7 +227,7 @@ class State:
             for i in range(s, e + 1):
                 self.step_data[i][col] = 0
 
-    def initialize(self):
+    def initialize(self, screen_size: Tuple[int, int] = None):
         # Flag
         self.IS_SCROLL = False
         self.LATTICE_CLICKED = False
@@ -276,8 +276,11 @@ class State:
         ]  # initial step data
 
         # Screen size
-        self.screen_width = SCREEN_WIDTH
-        self.screen_height = SCREEN_HEIGHT
+        if screen_size is None:
+            self.screen_width = SCREEN_WIDTH
+            self.screen_height = SCREEN_HEIGHT
+        else:
+            self.screen_width, self.screen_height = screen_size
 
         # Information for each y
         self.max_y = -1
@@ -337,3 +340,4 @@ class State:
 
         self.update_y_info()
         self.update_scr_to_time()
+        self.update_scrollbar_info()
