@@ -12,5 +12,4 @@ ucs/*
 logs/*
 !logs/
 !logs/.gitkeep
-dist/
 build/
