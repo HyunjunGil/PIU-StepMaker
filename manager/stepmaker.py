@@ -84,6 +84,8 @@ class StepMaker:
                     f"./assets/images/receptor_{mode.lower()}_{suffix}.png"
                 ).convert_alpha()
 
+        self.beat = pygame.mixer.Sound("./assets/beat.wav")
+
     def resize_screen(self, size: Tuple[int, int]):
         state = self.state
         w, h = size
@@ -327,6 +329,17 @@ class StepMaker:
             )
             - state.receptor_y
         )
+
+        ln = state.y_to_ln[state.scr_y + state.receptor_y]
+        if state.beat_ln != ln and len(
+            list(
+                filter(
+                    lambda x: x == 1 or x == 2, state.step_data[ln][STEP_DATA_OFFSET:]
+                )
+            )
+        ):
+            self.beat.play()
+            state.beat_ln = ln
 
     def emergency_escape(self, error_msg: str):
         save_ucs_file(self.state, True)

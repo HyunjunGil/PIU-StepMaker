@@ -238,6 +238,7 @@ class PlayButton(ElementBase):
         if state.MUSIC_PLAYING:
             if state.music_len != 0:
                 pygame.mixer.stop()
+            state.beat_ln = -1
             state.MUSIC_PLAYING = False
         else:
             if state.music_len != 0:

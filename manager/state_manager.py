@@ -321,6 +321,7 @@ class State:
         self.music_speed_idx: int = MUSIC_SPEED_MAP.index(1)
         self.music_start_time: int = 0  # in ms
         self.music_start_offset: int = 0  # in ms
+        self.beat_ln = -1
 
         # Log
         self.logs: List[str] = []
