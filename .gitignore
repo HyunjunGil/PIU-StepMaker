@@ -2,3 +2,13 @@
 *.mp3
 *.pyc
 temp/
+
+# Maintain empty ucs
+ucs/*
+!ucs/
+!ucs/.gitkeep
+
+# Maintain empty ucs
+logs/*
+!logs/
+!logs/.gitkeep
