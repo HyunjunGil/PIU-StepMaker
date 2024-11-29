@@ -245,7 +245,7 @@ class State:
         # Save Information
         self.ucs_file_path: str = ""
         self.ucs_save_path: str = ""
-        self.ucs_cache_path: str = ""
+        self.ucs_cache_path: str = "./ucs/cache.ucs"
 
         # 0 : small, 24px
         # 1 : medium, 36px

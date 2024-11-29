@@ -151,11 +151,13 @@ def load_ucs_file(
     state.scrollbar_x_start = state.measure_x_start + state.get_measure_width()
 
 
-def save_ucs_file(
-    state: State,
-):
+def save_ucs_file(state: State, to_cache_path: bool = False):
 
-    path, format, mode = state.ucs_save_path, state.format, state.mode
+    path, format, mode = (
+        state.ucs_cache_path if to_cache_path else state.ucs_save_path,
+        state.format,
+        state.mode,
+    )
     step_data, block_info = state.get_step_info()
     rows, cols = len(step_data), len(step_data[0]) - STEP_DATA_OFFSET
     with open(path, "w") as f:

@@ -18,6 +18,8 @@ from utils import (
     clear_step,
 )
 
+from core import save_ucs_file
+
 
 class StepMaker:
     def __init__(self, screen: pygame.Surface):
@@ -325,6 +327,16 @@ class StepMaker:
             )
             - state.receptor_y
         )
+
+    def emergency_escape(self, error_msg: str):
+        save_ucs_file(self.state, True)
+        log_path = (
+            EMERGENCY_LOG_DIRECTORY + "/" f'log_{time.strftime("%F_%H_%M_%S")}.logs'
+        )
+        logs = self.ui_manager.get_ui_element_by_idx(LOG_TEXTBOX).e.html_text
+
+        with open(log_path, "w") as f:
+            f.write(logs + "\n" + error_msg)
 
     def draw(self):
 

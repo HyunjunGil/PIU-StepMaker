@@ -63,6 +63,9 @@ ALLOW_LONG_NOTE = False
 ###### USER MODIFIABLE CONSTANTS ######
 #######################################
 
+# Emergency log path
+EMERGENCY_LOG_DIRECTORY = "./logs"
+
 
 # Pygame.mixer sample_rate
 PYGAME_SAMPLE_RATE = 44100
