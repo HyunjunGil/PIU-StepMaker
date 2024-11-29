@@ -15,12 +15,18 @@ python 3.12 버전을 사용하실 것을 권장합니다.
 
     pip install -r requirements.txt
 
+레포지토리에서 python main.py 커맨드로도 실행이 가능합니다.    
+<br>exe 파일로 만들어서 실행하고 싶으시면 아래 커맨드를 이용하여 exe 파일을 만들 수 있습니다.
+
+    pyinstaller StepEditKeyboard.spec
+
+이후 생성된 dist 폴더 안에 생성된 StepEditKeyboard.exe를 실행하면 됩니다.
 
 ## 3. 화면 구성 요소 설명
 화면은 아래와 같이 구성되어 있으며 각각의 명칭은 아래와 같습니다.
 
 
-<이미지를 넣을 것!>
+<이미지 추가 예정정>
 
 
 그 밖에 사용되는 용어는 아래와 같습니다.
