@@ -63,7 +63,7 @@ class StepChartKey(KeyBase):
                 if ln == ln_from and v != 2:
                     done = False
                     step_diff.append((ln, col, v, 2))
-                elif ln < ln_to - 1 and v != 3:
+                elif ln_from < ln < ln_to - 1 and v != 3:
                     done = False
                     step_diff.append((ln, col, v, 3))
                 elif ln == ln_to - 1 and v != 4:
@@ -71,7 +71,7 @@ class StepChartKey(KeyBase):
                     step_diff.append((ln, col, v, 4))
             if done:
                 return
-            if not done:
+            else:
                 step_diff = step_diff + list(
                     filter(
                         lambda x: not (ln_from <= x[0] < ln_to),
@@ -89,5 +89,4 @@ class StepChartKey(KeyBase):
         update_validity(step_data, ln_from - 1, ln_to + 1)
 
         coor_redo = (state.coor_cur, state.coor_base)
-
         history_manager.append(StepChartChangeDelta(coor_undo, coor_redo, step_diff))
