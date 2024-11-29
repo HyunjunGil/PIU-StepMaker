@@ -1,4 +1,4 @@
-import pygame, pygame_gui, time
+import pygame, pygame_gui, time, sys, os, json
 
 from typing import List, Tuple, Dict, Union
 from pygame import Rect
@@ -120,9 +120,35 @@ class UIElementManager:
 
     def initialize(self):
 
-        manager = pygame_gui.UIManager(
-            (SCREEN_WIDTH, SCREEN_HEIGHT), "./assets/theme.json"
-        )
+        # if getattr(sys, "frozen", False):  # 실행 파일로 패키징된 상태
+        #     base_path = sys._MEIPASS
+        #     theme_path = os.path.join(base_path, ".\\assets\\theme.json")
+
+        #     # with open(theme_path, "r") as file:
+        #     #     theme_data = file.read()
+        #     # print(theme_path)
+        #     # theme_data.replace("./assets/d2coding.ttf", theme_path)
+
+        #     # with open(theme_path, "w") as temp_file:
+        #     #     temp_file.write(theme_data)
+
+        # else:  # 개발 환경
+        #     base_path = os.path.abspath(os.path.dirname(__file__))
+        #     base_path = os.path.join(base_path, "..\\")
+        #     theme_path = os.path.join(base_path, ".\\assets\\theme.json")
+
+        theme_path = os.path.join(get_base_path(), ".\\assets\\theme.json")
+        if getattr(sys, "frozen", False):
+            with open(theme_path, "r") as f:
+                obj = json.load(f)
+
+            font_path = theme_path.replace("theme.json", "d2coding.ttf")
+
+            obj["@textbox_log"]["font"]["regular_path"] = font_path
+            with open(theme_path, "w") as f:
+                json.dump(obj, f)
+
+        manager = pygame_gui.UIManager((SCREEN_WIDTH, SCREEN_HEIGHT), theme_path)
 
         PANEL_1_HEIGHT = 30
         PANEL_2_HEIGHT = 200

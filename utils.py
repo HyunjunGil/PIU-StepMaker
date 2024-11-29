@@ -1,3 +1,4 @@
+import os, sys
 from datetime import datetime
 from typing import List, Tuple, Dict
 from constants import (
@@ -11,6 +12,15 @@ from constants import (
     BPM_MIN_COLOR,
     BPM_MAX_COLOR,
 )
+
+
+def get_base_path():
+    if getattr(sys, "frozen", False):  # 실행 파일로 패키징된 상태
+        base_path = sys._MEIPASS
+    else:  # 개발 환경
+        base_path = os.path.abspath(os.path.dirname(__file__))
+        # base_path = os.path.join(base_path, "..\\")
+    return base_path
 
 
 def get_bpm_color(bpm_min: int, bpm_max: int, bpm: int):

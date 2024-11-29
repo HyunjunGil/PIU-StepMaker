@@ -1,4 +1,4 @@
-import pygame, pygame_gui, numpy as np, time
+import pygame, pygame_gui, numpy as np, time, sys, os
 
 from tkinter import Tk
 from typing import List, Tuple, Dict
@@ -16,6 +16,7 @@ from utils import (
     get_bpm_color,
     ms_to_beats,
     clear_step,
+    get_base_path,
 )
 
 from core import save_ucs_file
@@ -34,35 +35,47 @@ class StepMaker:
 
         # Images
         # Image Load
+        base_path = get_base_path()
+
         self.TOTAL_IMAGES = []
         for suffix in ["s", "m", "l"]:
             SHORT_IMAGES = [
                 pygame.image.load(
-                    f"./assets/images/note{i % 5}_{suffix}.png"
+                    os.path.join(
+                        base_path, f".\\assets\\images\\note{i % 5}_{suffix}.png"
+                    )
                 ).convert_alpha()
                 for i in range(10)
             ]
             LONG_HEAD_IMAGES = [
                 pygame.image.load(
-                    f"./assets/images/start{i % 5}_{suffix}.png"
+                    os.path.join(
+                        base_path, f".\\assets\\images\\start{i % 5}_{suffix}.png"
+                    )
                 ).convert_alpha()
                 for i in range(10)
             ]
             LONG_MIDDLE_IMAGES = [
                 pygame.image.load(
-                    f"./assets/images/hold{i % 5}_{suffix}.png"
+                    os.path.join(
+                        base_path, f".\\assets\\images\\hold{i % 5}_{suffix}.png"
+                    )
                 ).convert_alpha()
                 for i in range(10)
             ]
             LONG_MIDDLE_HALF_IMAGES = [
                 pygame.image.load(
-                    f"./assets/images/hold_half{i % 5}_{suffix}.png"
+                    os.path.join(
+                        base_path, f".\\assets\\images\\hold_half{i % 5}_{suffix}.png"
+                    )
                 ).convert_alpha()
                 for i in range(10)
             ]
             LONG_TAIL_IMAGES = [
                 pygame.image.load(
-                    f"./assets/images/end{i % 5}_{suffix}.png"
+                    os.path.join(
+                        base_path, f".\\assets\\images\\end{i % 5}_{suffix}.png"
+                    )
                 ).convert_alpha()
                 for i in range(10)
             ]
@@ -81,10 +94,13 @@ class StepMaker:
         for i, suffix in enumerate(["s", "m", "l"]):
             for mode in ["Single", "Double"]:
                 self.RECEPTOR_IMAGES[f"{mode}_{i}"] = pygame.image.load(
-                    f"./assets/images/receptor_{mode.lower()}_{suffix}.png"
+                    os.path.join(
+                        base_path,
+                        f".\\assets\\images\\receptor_{mode.lower()}_{suffix}.png",
+                    )
                 ).convert_alpha()
 
-        self.beat = pygame.mixer.Sound("./assets/beat.wav")
+        self.beat = pygame.mixer.Sound(os.path.join(base_path, ".\\assets\\beat.wav"))
 
     def resize_screen(self, size: Tuple[int, int]):
         state = self.state

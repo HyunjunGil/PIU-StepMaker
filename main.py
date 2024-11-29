@@ -1,6 +1,7 @@
-import pygame, pygame_gui, sys, time, numpy as np
+import pygame, pygame_gui, sys, time, numpy as np, os
 
 from constants import *
+from utils import get_base_path
 
 from manager import StepMaker
 
@@ -13,7 +14,9 @@ stepmaker = StepMaker(
 )
 
 pygame.display.set_caption("PIU StepMaker Keyboard Edition")
-icon = pygame.image.load("./assets/images/icon.png")  # 아이콘 경로
+icon = pygame.image.load(
+    os.path.join(get_base_path(), "./assets/images/icon.png")
+)  # 아이콘 경로
 pygame.display.set_icon(icon)
 running = True
 
