@@ -38,11 +38,11 @@ The screen is structured as shown below, and the names of each component are as 
 
 ![layout_desc_en](https://github.com/user-attachments/assets/4986b983-687e-4f23-bea9-eeed7402a0e9)
 
-**Control Area**: The leftmost area containing various buttons.
-**Chart Area**: The central area where the chart is displayed.
-**Selection Area**: The area highlighted with a hollow black rectangle.
-**Measure Area**: The area located immediately to the right of the chart area.
-**Scrollbar Area**: The area to the right of the measure area where the scrollbar is displayed.
+- **Control Area**: The leftmost area containing various buttons.
+- **Chart Area**: The central area where the chart is displayed.
+- **Selection Area**: The area highlighted with a hollow black rectangle.
+- **Measure Area**: The area located immediately to the right of the chart area.
+- **Scrollbar Area**: The area to the right of the measure area where the scrollbar is displayed.
 
 ## 4. Key Guide
 
