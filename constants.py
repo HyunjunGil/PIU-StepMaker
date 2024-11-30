@@ -18,13 +18,13 @@ class DelayUnit(Enum):
 # Increase this value if your ucs file needs more combo or line
 # Too big value may lead to bad performance
 # Recommended value is 2,000 ~ 3,000
-HARD_MAX_LINES = 2_000  # maximum number of lines.
+HARD_MAX_LINES = 5_000  # maximum number of lines.
 
 # Maximum ucs file heihgt in pixel
 # Incrase this value if your ucs file needs more combo, line or height
 # Too big value may lead to bad performance
 # Recommended value is 100,000 ~ 200,000
-HARD_MAX_Y = 100_000  # maximum scrollable height
+HARD_MAX_Y = 200_000  # maximum scrollable height
 
 # Key Hold Delay
 # Hold-and-Wait time to active the key input consequently
