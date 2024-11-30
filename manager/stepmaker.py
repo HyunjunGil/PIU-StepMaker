@@ -357,10 +357,15 @@ class StepMaker:
             self.beat.play()
             state.beat_ln = ln
 
+    def save_cache(self):
+        if len(self.state.ucs_save_path) > 0:
+            save_ucs_file(self.state, True)
+
     def emergency_escape(self, error_msg: str):
-        save_ucs_file(self.state, True)
-        log_path = (
-            EMERGENCY_LOG_DIRECTORY + "/" f'log_{time.strftime("%F_%H_%M_%S")}.logs'
+        self.save_cache()
+        log_path = os.path.join(
+            os.path.dirname(os.path.abspath(sys.argv[0])),
+            f'log_{time.strftime("%F_%H_%M_%S")}.logs',
         )
         logs = self.ui_manager.get_ui_element_by_idx(LOG_TEXTBOX).e.html_text
 

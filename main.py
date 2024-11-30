@@ -29,6 +29,7 @@ try:
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                stepmaker.save_cache()
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.VIDEORESIZE:

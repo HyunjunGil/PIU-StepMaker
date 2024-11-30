@@ -84,7 +84,7 @@ class LoadButton(ElementBase):
             state.log(f"MP3 file {mp3_name} is loaded")
 
         state.ucs_file_path = state.ucs_save_path = ucs_file_path
-        state.ucs_cache_path = ucs_file_path[:-4] + ".cache.ucs"
+        state.ucs_cache_path = state.ucs_save_path[:-4] + ".cache.ucs"
 
         history_manager.initialize(state)
 
@@ -181,6 +181,7 @@ class SaveAsButton(ElementBase):
         if save_path == "":
             return
         state.ucs_save_path = save_path
+        state.ucs_cache_path = state.ucs_save_path[:-4] + ".cache.ucs"
         SaveButton.action(history_manager, state, event, ui_elements)
         # Hide sub-panel
         state.focus_idx = -1
