@@ -154,7 +154,7 @@ You can modify the values in constants.py to adjust the environment to better su
 |HARD_MAX_Y|(100,000) The maximum Y value of the scroll area. Setting this value too high may slow down performance.|
 |KEY_REPEAT_DELAY_MS|(500) The delay time for the first repeat input when a key is pressed. The larger the number, the longer the delay.|
 |KEY_REPEAT_RATE_MS|(50) The time interval between continuous inputs after the first repeat input. The smaller the number, the faster it repeats.|
-|MUSIC_SPEED_MAP|([0.2, 0.3, 0.4, 0.5, 0.6, 1]) The list of possible music playback speeds. The value 1 must always be included.|
+|MUSIC_SPEED_MAP|([0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]) The list of possible music playback speeds. The value 1 must always be included.|
 |VERTICAL_MULTIPLIER_MAX|(50) The maximum value to which the chart area can be scaled vertically. A value of 10 corresponds to a 1.0 scale.|
 |MIN_SPLIT_SIZE|The minimum space maintained between lines even as the Split/Beat value increases.|
 |MUSIC_INPUT_DELAY_IN_PIXEL|(10) The correction value for the chart input position when music is playing. Adjust it if the input seems too early or late.|
