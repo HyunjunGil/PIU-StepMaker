@@ -29,14 +29,11 @@ class UpKey(KeyBase):
 
         step_data, block_info = state.get_step_info()
         x, ln = state.coor_cur
-        if ln == 0:
-            state.sync_scr_y()
-            return
-
         pressed_keys = pygame.key.get_pressed()
         ctrl_pressed = pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL]
         if (
-            step_data[ln][x + STEP_DATA_OFFSET] != 0
+            ln != 0
+            and step_data[ln][x + STEP_DATA_OFFSET] != 0
             and (pressed_keys[pygame.K_LALT] or pressed_keys[pygame.K_RALT])
         ) and state.coor_cur == state.coor_base:
             step_diff: List[Tuple[int, int, int, int]] = []
@@ -155,24 +152,32 @@ class UpKey(KeyBase):
                     StepChartChangeDelta(coor_undo, coor_redo, step_diff)
                 )
 
-        else:
+        elif ln != 0:
             ln -= 1
-            block_idx_prev = step_data[ln][STEP_DATA_BI_IDX]
-            if pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL]:
-                line = step_data[ln]
-                block = block_info[line[STEP_DATA_BI_IDX]]
-                ln -= line[STEP_DATA_BT_IDX] * block[2] + line[STEP_DATA_SP_IDX]
-                state.coor_cur = (state.coor_cur[0], ln)
-            else:
-                state.coor_cur = (state.coor_cur[0], ln)
+            bi, mi = (
+                step_data[ln][STEP_DATA_BI_IDX],
+                step_data[ln][STEP_DATA_MS_IDX],
+            )
+            if ctrl_pressed:
+                while (
+                    ln - 1 >= 0
+                    and step_data[ln - 1][STEP_DATA_BI_IDX] == bi
+                    and step_data[ln - 1][STEP_DATA_MS_IDX] == mi
+                ):
+                    ln -= 1
+            state.coor_cur = (state.coor_cur[0], ln)
 
             block_idx = step_data[state.coor_cur[1]][STEP_DATA_BI_IDX]
-            if block_idx != block_idx_prev:
+            if block_idx != bi:
                 state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
 
             if state.AUTO_LINE_PASS:
                 state.coor_base = (state.coor_base[0], state.coor_cur[1])
             elif not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
+                state.coor_base = state.coor_cur
+
+        else:
+            if not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
                 state.coor_base = state.coor_cur
 
         state.sync_scr_y()
@@ -207,14 +212,11 @@ class DownKey(KeyBase):
         step_data, block_info = state.get_step_info()
         x, ln = state.coor_cur
         ln_max = len(step_data) - 1
-        if ln == ln_max:
-            state.sync_scr_y()
-            return
-
         pressed_keys = pygame.key.get_pressed()
         ctrl_pressed = pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL]
         if (
-            step_data[ln][x + STEP_DATA_OFFSET] != 0
+            ln != ln_max
+            and step_data[ln][x + STEP_DATA_OFFSET] != 0
             and (pressed_keys[pygame.K_LALT] or pressed_keys[pygame.K_RALT])
         ) and state.coor_cur == state.coor_base:
             step_diff: List[Tuple[int, int, int, int]] = []
@@ -334,26 +336,33 @@ class DownKey(KeyBase):
                     StepChartChangeDelta(coor_undo, coor_redo, step_diff)
                 )
 
-        else:
-            block_idx_prev = step_data[ln][STEP_DATA_BI_IDX]
-            if pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL]:
-                line = step_data[ln]
-                block = block_info[line[STEP_DATA_BI_IDX]]
-                ln -= line[STEP_DATA_BT_IDX] * block[2] + line[STEP_DATA_SP_IDX]
-
-                ln += block[1] * block[2]
-                ln = min(ln, len(step_data) - 1)
-                state.coor_cur = (state.coor_cur[0], ln)
-            else:
-                state.coor_cur = (state.coor_cur[0], ln + 1)
+        elif ln != ln_max:
+            ln += 1
+            # block_idx_prev = step_data[ln][STEP_DATA_BI_IDX]
+            bi, mi = (
+                step_data[ln][STEP_DATA_BI_IDX],
+                step_data[ln][STEP_DATA_MS_IDX],
+            )
+            if ctrl_pressed:
+                while (
+                    ln + 1 <= ln_max
+                    and step_data[ln + 1][STEP_DATA_BI_IDX] == bi
+                    and step_data[ln + 1][STEP_DATA_MS_IDX] == mi
+                ):
+                    ln += 1
+            state.coor_cur = (state.coor_cur[0], ln)
 
             block_idx = step_data[state.coor_cur[1]][STEP_DATA_BI_IDX]
-            if block_idx != block_idx_prev:
+            if block_idx != bi:
                 state.UPDATE_BLOCK_INFORMATION_TEXTBOX = True
 
             if state.AUTO_LINE_PASS:
                 state.coor_base = (state.coor_base[0], state.coor_cur[1])
             elif not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
+                state.coor_base = state.coor_cur
+
+        else:
+            if not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
                 state.coor_base = state.coor_cur
 
         state.sync_scr_y()
@@ -389,14 +398,13 @@ class LeftKey(KeyBase):
             return
         x = state.coor_cur[0]
         pressed_keys = pygame.key.get_pressed()
-        if x != 0:
-            if pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL]:
-                x = 0
-            else:
-                x -= 1
-            state.coor_cur = (x, state.coor_cur[1])
-            if not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
-                state.coor_base = state.coor_cur
+        if pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL]:
+            x = 0
+        elif x != 0:
+            x -= 1
+        state.coor_cur = (x, state.coor_cur[1])
+        if not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
+            state.coor_base = state.coor_cur
 
 
 # Right
@@ -426,11 +434,10 @@ class RightKey(KeyBase):
         x = state.coor_cur[0]
         cols = state.get_cols()
         pressed_keys = pygame.key.get_pressed()
-        if x != cols - 1:
-            if pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL]:
-                x = cols - 1
-            else:
-                x += 1
-            state.coor_cur = (x, state.coor_cur[1])
-            if not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
-                state.coor_base = state.coor_cur
+        if pressed_keys[pygame.K_LCTRL] or pressed_keys[pygame.K_RCTRL]:
+            x = cols - 1
+        elif x != cols - 1:
+            x += 1
+        state.coor_cur = (x, state.coor_cur[1])
+        if not (pressed_keys[pygame.K_LSHIFT] or pressed_keys[pygame.K_RSHIFT]):
+            state.coor_base = state.coor_cur
