@@ -36,6 +36,8 @@ Afterward, navigate to the dist folder and run the generated StepEditKeyboard.ex
 
 The screen is structured as shown below, and the names of each component are as follows.
 
+![layout_desc_en](https://github.com/user-attachments/assets/4986b983-687e-4f23-bea9-eeed7402a0e9)
+
 **Control Area**: The leftmost area containing various buttons.
 **Chart Area**: The central area where the chart is displayed.
 **Selection Area**: The area highlighted with a hollow black rectangle.
