@@ -77,15 +77,27 @@ class CutKey(KeyBase):
             max(state.coor_cur[0], state.coor_base[0]) + STEP_DATA_OFFSET + 1,
         )
         state.clipboard = copy.deepcopy(step_data[ln_from:ln_to])
-
+        step_diff: List[Tuple[int, int, int, int]] = []
         for ln in range(ln_from, ln_to):
             for col in range(STEP_DATA_OFFSET, len(step_data[0])):
                 if col_from <= col < col_to:
-                    step_data[ln][col] = 0
+                    if step_data[ln][col] != 0:
+                        step_diff.append((ln, col, step_data[ln][col], 0))
+                        step_data[ln][col] = 0
                 else:
                     state.clipboard[ln - ln_from][col] = -1
 
         update_validity(step_data, ln_from - 1, ln_to + 1)
+
+        coor_undo = coor_redo = (state.coor_cur, state.coor_base)
+        if len(step_diff):
+            history_manager.append(
+                StepChartChangeDelta(
+                    coor_undo,
+                    coor_redo,
+                    step_diff,
+                )
+            )
 
 
 class PasteKey(KeyBase):
