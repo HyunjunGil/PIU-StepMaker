@@ -166,5 +166,13 @@ class BackspaceKey(KeyBase):
 
         update_validity(step_data, ln_from - 1, ln_to + 1)
 
-        y_undo = y_redo = (state.coor_cur, state.coor_base)
-        history_manager.append(StepChartChangeDelta(y_undo, y_redo, step_diff))
+        coor_undo = coor_redo = (state.coor_cur, state.coor_base)
+
+        if len(step_diff):
+            history_manager.append(
+                StepChartChangeDelta(
+                    coor_undo,
+                    coor_redo,
+                    step_diff,
+                )
+            )
