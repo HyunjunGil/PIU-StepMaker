@@ -1,3 +1,6 @@
+[![en](https://img.shields.io/badge/lang-kr-red.svg)](https://github.com/HyunjunGil/PIU-StepMaker/blob/main/README.en.md)
+
+
 # PIU StepMaker-KeyboardEdition
 
 ## 1. 소개
