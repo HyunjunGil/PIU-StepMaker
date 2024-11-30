@@ -9,8 +9,6 @@ ucs/*
 !ucs/.gitkeep
 
 # Maintain empty ucs
-logs/*
-!logs/
-!logs/.gitkeep
+*.logs
 build/
 dist/
