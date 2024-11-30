@@ -331,7 +331,6 @@ class BlockSplitDelta(StateDelta):
 
         state.log(
             f"(Undo) Merge Block #{self.block_idx + 1} & #{self.block_idx + 2}",
-            quite=False,
         )
         super().undo(state)
 
