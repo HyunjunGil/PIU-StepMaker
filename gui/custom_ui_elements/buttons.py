@@ -63,6 +63,8 @@ class LoadButton(ElementBase):
         event: pygame.Event,
         ui_elements: List[ElementBase],
     ):
+        if len(state.ucs_save_path) > 0:
+            save_ucs_file(state, True)
         file_path = askopenfilename(
             title="Select an UCS file", filetypes=[("Ucs Files", "*.ucs")]
         )
