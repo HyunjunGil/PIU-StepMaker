@@ -32,6 +32,11 @@ If you prefer to create and run an executable file, you can do so with the follo
 
 Afterward, navigate to the dist folder and run the generated StepEditKeyboard.exe file.
 
+### 2.3. How to Handle Errors
+If an error occurs, whether it's from loading a new UCS file, closing the window, or an unexpected crash, your progress up to that point will be saved in a cache.ucs file. You can recover your work using this file even after such incidents.
+
+In the event of a sudden crash, a log file will also be generated in the same directory as the UCS file. Reporting the error along with the log file will greatly help in improving the program.
+
 ## 3.Explanation of Screen Components
 
 The screen is structured as shown below, and the names of each component are as follows.
