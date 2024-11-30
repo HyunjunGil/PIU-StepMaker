@@ -157,7 +157,7 @@ class PasteKey(KeyBase):
                 step_data[ln][col] = 0
 
         # Paste
-        for ln in range(ln_from, ln_to):
+        for ln in range(ln_from, ln_to_paste):
             for col in target_cols:
                 step_data[ln][col] = clipboard[ln - ln_from][col]
 
