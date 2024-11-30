@@ -14,7 +14,7 @@ python의 pygame 패키지를 이용하여 구현하였습니다. 추후에 Elec
 ## 2. 설치 및 사용 방법
 
 ### 2.1. exe 파일 다운
-[릴리스 페이지](https://github.com/HyunjunGil/PIU-StepMaker/releases/tag/1.0.0)에 들어가셔서 StepEditKeyboard.zip을 다운받고 압축을 푼 후 안에 있는 exe 파일을 사용하시면 됩니다. **exe 파일을 실행할 때 윈도우에서 알 수 없는 게시자라고 경고가 나와도 무시하고 실행하면 됩니다.** 제가 따로 인증서를 구입해서 포함시켜야 해결되는 문제라 일단 그대로 두었습니다.
+[릴리스 페이지](https://github.com/HyunjunGil/PIU-StepMaker/releases/tag/latest)에 들어가셔서 StepEditKeyboard.zip을 다운받고 압축을 푼 후 안에 있는 exe 파일을 사용하시면 됩니다. **exe 파일을 실행할 때 윈도우에서 알 수 없는 게시자라고 경고가 나와도 무시하고 실행하면 됩니다.** 제가 따로 인증서를 구입해서 포함시켜야 해결되는 문제라 일단 그대로 두었습니다.
 
 
 

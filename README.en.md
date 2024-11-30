@@ -13,7 +13,7 @@ To be honest, I haven't created many UCS files myself, so I’m not entirely fam
 ## 2. Installation and Usage Instructions
 
 ### 2.1. Download exe file
-To use the program, go to the [release page](https://github.com/HyunjunGil/PIU-StepMaker/releases/tag/1.0.0), download StepEditKeyboard.zip, extract it, and run the executable file inside. When running the executable, Windows may display a warning about an unknown publisher. You can safely ignore this and proceed. This issue occurs because I haven’t purchased and included a digital certificate. I’ve decided to leave it as is for now.
+To use the program, go to the [release page](https://github.com/HyunjunGil/PIU-StepMaker/releases/tag/latest), download StepEditKeyboard.zip, extract it, and run the executable file inside. When running the executable, Windows may display a warning about an unknown publisher. You can safely ignore this and proceed. This issue occurs because I haven’t purchased and included a digital certificate. I’ve decided to leave it as is for now.
 
 ### 2.2. Running the Code Directly
 It is recommended to use Python 3.12.
